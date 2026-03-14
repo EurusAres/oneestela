@@ -1,0 +1,203 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { executeQuery } from '@/lib/db';
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+
+    let query = `
+      SELECT b.*, o.name as room_name, o.image_url
+      FROM bookings b
+      LEFT JOIN office_rooms o ON b.office_room_id = o.id
+    `;
+    const params: any[] = [];
+
+    if (userId) {
+      query += ' WHERE b.user_id = ?';
+      params.push(userId);
+    }
+
+    query += ' ORDER BY b.created_at DESC';
+
+    const bookings = await executeQuery(query, params);
+
+    return NextResponse.json({ bookings });
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    
+    console.log('Received booking data:', JSON.stringify(body, null, 2));
+    
+    // Handle both API formats: office room booking and event booking
+    const userId = body.userId;
+    const officeRoomId = body.officeRoomId || 1; // Default to first room if not specified
+    
+    // Handle date formatting more carefully
+    let checkInDate, checkOutDate;
+    if (body.checkInDate) {
+      checkInDate = body.checkInDate;
+    } else if (body.date) {
+      const dateStr = body.date.includes('T') ? body.date.split('T')[0] : body.date;
+      checkInDate = `${dateStr} ${body.startTime || '09:00:00'}`;
+    }
+    
+    if (body.checkOutDate) {
+      checkOutDate = body.checkOutDate;
+    } else if (body.date) {
+      const dateStr = body.date.includes('T') ? body.date.split('T')[0] : body.date;
+      checkOutDate = `${dateStr} ${body.endTime || '17:00:00'}`;
+    }
+    
+    const numberOfGuests = body.numberOfGuests || body.guestCount || 1;
+    const specialRequests = body.specialRequests || '';
+    const totalPrice = body.totalPrice || 0;
+
+    console.log('Processed values:', { userId, officeRoomId, checkInDate, checkOutDate, numberOfGuests });
+
+    if (!userId || !checkInDate || !checkOutDate) {
+      console.error('Validation failed:', { userId, checkInDate, checkOutDate });
+      return NextResponse.json(
+        { error: 'Missing required fields: userId, date/checkInDate, and time/checkOutDate are required', received: { userId, checkInDate, checkOutDate } },
+        { status: 400 }
+      );
+    }
+
+    const result = await executeQuery(
+      `INSERT INTO bookings 
+       (user_id, office_room_id, check_in_date, check_out_date, number_of_guests, special_requests, total_price, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, officeRoomId, checkInDate, checkOutDate, numberOfGuests, specialRequests, totalPrice, 'pending']
+    );
+
+    const insertId = (result as any).insertId;
+
+    // Return the created booking with proper structure
+    const newBooking = {
+      id: insertId.toString(),
+      userId,
+      eventName: body.eventName || 'Event Booking',
+      eventType: body.eventType || 'general',
+      guestCount: numberOfGuests,
+      date: body.date || checkInDate.split(' ')[0],
+      startTime: body.startTime || checkInDate.split(' ')[1] || '09:00',
+      endTime: body.endTime || checkOutDate.split(' ')[1] || '17:00',
+      specialRequests,
+      status: 'pending',
+      submittedAt: new Date().toISOString(),
+      total: totalPrice.toString(),
+      userInfo: body.userInfo || { name: '', email: '', phone: '' }
+    };
+
+    return NextResponse.json(newBooking, { status: 201 });
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Booking ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    // Build dynamic update query based on provided fields
+    if (body.status !== undefined) {
+      updates.push('status = ?');
+      values.push(body.status);
+    }
+    if (body.checkInDate !== undefined) {
+      updates.push('check_in_date = ?');
+      values.push(body.checkInDate);
+    }
+    if (body.checkOutDate !== undefined) {
+      updates.push('check_out_date = ?');
+      values.push(body.checkOutDate);
+    }
+    if (body.numberOfGuests !== undefined) {
+      updates.push('number_of_guests = ?');
+      values.push(body.numberOfGuests);
+    }
+    if (body.specialRequests !== undefined) {
+      updates.push('special_requests = ?');
+      values.push(body.specialRequests);
+    }
+    if (body.totalPrice !== undefined) {
+      updates.push('total_price = ?');
+      values.push(body.totalPrice);
+    }
+
+    if (updates.length === 0) {
+      return NextResponse.json(
+        { error: 'No fields to update' },
+        { status: 400 }
+      );
+    }
+
+    values.push(id);
+
+    await executeQuery(
+      `UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`,
+      values
+    );
+
+    return NextResponse.json({ message: 'Booking updated successfully' });
+  } catch (error) {
+    console.error('Error updating booking:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Booking ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Soft delete by updating status to cancelled
+    await executeQuery(
+      'UPDATE bookings SET status = ? WHERE id = ?',
+      ['cancelled', id]
+    );
+
+    return NextResponse.json({ message: 'Booking cancelled successfully' });
+  } catch (error) {
+    console.error('Error cancelling booking:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
