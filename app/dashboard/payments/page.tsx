@@ -96,23 +96,44 @@ export default function PaymentsPage() {
     setAdminNote("")
   }
 
-  const handleViewImage = (proof: any) => {
-    const file = getPaymentProofFile(proof.fileId)
-    if (file) {
-      setSelectedImage(file.url)
+  const handleViewImage = async (proof: any) => {
+    console.log('View image - proof object:', proof)
+    // File URL is stored directly in the proof object from the database
+    if (proof.fileUrl || proof.file_url) {
+      setSelectedImage(proof.fileUrl || proof.file_url)
       setShowImageDialog(true)
+    } else {
+      toast({
+        title: "File not found",
+        description: "Unable to load the payment proof file.",
+        variant: "destructive",
+      })
     }
   }
 
   const handleDownloadFile = (proof: any) => {
-    const file = getPaymentProofFile(proof.fileId)
-    if (file) {
+    console.log('Download - proof object:', proof)
+    const fileUrl = proof.fileUrl || proof.file_url
+    const fileName = proof.fileName || proof.file_name
+    
+    if (fileUrl) {
       const link = document.createElement("a")
-      link.href = file.url
-      link.download = file.name
+      link.href = fileUrl
+      link.download = fileName
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      
+      toast({
+        title: "Download started",
+        description: `Downloading ${fileName}`,
+      })
+    } else {
+      toast({
+        title: "File not found",
+        description: "Unable to download the payment proof file.",
+        variant: "destructive",
+      })
     }
   }
 

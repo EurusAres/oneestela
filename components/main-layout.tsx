@@ -102,7 +102,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       <div
         className={`${
           isMobileMenuOpen ? "block" : "hidden"
-        } w-full border-r bg-white md:block md:w-64 md:flex-shrink-0`}
+        } w-full border-r bg-white md:block md:w-64 md:flex-shrink-0 md:sticky md:top-0 md:h-screen`}
       >
         <div className="flex h-full flex-col">
           <div className="hidden items-center justify-center border-b p-4 md:flex">

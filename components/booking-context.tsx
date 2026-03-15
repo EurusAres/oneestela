@@ -47,7 +47,25 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         const response = await fetch("/api/bookings")
         if (response.ok) {
           const data = await response.json()
-          setBookings(data.bookings || [])
+          const mapped = (data.bookings || []).map((b: any) => ({
+            ...b,
+            id: b.id?.toString(),
+            userId: b.userId || b.user_id?.toString(),
+            eventName: b.eventName || b.event_name || 'Event Booking',
+            eventType: b.eventType || b.event_type || 'general',
+            guestCount: b.guestCount || b.number_of_guests || 0,
+            date: b.date || (b.check_in_date ? new Date(b.check_in_date).toISOString().split('T')[0] : ''),
+            startTime: b.startTime || (b.check_in_date ? new Date(b.check_in_date).toTimeString().slice(0,5) : ''),
+            endTime: b.endTime || (b.check_out_date ? new Date(b.check_out_date).toTimeString().slice(0,5) : ''),
+            submittedAt: b.submittedAt || b.created_at || new Date().toISOString(),
+            total: b.total || b.total_price?.toString(),
+            userInfo: b.userInfo || {
+              name: b.user_name || '',
+              email: b.user_email || '',
+              phone: b.user_phone || '',
+            },
+          }))
+          setBookings(mapped)
         }
       } catch (error) {
         console.error("Load bookings error:", error)
@@ -71,8 +89,13 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       }
       if (response.ok) {
         const newBooking = await response.json()
-        const updatedBookings = [...bookings, newBooking]
-        setBookings(updatedBookings)
+        const mapped = {
+          ...newBooking,
+          id: newBooking.id?.toString(),
+          userId: newBooking.userId || bookingData.userId,
+          userInfo: newBooking.userInfo || bookingData.userInfo,
+        }
+        setBookings((prev) => [...prev, mapped])
       }
     } catch (error) {
       console.error("Add booking error:", error)

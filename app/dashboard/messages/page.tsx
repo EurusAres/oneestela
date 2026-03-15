@@ -155,12 +155,16 @@ export default function MessagesPage() {
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-lg font-semibold">{message.name}</h3>
                         <div className="flex space-x-2">
-                          <Badge className={getPriorityColor(message.priority)}>
-                            {message.priority.charAt(0).toUpperCase() + message.priority.slice(1)} Priority
-                          </Badge>
-                          <Badge className={getStatusColor(message.status)}>
-                            {message.status.charAt(0).toUpperCase() + message.status.slice(1)}
-                          </Badge>
+                          {message.priority && (
+                            <Badge className={getPriorityColor(message.priority)}>
+                              {message.priority.charAt(0).toUpperCase() + message.priority.slice(1)} Priority
+                            </Badge>
+                          )}
+                          {message.status && (
+                            <Badge className={getStatusColor(message.status)}>
+                              {message.status.charAt(0).toUpperCase() + message.status.slice(1)}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">

@@ -1,196 +1,140 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useState, useEffect, useCallback } from "react"
 
-export interface BookingReport {
-  totalBookings: number
-  dailyBookings: { date: string; count: number }[]
-  weeklyBookings: { week: string; count: number }[]
+export interface DashboardStats {
+  summary: {
+    totalBookings: number
+    confirmed: number
+    pending: number
+    cancelled: number
+    completed: number
+    totalRevenue: number
+    totalUsers: number
+    avgRating: string
+    totalReviews: number
+    unreadMessages: number
+    totalMessages: number
+  }
+  thisMonth: { bookings: number; revenue: number }
+  lastMonth: { bookings: number; revenue: number }
+  recentBookings: any[]
   monthlyBookings: { month: string; count: number }[]
-  mostBookedAreas: { area: string; count: number }[]
-  peakTimes: { time: string; count: number }[]
-  cancellations: number
-  noShows: number
-  occupancyRate: { area: string; rate: number }[]
-}
-
-export interface RevenueReport {
-  totalRevenue: number
-  dailyRevenue: { date: string; amount: number }[]
   monthlyRevenue: { month: string; amount: number }[]
-  revenueByArea: { area: string; amount: number }[]
-  revenueByEventType: { eventType: string; amount: number }[]
-  paymentStatus: { status: string; count: number; amount: number }[]
-  refunds: { total: number; amount: number }
-}
-
-export interface InquiryReport {
-  totalInquiries: number
-  dailyInquiries: { date: string; count: number }[]
-  weeklyInquiries: { week: string; count: number }[]
-  averageResponseTime: number
-  topTopics: { topic: string; count: number }[]
-  responseRate: number
-}
-
-export interface CustomerReport {
-  totalCustomers: number
+  bookingsByRoom: { area: string; count: number }[]
+  statusBreakdown: { status: string; count: number; amount: number }[]
   newSignups: { month: string; count: number }[]
-  repeatCustomers: number
-  customerRetentionRate: number
   topCustomers: { name: string; bookings: number; revenue: number }[]
 }
 
 interface ReportsContextType {
-  bookingReport: BookingReport
-  revenueReport: RevenueReport
-  inquiryReport: InquiryReport
-  customerReport: CustomerReport
+  stats: DashboardStats | null
   generateReports: () => void
   isLoading: boolean
+  // Legacy fields kept for backward compat with reports page
+  bookingReport: any
+  revenueReport: any
+  inquiryReport: any
+  customerReport: any
+}
+
+const defaultStats: DashboardStats = {
+  summary: { totalBookings: 0, confirmed: 0, pending: 0, cancelled: 0, completed: 0, totalRevenue: 0, totalUsers: 0, avgRating: '0.0', totalReviews: 0, unreadMessages: 0, totalMessages: 0 },
+  thisMonth: { bookings: 0, revenue: 0 },
+  lastMonth: { bookings: 0, revenue: 0 },
+  recentBookings: [],
+  monthlyBookings: [],
+  monthlyRevenue: [],
+  bookingsByRoom: [],
+  statusBreakdown: [],
+  newSignups: [],
+  topCustomers: [],
 }
 
 const ReportsContext = createContext<ReportsContextType | undefined>(undefined)
 
 export function ReportsProvider({ children }: { children: React.ReactNode }) {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const [bookingReport, setBookingReport] = useState<BookingReport>({
-    totalBookings: 156,
-    dailyBookings: [
-      { date: "2025-01-20", count: 8 },
-      { date: "2025-01-21", count: 12 },
-      { date: "2025-01-22", count: 6 },
-      { date: "2025-01-23", count: 15 },
-      { date: "2025-01-24", count: 10 },
-      { date: "2025-01-25", count: 18 },
-    ],
-    weeklyBookings: [],
-    monthlyBookings: [
-      { month: "2024-10", count: 45 },
-      { month: "2024-11", count: 52 },
-      { month: "2024-12", count: 38 },
-      { month: "2025-01", count: 21 },
-    ],
-    mostBookedAreas: [
-      { area: "Main Hall", count: 45 },
-      { area: "Garden Area", count: 38 },
-      { area: "Rooftop", count: 32 },
-      { area: "Conference Room", count: 25 },
-      { area: "Ballroom", count: 16 },
-    ],
-    peakTimes: [
-      { time: "6:00 PM - 8:00 PM", count: 45 },
-      { time: "2:00 PM - 4:00 PM", count: 38 },
-      { time: "10:00 AM - 12:00 PM", count: 32 },
-      { time: "8:00 PM - 10:00 PM", count: 28 },
-    ],
-    cancellations: 12,
-    noShows: 5,
-    occupancyRate: [
-      { area: "Main Hall", rate: 85 },
-      { area: "Garden Area", rate: 72 },
-      { area: "Rooftop", rate: 68 },
-      { area: "Conference Room", rate: 91 },
-      { area: "Ballroom", rate: 64 },
-    ],
-  })
-
-  const [revenueReport, setRevenueReport] = useState<RevenueReport>({
-    totalRevenue: 245680,
-    dailyRevenue: [
-      { date: "2025-01-20", amount: 3200 },
-      { date: "2025-01-21", amount: 4800 },
-      { date: "2025-01-22", amount: 2400 },
-      { date: "2025-01-23", amount: 6000 },
-      { date: "2025-01-24", amount: 4000 },
-      { date: "2025-01-25", amount: 7200 },
-    ],
-    monthlyRevenue: [
-      { month: "2024-10", amount: 68500 },
-      { month: "2024-11", amount: 72300 },
-      { month: "2024-12", amount: 58200 },
-      { month: "2025-01", amount: 46680 },
-    ],
-    revenueByArea: [],
-    revenueByEventType: [
-      { eventType: "Wedding", amount: 125000 },
-      { eventType: "Corporate Event", amount: 68000 },
-      { eventType: "Birthday Party", amount: 32000 },
-      { eventType: "Conference", amount: 20680 },
-    ],
-    paymentStatus: [
-      { status: "Paid", count: 108, amount: 172000 },
-      { status: "Pending", count: 32, amount: 49000 },
-      { status: "Unpaid", count: 16, amount: 24680 },
-    ],
-    refunds: { total: 3, amount: 8500 },
-  })
-
-  const [inquiryReport, setInquiryReport] = useState<InquiryReport>({
-    totalInquiries: 234,
-    dailyInquiries: [
-      { date: "2025-01-20", count: 12 },
-      { date: "2025-01-21", count: 18 },
-      { date: "2025-01-22", count: 8 },
-      { date: "2025-01-23", count: 22 },
-      { date: "2025-01-24", count: 15 },
-      { date: "2025-01-25", count: 25 },
-    ],
-    weeklyInquiries: [],
-    averageResponseTime: 4.5,
-    topTopics: [
-      { topic: "Wedding Packages", count: 45 },
-      { topic: "Corporate Events", count: 32 },
-      { topic: "Pricing Information", count: 28 },
-      { topic: "Availability", count: 25 },
-      { topic: "Catering Options", count: 18 },
-    ],
-    responseRate: 87.2,
-  })
-
-  const [customerReport, setCustomerReport] = useState<CustomerReport>({
-    totalCustomers: 89,
-    newSignups: [
-      { month: "2024-09", count: 12 },
-      { month: "2024-10", count: 18 },
-      { month: "2024-11", count: 15 },
-      { month: "2024-12", count: 22 },
-      { month: "2025-01", count: 19 },
-    ],
-    repeatCustomers: 23,
-    customerRetentionRate: 25.8,
-    topCustomers: [
-      { name: "Sarah Johnson", bookings: 5, revenue: 18500 },
-      { name: "Michael Chen", bookings: 4, revenue: 15200 },
-      { name: "Emily Davis", bookings: 3, revenue: 12800 },
-      { name: "David Wilson", bookings: 3, revenue: 11500 },
-      { name: "Lisa Anderson", bookings: 2, revenue: 9800 },
-    ],
-  })
-
-  const generateReports = () => {
+  const generateReports = useCallback(async () => {
     setIsLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      // In a real app, this would fetch fresh data from your API
+    try {
+      const res = await fetch('/api/dashboard/stats')
+      if (res.ok) {
+        const data = await res.json()
+        setStats(data)
+      }
+    } catch (e) {
+      console.error('Failed to load dashboard stats:', e)
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
+  }, [])
+
+  useEffect(() => {
+    generateReports()
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(generateReports, 30000)
+    return () => clearInterval(interval)
+  }, [generateReports])
+
+  const s = stats || defaultStats
+
+  // Map to legacy shape for reports page
+  const bookingReport = {
+    totalBookings: s.summary.totalBookings,
+    monthlyBookings: s.monthlyBookings.map(m => ({ month: m.month, count: m.count })),
+    mostBookedAreas: s.bookingsByRoom,
+    peakTimes: [],
+    cancellations: s.summary.cancelled,
+    noShows: 0,
+    occupancyRate: s.bookingsByRoom.map(r => ({
+      area: r.area,
+      rate: s.summary.totalBookings > 0 ? Math.round((r.count / s.summary.totalBookings) * 100) : 0,
+    })),
+    dailyBookings: [],
+    weeklyBookings: [],
+  }
+
+  const revenueReport = {
+    totalRevenue: s.summary.totalRevenue,
+    monthlyRevenue: s.monthlyRevenue.map(m => ({ month: m.month, amount: m.amount })),
+    revenueByEventType: s.bookingsByRoom.map(r => ({ eventType: r.area, amount: 0 })),
+    paymentStatus: s.statusBreakdown.map(st => ({
+      status: st.status.charAt(0).toUpperCase() + st.status.slice(1),
+      count: st.count,
+      amount: st.amount,
+    })),
+    refunds: { total: s.summary.cancelled, amount: 0 },
+    dailyRevenue: [],
+    revenueByArea: [],
+  }
+
+  const inquiryReport = {
+    totalInquiries: s.summary.totalMessages,
+    dailyInquiries: [],
+    weeklyInquiries: [],
+    averageResponseTime: 0,
+    topTopics: [],
+    responseRate: s.summary.totalMessages > 0
+      ? Math.round(((s.summary.totalMessages - s.summary.unreadMessages) / s.summary.totalMessages) * 100)
+      : 0,
+  }
+
+  const customerReport = {
+    totalCustomers: s.summary.totalUsers,
+    newSignups: s.newSignups,
+    repeatCustomers: s.topCustomers.filter(c => c.bookings > 1).length,
+    customerRetentionRate: s.summary.totalUsers > 0
+      ? Math.round((s.topCustomers.filter(c => c.bookings > 1).length / s.summary.totalUsers) * 100)
+      : 0,
+    topCustomers: s.topCustomers,
   }
 
   return (
-    <ReportsContext.Provider
-      value={{
-        bookingReport,
-        revenueReport,
-        inquiryReport,
-        customerReport,
-        generateReports,
-        isLoading,
-      }}
-    >
+    <ReportsContext.Provider value={{ stats, generateReports, isLoading, bookingReport, revenueReport, inquiryReport, customerReport }}>
       {children}
     </ReportsContext.Provider>
   )
@@ -198,8 +142,6 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
 
 export function useReports() {
   const context = useContext(ReportsContext)
-  if (context === undefined) {
-    throw new Error("useReports must be used within a ReportsProvider")
-  }
+  if (context === undefined) throw new Error("useReports must be used within a ReportsProvider")
   return context
 }

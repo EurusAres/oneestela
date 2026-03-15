@@ -34,7 +34,7 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
   const [paymentDetails, setPaymentDetails] = useState({
     paymentMethod: "",
     paymentAmount: "",
-    paymentDate: "",
+    paymentDate: new Date().toISOString().split('T')[0], // Auto-fill with today's date
     paymentReference: "",
   })
 
@@ -365,27 +365,14 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="paymentDate">Payment Date *</Label>
-                <Input
-                  id="paymentDate"
-                  type="date"
-                  value={paymentDetails.paymentDate}
-                  onChange={(e) => setPaymentDetails((prev) => ({ ...prev, paymentDate: e.target.value }))}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="paymentReference">Reference Number (Optional)</Label>
-                <Input
-                  id="paymentReference"
-                  placeholder="Transaction ID, Check #, etc."
-                  value={paymentDetails.paymentReference}
-                  onChange={(e) => setPaymentDetails((prev) => ({ ...prev, paymentReference: e.target.value }))}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentReference">Reference Number (Optional)</Label>
+              <Input
+                id="paymentReference"
+                placeholder="Transaction ID, Check #, etc."
+                value={paymentDetails.paymentReference}
+                onChange={(e) => setPaymentDetails((prev) => ({ ...prev, paymentReference: e.target.value }))}
+              />
             </div>
 
             {/* Submit Button */}

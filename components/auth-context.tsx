@@ -7,6 +7,7 @@ interface User {
   id: string
   name: string
   email: string
+  phone?: string
   avatar?: string
   role: "user" | "admin" | "owner"
 }
@@ -17,6 +18,7 @@ interface AuthContextType {
   logout: () => void
   signup: (firstName: string, lastName: string, email: string, password: string) => Promise<boolean>
   googleSignIn: () => Promise<boolean>
+  updateUser: (updates: Partial<User>) => void
   isLoading: boolean
 }
 
@@ -175,6 +177,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     sessionStorage.removeItem("user")
   }
 
+  const updateUser = (updates: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev
+      const updated = { ...prev, ...updates }
+      // Persist to whichever storage was used
+      if (localStorage.getItem("user")) {
+        localStorage.setItem("user", JSON.stringify(updated))
+      } else {
+        sessionStorage.setItem("user", JSON.stringify(updated))
+      }
+      return updated
+    })
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -183,6 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         signup,
         googleSignIn,
+        updateUser,
         isLoading,
       }}
     >

@@ -2,7 +2,7 @@
 
 -- Create database if it doesn't exist
 CREATE DATABASE IF NOT EXISTS one_estela_place;
-USE estela_place;
+USE one_estela_place;
 
 -- Create Users table
 CREATE TABLE IF NOT EXISTS users (
