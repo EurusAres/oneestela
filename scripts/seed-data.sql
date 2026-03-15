@@ -3,26 +3,29 @@
 
 -- Clear existing data to avoid duplicate key errors
 SET FOREIGN_KEY_CHECKS=0;
-DELETE FROM reviews;
-DELETE FROM chat_messages;
-DELETE FROM payment_proofs;
-DELETE FROM contact_messages;
-DELETE FROM bookings;
-DELETE FROM cms_content;
-DELETE FROM staff;
-DELETE FROM office_rooms;
-DELETE FROM venues;
-DELETE FROM users;
+TRUNCATE TABLE reviews;
+TRUNCATE TABLE chat_messages;
+TRUNCATE TABLE payment_proofs;
+TRUNCATE TABLE contact_messages;
+TRUNCATE TABLE bookings;
+TRUNCATE TABLE cms_content;
+TRUNCATE TABLE staff;
+TRUNCATE TABLE office_rooms;
+TRUNCATE TABLE venues;
+TRUNCATE TABLE users;
 SET FOREIGN_KEY_CHECKS=1;
 
+-- Insert users first
 INSERT INTO users (email, password_hash, full_name, phone, role) VALUES
 ('admin@oneestela.com', '$2b$10$YourHashedPasswordHere', 'Admin User', '+1-234-567-8900', 'admin'),
 ('user@example.com', '$2b$10$YourHashedPasswordHere', 'John Doe', '+1-234-567-8901', 'user'),
 ('client2@example.com', '$2b$10$YourHashedPasswordHere', 'Jane Smith', '+1-234-567-8902', 'user');
 
-INSERT INTO venues (name, description, location, capacity, price_per_hour, image_url) VALUES
-('One Estela Place', 'Premium event venue with elegant design and world-class facilities', '123 Estela Street, Downtown', 500, 150.00, '/images/venue-main.jpg');
+-- Insert venue
+INSERT INTO venues (id, name, description, location, capacity, price_per_hour, image_url) VALUES
+(1, 'One Estela Place', 'Premium event venue with elegant design and world-class facilities', '123 Estela Street, Downtown', 500, 150.00, '/images/venue-main.jpg');
 
+-- Insert office rooms (referencing venue_id = 1)
 INSERT INTO office_rooms (venue_id, name, description, capacity, price_per_hour, image_url, amenities) VALUES
 (1, 'Executive Suite', 'Premium board room with panoramic views', 20, 250.00, '/images/executive-suite.jpg', '["WiFi", "Projector", "Whiteboard", "Coffee Service"]'),
 (1, 'Conference Hall', 'Large conference space suitable for presentations', 100, 150.00, '/images/conference-hall.jpg', '["WiFi", "Audio System", "Stage", "Catering Available"]'),
