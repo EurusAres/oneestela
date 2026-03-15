@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/components/auth-context"
 
 interface SettingsDialogProps {
   open: boolean
@@ -18,6 +19,8 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -30,21 +33,39 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     eventUpdates: true,
   })
 
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast({
-        title: "Password mismatch",
-        description: "New passwords do not match.",
-        variant: "destructive",
-      })
+      toast({ title: "Password mismatch", description: "New passwords do not match.", variant: "destructive" })
       return
     }
-    toast({
-      title: "Password updated",
-      description: "Your password has been successfully changed.",
-    })
-    setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" })
+    if (passwordData.newPassword.length < 6) {
+      toast({ title: "Password too short", description: "Password must be at least 6 characters.", variant: "destructive" })
+      return
+    }
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        toast({ title: "Error", description: data.error || "Failed to change password.", variant: "destructive" })
+      } else {
+        toast({ title: "Password updated", description: "Your password has been successfully changed." })
+        setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" })
+      }
+    } catch {
+      toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleNotificationSave = () => {
@@ -106,8 +127,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Change Password
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Updating..." : "Change Password"}
               </Button>
             </form>
           </TabsContent>

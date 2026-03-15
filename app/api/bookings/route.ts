@@ -7,9 +7,11 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId');
 
     let query = `
-      SELECT b.*, o.name as room_name, o.image_url
+      SELECT b.*, o.name as room_name, o.image_url,
+             u.full_name as user_name, u.email as user_email, u.phone as user_phone
       FROM bookings b
       LEFT JOIN office_rooms o ON b.office_room_id = o.id
+      LEFT JOIN users u ON b.user_id = u.id
     `;
     const params: any[] = [];
 
@@ -40,7 +42,19 @@ export async function POST(request: NextRequest) {
     
     // Handle both API formats: office room booking and event booking
     const userId = body.userId;
-    const officeRoomId = body.officeRoomId || 1; // Default to first room if not specified
+
+    // Resolve officeRoomId — fall back to the first room in the DB if not provided
+    let officeRoomId = body.officeRoomId;
+    if (!officeRoomId) {
+      const rooms = await executeQuery('SELECT id FROM office_rooms ORDER BY id ASC LIMIT 1') as any[];
+      if (!rooms || rooms.length === 0) {
+        return NextResponse.json(
+          { error: 'No office rooms found. Please seed the database first.' },
+          { status: 400 }
+        );
+      }
+      officeRoomId = rooms[0].id;
+    }
     
     // Handle date formatting more carefully
     let checkInDate, checkOutDate;
@@ -102,7 +116,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating booking:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', detail: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

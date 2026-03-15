@@ -223,7 +223,212 @@ export const chatbotKnowledge: ChatbotKnowledge = {
     category: "tour",
   },
 
-  // Default responses for unrecognized queries
+  // ── FAQ: Advance booking ────────────────────────────────────────────────────
+  "how far in advance": {
+    message:
+      "We recommend booking at least 3-6 months in advance, especially for popular dates like weekends and holidays. However, we can sometimes accommodate last-minute bookings depending on availability.\n\n📅 **Quick guide:**\n• Weekends & holidays → 3-6 months ahead\n• Weekday events → 1-3 months ahead\n• Last-minute → contact us to check availability",
+    followUp: ["Check availability", "Book now", "Contact team", "View pricing"],
+    category: "reservation",
+  },
+  "advance booking": {
+    message:
+      "We recommend booking at least 3-6 months in advance for popular dates. Last-minute bookings may be possible depending on availability — just reach out to our team!",
+    followUp: ["Check availability", "Start booking", "Contact team"],
+    category: "reservation",
+  },
+
+  // ── FAQ: What's included ────────────────────────────────────────────────────
+  "what is included": {
+    message:
+      "Our venue rental includes:\n\n✅ Tables and chairs\n✅ Basic lighting\n✅ Sound system\n✅ Air conditioning\n✅ Parking (up to 200 vehicles)\n✅ Access to bridal/preparation suite\n\nCatering, decorations, and additional services can be arranged separately.",
+    followUp: ["Catering services", "Decoration packages", "Pricing", "Book now"],
+    category: "amenities",
+  },
+  "what's included": {
+    message:
+      "Our venue rental includes tables, chairs, basic lighting, sound system, air conditioning, parking, and access to our bridal suite. Catering, decorations, and additional services can be arranged separately.",
+    followUp: ["Catering services", "Decoration packages", "Pricing", "Book now"],
+    category: "amenities",
+  },
+  included: {
+    message:
+      "Our venue rental includes tables, chairs, basic lighting, sound system, air conditioning, parking, and access to our bridal suite. Catering, decorations, and additional services can be arranged separately.",
+    followUp: ["Catering services", "Decoration packages", "Pricing", "Book now"],
+    category: "amenities",
+  },
+
+  // ── FAQ: Cancellation policy ────────────────────────────────────────────────
+  cancellation: {
+    message:
+      "📋 **Cancellation Policy:**\n\n• **90+ days before event** → Full refund minus processing fee\n• **30-89 days before** → 50% refund\n• **Within 30 days** → Non-refundable\n\n**Deposit Policy:**\nA non-refundable 30% deposit is required within 48 hours to confirm your booking. The remaining balance must be paid at least 7 days before your event.\n\nNeed to cancel? Contact our team as soon as possible.",
+    followUp: ["Rescheduling policy", "Payment terms", "Contact team", "Book now"],
+    category: "reservation",
+  },
+  "cancel my event": {
+    message:
+      "📋 **Cancellation Policy:**\n\n• **14+ days before event** → No additional fees (deposit remains non-refundable)\n• **Within 14 days** → 50% charge of total rental fee\n• **Same-day cancellation** → Full amount charged\n\nPlease contact our team as soon as possible if you need to cancel.",
+    followUp: ["Rescheduling policy", "Contact team", "Payment terms"],
+    category: "reservation",
+  },
+  refund: {
+    message:
+      "**Refund Policy:**\n\n• 90+ days before event → Full refund minus processing fee\n• 30-89 days before → 50% refund\n• Within 30 days → Non-refundable\n• 30% deposit is always non-refundable\n\nFor specific refund inquiries, please contact our team directly.",
+    followUp: ["Cancellation policy", "Contact team", "Rescheduling"],
+    category: "reservation",
+  },
+
+  // ── FAQ: Rescheduling ───────────────────────────────────────────────────────
+  reschedule: {
+    message:
+      "📅 **Rescheduling Policy:**\n\nOne free rescheduling is allowed if requested at least 10 days in advance, subject to availability.\n\nAdditional changes within 10 days may incur processing fees.\n\nContact our team to check availability for your new preferred date.",
+    followUp: ["Check availability", "Contact team", "Cancellation policy"],
+    category: "reservation",
+  },
+  rescheduling: {
+    message:
+      "One free rescheduling is allowed if requested at least 10 days in advance, subject to availability. Additional changes within 10 days may incur processing fees.",
+    followUp: ["Check availability", "Contact team", "Cancellation policy"],
+    category: "reservation",
+  },
+
+  // ── FAQ: Parking ────────────────────────────────────────────────────────────
+  parking: {
+    message:
+      "🚗 **Parking Information:**\n\n• Complimentary parking for up to 200 vehicles\n• Valet parking available for an additional fee\n• Accessible parking spaces available\n• Open 24/7 during events\n\nNeed valet service? Let us know when booking!",
+    followUp: ["Accessibility info", "Contact team", "Book now", "Venue amenities"],
+    category: "amenities",
+  },
+
+  // ── FAQ: Site visit / tour ──────────────────────────────────────────────────
+  "visit the venue": {
+    message:
+      "We encourage all potential clients to schedule a tour before booking! 🏛️\n\nContact us to arrange a convenient time to visit and see our facilities in person.\n\nYou can also explore our spaces through the virtual tour on our website.",
+    followUp: ["Schedule a tour", "Virtual tour", "Contact team", "Book now"],
+    escalate: true,
+    category: "tour",
+  },
+  "site visit": {
+    message:
+      "We'd love to show you around! Schedule a site visit to see our venues and office spaces in person.\n\nContact our team to arrange a convenient time.",
+    followUp: ["Contact team", "Virtual tour", "Book now"],
+    escalate: true,
+    category: "tour",
+  },
+
+  // ── FAQ: Outside vendors ────────────────────────────────────────────────────
+  "outside vendors": {
+    message:
+      "✅ **Outside Vendors Policy:**\n\nYes, you can bring your own vendors!\n\n**Requirements:**\n• All outside vendors must be licensed and insured\n• Vendor information required at least 30 days before your event\n• Vendors must comply with our venue guidelines\n\nThis applies to caterers, decorators, photographers, and other suppliers.",
+    followUp: ["Catering services", "Decoration packages", "Contact team", "Book now"],
+    category: "reservation",
+  },
+  vendor: {
+    message:
+      "You can bring your own vendors — they must be licensed, insured, and registered with us at least 30 days before your event. Our in-house catering and decoration services are also available if you prefer.",
+    followUp: ["Catering services", "Decoration packages", "Contact team"],
+    category: "reservation",
+  },
+
+  // ── FAQ: Accessibility ──────────────────────────────────────────────────────
+  accessibility: {
+    message:
+      "♿ **Accessibility Features:**\n\nOur venue is fully accessible:\n\n✅ Wheelchair accessible entrances\n✅ Accessible restrooms on all floors\n✅ Elevator access to all floors\n✅ Accessible parking spaces\n✅ Wide corridors and doorways\n\nWe are committed to making every guest feel welcome.",
+    followUp: ["Parking information", "Venue amenities", "Contact team", "Book now"],
+    category: "amenities",
+  },
+  wheelchair: {
+    message:
+      "Our venue is fully accessible with wheelchair accessible entrances, restrooms, elevator access to all floors, and dedicated accessible parking spaces.",
+    followUp: ["Venue amenities", "Contact team", "Book now"],
+    category: "amenities",
+  },
+  disabled: {
+    message:
+      "Our venue is fully ADA compliant with wheelchair accessible entrances, restrooms, and elevator access to all floors. We're happy to accommodate any special accessibility needs.",
+    followUp: ["Venue amenities", "Contact team", "Book now"],
+    category: "amenities",
+  },
+
+  // ── FAQ: Payment ────────────────────────────────────────────────────────────
+  payment: {
+    message:
+      "💳 **Payment Information:**\n\n**Accepted Methods:**\n• Cash\n• Check\n• All major credit cards\n• Bank transfer\n\n**Payment Schedule:**\n• 30% non-refundable deposit required within 48 hours of booking confirmation\n• Remaining balance due at least 7 days before your event\n\n**Flexible terms** may be available — contact our team to discuss.",
+    followUp: ["Cancellation policy", "Booking process", "Contact team", "Get quote"],
+    category: "reservation",
+  },
+  deposit: {
+    message:
+      "A non-refundable 30% deposit is required within 48 hours to confirm your booking. The remaining balance must be paid at least 7 days before your event date.",
+    followUp: ["Payment methods", "Cancellation policy", "Contact team"],
+    category: "reservation",
+  },
+  "payment methods": {
+    message:
+      "We accept cash, check, all major credit cards, and bank transfer. A 30% deposit is required to secure your date, with the balance due at least 7 days before your event.",
+    followUp: ["Deposit policy", "Cancellation policy", "Book now"],
+    category: "reservation",
+  },
+
+  // ── FAQ: Restrictions ───────────────────────────────────────────────────────
+  restrictions: {
+    message:
+      "📋 **Venue Restrictions:**\n\n• 🚭 Smoking is strictly prohibited inside the venue\n• 🔊 Noise levels must comply with local ordinances\n• 🧹 All equipment and decorations must be removed immediately after your event\n• ⚠️ Any damages will be charged to the client\n\nFor a full list of guidelines, please contact our team.",
+    followUp: ["Outside vendors policy", "Cancellation policy", "Contact team", "Book now"],
+    category: "reservation",
+  },
+  smoking: {
+    message:
+      "Smoking is strictly prohibited inside the venue. Designated outdoor smoking areas may be available — please ask our staff.",
+    followUp: ["Venue restrictions", "Contact team", "Book now"],
+    category: "reservation",
+  },
+  rules: {
+    message:
+      "**Venue Rules:**\n\n• No smoking inside the venue\n• Noise levels must comply with local ordinances\n• All items must be removed after your event\n• Damages will be charged to the client\n• Outside vendors must be licensed and registered 30 days prior\n\nOur team is happy to walk you through all guidelines.",
+    followUp: ["Outside vendors", "Cancellation policy", "Contact team"],
+    category: "reservation",
+  },
+
+  // ── FAQ: Services provided ──────────────────────────────────────────────────
+  services: {
+    message:
+      "**Our Services:**\n\n🏛️ **Event Space Rental** — Our primary service\n🍽️ **Catering** — Via preferred catering partners or your own caterer\n🎨 **Decorations** — Decoration packages available\n🚗 **Parking** — Complimentary for up to 200 vehicles\n💼 **Office Rental** — 16 modern office spaces\n\n**Note:** We provide event space rental as our core service. Catering, decoration, and event management can be arranged through our partners or your own vendors.",
+    followUp: ["Catering details", "Decoration packages", "Office spaces", "Pricing"],
+    category: "amenities",
+  },
+
+  // ── Weddings ────────────────────────────────────────────────────────────────
+  wedding: {
+    message:
+      "💍 **Wedding Packages at One Estela Place:**\n\nWe host beautiful weddings for all sizes!\n\n🏛️ **The Milestone Event Place** — Up to 500 guests, perfect for grand receptions\n🌟 **Moment Event Place** — Up to 150 guests, ideal for intimate ceremonies\n\n**What's Included:**\n✅ Tables, chairs, basic lighting & sound\n✅ Air conditioning\n✅ Bridal/preparation suite\n✅ Parking for 200+ vehicles\n\n**Add-ons Available:**\n• Catering packages\n• Decoration & floral arrangements\n• Valet parking\n\nWould you like to schedule a tour or get a quote?",
+    followUp: ["Get wedding quote", "Schedule venue tour", "Catering options", "Decoration packages"],
+    escalate: true,
+    category: "availability",
+  },
+  "wedding reception": {
+    message:
+      "We'd love to host your wedding reception! Our Milestone Event Place accommodates up to 500 guests and our Moment Event Place is perfect for intimate receptions up to 150 guests.\n\nLet me connect you with our events team for a personalized quote.",
+    followUp: ["Get quote", "Schedule tour", "View pricing", "Catering options"],
+    escalate: true,
+    category: "availability",
+  },
+
+  // ── Corporate events ────────────────────────────────────────────────────────
+  corporate: {
+    message:
+      "💼 **Corporate Event Spaces:**\n\n📊 **Conference Room** — Up to 50 attendees, ideal for seminars and training\n💼 **Business Meeting Room** — Up to 20 executives, perfect for board meetings\n🏛️ **The Milestone Event Place** — Up to 500 guests for large corporate events\n\n**Corporate Amenities:**\n✅ Projectors & presentation equipment\n✅ High-speed internet\n✅ Sound system\n✅ Catering available\n✅ Ample parking\n\nWould you like to discuss your corporate event needs?",
+    followUp: ["Conference room details", "Meeting room details", "Corporate pricing", "Book now"],
+    escalate: true,
+    category: "availability",
+  },
+  conference: {
+    message:
+      "Our Conference Room accommodates up to 50 attendees and is equipped with projectors, presentation equipment, high-speed internet, and a sound system — perfect for seminars, training sessions, and business conferences.",
+    followUp: ["Conference room pricing", "Business meeting room", "Book conference room", "Contact team"],
+    category: "availability",
+  },
+
+  // ── Default responses for unrecognized queries
   default: {
     message:
       "I'd be happy to help you with that! However, I might need to connect you with one of our specialists who can provide more detailed information about your specific inquiry.\n\nIn the meantime, I can help you with:\n• Venue availability and pricing\n• Office space details and features\n• Reservation process and requirements\n• Contact information and directions\n\nWould you like me to connect you with our team for personalized assistance?",
@@ -247,17 +452,32 @@ export function findBestMatch(userInput: string): ChatbotResponse {
   // Fuzzy matching for common variations
   const fuzzyMatches: { [key: string]: string[] } = {
     hello: ["hey", "hi there", "greetings", "good day"],
-    availability: ["available", "free", "open", "vacant", "schedule"],
-    pricing: ["price", "cost", "rate", "fee", "charge", "expensive", "cheap"],
+    availability: ["available", "free", "open", "vacant"],
+    pricing: ["price", "cost", "rate", "fee", "charge", "expensive", "cheap", "how much"],
     "office spaces": ["office", "workspace", "room", "rental", "lease"],
-    reservation: ["book", "reserve", "booking", "appointment"],
+    reservation: ["reserve", "appointment"],
+    booking: ["book", "booking"],
     contact: ["reach", "call", "phone", "email", "address"],
-    amenities: ["features", "facilities", "services", "included", "what's included"],
-    "virtual tour": ["tour", "view", "see", "visit", "look around", "360"],
+    "what is included": ["what is included", "what's included", "whats included", "what do you include"],
+    included: ["included in the rental", "included in rental", "comes with"],
+    amenities: ["features", "facilities", "what's included"],
+    "virtual tour": ["tour", "view", "see", "look around", "360"],
+    "visit the venue": ["visit", "come see", "view the venue", "see the venue"],
     catering: ["food", "catering", "menu", "meals", "dining", "restaurant", "lunch", "dinner", "breakfast", "refreshments"],
-    decorations: ["decoration", "flowers", "setup", "arrangement", "theme", "design", "floral", "backdrop", "lighting"],
-    schedule: ["schedule", "timing", "time", "date", "when", "hours", "hours of operation", "availability"],
+    decorations: ["decoration", "flowers", "arrangement", "theme", "design", "floral", "backdrop"],
+    schedule: ["schedule", "timing", "time", "date", "when", "hours of operation"],
     capacity: ["capacity", "guests", "people", "attendees", "how many", "size", "seating"],
+    cancellation: ["cancel", "cancellation", "refund", "money back"],
+    reschedule: ["reschedule", "change date", "move date", "postpone"],
+    payment: ["payment", "pay", "deposit", "credit card", "cash", "bank transfer"],
+    parking: ["parking", "park", "car", "vehicle"],
+    accessibility: ["accessible", "accessibility", "wheelchair", "disability", "disabled"],
+    restrictions: ["restriction", "rules", "allowed", "prohibited", "smoking", "noise"],
+    "outside vendors": ["outside vendor", "own caterer", "own decorator", "bring vendor", "external vendor"],
+    wedding: ["wedding", "bride", "groom", "ceremony", "reception", "nuptial"],
+    corporate: ["corporate", "company", "business event", "seminar", "conference", "meeting"],
+    services: ["what services", "what do you offer", "what do you provide", "offerings"],
+    "how far in advance": ["how far", "how early", "advance notice", "how soon"],
   }
 
   for (const [key, variations] of Object.entries(fuzzyMatches)) {
@@ -281,6 +501,10 @@ export function generateFollowUps(category: string): string[] {
     contact: ["Schedule callback", "Get directions", "Request brochure", "Chat with team"],
     amenities: ["View virtual tour", "Get detailed specs", "Compare features", "Schedule visit"],
     tour: ["Start virtual tour", "Schedule live tour", "Get room details", "Book viewing"],
+    catering: ["View menu options", "Get catering quote", "Dietary requirements", "Book now"],
+    decorations: ["View decoration styles", "Get decoration quote", "Schedule consultation", "Book now"],
+    schedule: ["Check availability", "View pricing", "Book now", "Contact team"],
+    capacity: ["View venue layouts", "Capacity pricing", "Seating arrangements", "Book now"],
     general: ["Browse venues", "Check availability", "Get pricing", "Contact team"],
   }
 

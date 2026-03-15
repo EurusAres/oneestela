@@ -1,11 +1,11 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   MessageCircle,
@@ -13,14 +13,11 @@ import {
   Send,
   Minimize2,
   Maximize2,
-  Check,
-  CheckCheck,
-  UserCircleIcon,Bot,
+  Bot,
   User,
   Sparkles,
   AlertCircle,
 } from "lucide-react"
-import { useChat } from "@/components/chat-context"
 import { useAuth } from "@/components/auth-context"
 import { useChatbot } from "@/components/chatbot-service"
 import { cn } from "@/lib/utils"
@@ -30,81 +27,129 @@ interface UnifiedMessage {
   content: string
   senderType: "user" | "bot" | "admin"
   senderName: string
-  senderAvatar?: string
   timestamp: string
-  read?: boolean
   followUps?: string[]
   escalated?: boolean
-}
-
-const playNotificationSound = () => {
-  try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-    const oscillator = audioContext.createOscillator()
-    const gainNode = audioContext.createGain()
-
-    oscillator.connect(gainNode)
-    gainNode.connect(audioContext.destination)
-
-    oscillator.frequency.value = 600
-    oscillator.type = "sine"
-    gainNode.gain.setValueAtTime(0.15, audioContext.currentTime)
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
-
-    oscillator.start(audioContext.currentTime)
-    oscillator.stop(audioContext.currentTime + 0.3)
-  } catch (error) {
-    console.log("Audio notification not supported")
-  }
 }
 
 export function UnifiedChatWidget() {
   const { user } = useAuth()
   const {
-    messages: chatMessages,
-    typingIndicators,
-    userStatuses,
-    isConnected,
-    sendMessage: sendChatMessage,
-    markAsRead,
-    startTyping,
-    stopTyping,
-    getChatHistory,
-    getUnreadCount,
-  } = useChat()
-
-  const {
     messages: botMessages,
     isTyping: botIsTyping,
     sendMessage: sendBotMessage,
     sendFollowUp,
-    escalateToHuman,
     isEscalated,
   } = useChatbot()
 
   const [isOpen, setIsOpen] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
   const [messageInput, setMessageInput] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
   const [unifiedMessages, setUnifiedMessages] = useState<UnifiedMessage[]>([])
   const [isHandedOffToAdmin, setIsHandedOffToAdmin] = useState(false)
-  const [adminJoined, setAdminJoined] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [lastSeenMsgId, setLastSeenMsgId] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const pollRef = useRef<NodeJS.Timeout | null>(null)
 
-  const unreadCount = getUnreadCount()
-  const supportStatus = userStatuses["admin-1"] || { isOnline: false, lastSeen: new Date().toISOString() }
+  // ── DB helpers ──────────────────────────────────────────────────────────────
 
-  // Initialize with welcome message
+  const postToDb = useCallback(async (content: string, isSystem = false) => {
+    if (!user) return
+    await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        senderId: user.id,
+        senderEmail: user.email,
+        receiverId: null,
+        message: content,
+        messageType: isSystem ? "system" : "text",
+      }),
+    })
+  }, [user])
+
+  const fetchAdminReplies = useCallback(async () => {
+    if (!user) return
+    try {
+      const res = await fetch(`/api/chat?receiverId=${user.id}`)
+      if (!res.ok) return
+      const data = await res.json()
+      const msgs: any[] = data.messages || []
+      if (msgs.length === 0) return
+
+      const newMsgs = lastSeenMsgId ? msgs.filter(m => m.id > lastSeenMsgId) : msgs
+      if (newMsgs.length === 0) return
+
+      setLastSeenMsgId(msgs[msgs.length - 1].id)
+
+      const converted: UnifiedMessage[] = newMsgs.map(m => ({
+        id: `db-admin-${m.id}`,
+        content: m.message,
+        senderType: "admin" as const,
+        senderName: m.sender_name || "Support Team",
+        timestamp: m.created_at,
+      }))
+
+      setUnifiedMessages(prev => {
+        const existingIds = new Set(prev.map(x => x.id))
+        const fresh = converted.filter(x => !existingIds.has(x.id))
+        if (fresh.length === 0) return prev
+        if (!isOpen || isMinimized) setUnreadCount(c => c + fresh.length)
+        return [...prev, ...fresh].sort(
+          (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        )
+      })
+    } catch (e) {
+      console.error("poll error", e)
+    }
+  }, [user, lastSeenMsgId, isOpen, isMinimized])
+
+  // ── Load history from DB when widget opens ──────────────────────────────────
+
+  const loadHistory = useCallback(async () => {
+    if (!user) return
+    try {
+      // messages sent by user
+      const [r1, r2] = await Promise.all([
+        fetch(`/api/chat?senderId=${user.id}`),
+        fetch(`/api/chat?receiverId=${user.id}`),
+      ])
+      const d1 = r1.ok ? await r1.json() : { messages: [] }
+      const d2 = r2.ok ? await r2.json() : { messages: [] }
+      const all: any[] = [...(d1.messages || []), ...(d2.messages || [])]
+      all.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      const seen = new Set<number>()
+      const unique = all.filter(m => { if (seen.has(m.id)) return false; seen.add(m.id); return true })
+
+      if (unique.length === 0) return
+
+      const converted: UnifiedMessage[] = unique.map(m => ({
+        id: `db-${m.id}`,
+        content: m.message,
+        senderType: String(m.sender_id) === String(user.id) ? "user" : "admin",
+        senderName: String(m.sender_id) === String(user.id) ? (user.name || "You") : (m.sender_name || "Support Team"),
+        timestamp: m.created_at,
+      }))
+
+      setIsHandedOffToAdmin(true)
+      setUnifiedMessages(converted)
+      setLastSeenMsgId(unique[unique.length - 1].id)
+    } catch (e) {
+      console.error("history load error", e)
+    }
+  }, [user])
+
+  // ── Initialize welcome message ───────────────────────────────────────────────
+
   useEffect(() => {
-    if (unifiedMessages.length === 0) {
-      const welcomeMessage: UnifiedMessage = {
+    if (unifiedMessages.length === 0 && !isHandedOffToAdmin) {
+      setUnifiedMessages([{
         id: `welcome-${Date.now()}`,
-        content:
-          "Hello! Welcome to One Estela Place! 👋 I'm your AI assistant. I can help you with venue availability, office space details, pricing, and reservation steps. How can I assist you today?",
+        content: "Hello! Welcome to One Estela Place! 👋 I'm your AI assistant. I can help you with venue availability, office space details, pricing, and reservation steps. How can I assist you today?",
         senderType: "bot",
         senderName: "AI Assistant",
-        senderAvatar: "/placeholder.svg?height=32&width=32",
         timestamp: new Date().toISOString(),
         followUps: [
           "Check venue availability",
@@ -112,225 +157,119 @@ export function UnifiedChatWidget() {
           "Get pricing information",
           "Learn about reservation process",
         ],
-      }
-      setUnifiedMessages([welcomeMessage])
+      }])
     }
-  }, [unifiedMessages.length])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Merge bot messages into unified thread
+  // ── Sync bot messages into unified thread ────────────────────────────────────
+
   useEffect(() => {
-    if (botMessages.length > 0 && !isHandedOffToAdmin) {
-      const convertedMessages: UnifiedMessage[] = botMessages.map((msg) => ({
-        id: msg.id,
-        content: msg.content,
-        senderType: msg.isBot ? "bot" : "user",
-        senderName: msg.isBot ? "AI Assistant" : user?.name || "You",
-        senderAvatar: msg.isBot ? "/placeholder.svg?height=32&width=32" : user?.avatar,
-        timestamp: msg.timestamp,
-        followUps: msg.followUps,
-        escalated: msg.escalated,
-      }))
-
-      setUnifiedMessages(convertedMessages)
-    }
+    if (isHandedOffToAdmin) return
+    if (botMessages.length === 0) return
+    const converted: UnifiedMessage[] = botMessages.map(msg => ({
+      id: msg.id,
+      content: msg.content,
+      senderType: msg.isBot ? "bot" : "user",
+      senderName: msg.isBot ? "AI Assistant" : (user?.name || "You"),
+      timestamp: msg.timestamp,
+      followUps: msg.followUps,
+      escalated: msg.escalated,
+    }))
+    setUnifiedMessages(converted)
   }, [botMessages, isHandedOffToAdmin, user])
 
-  // Handle escalation to admin
+  // ── Handle escalation ────────────────────────────────────────────────────────
+
   useEffect(() => {
-    if (isEscalated && !isHandedOffToAdmin) {
-      setIsHandedOffToAdmin(true)
+    if (!isEscalated || isHandedOffToAdmin) return
+    setIsHandedOffToAdmin(true)
 
-      // Add handoff message
-      const handoffMessage: UnifiedMessage = {
-        id: `handoff-${Date.now()}`,
-        content:
-          "🔄 **Connecting you with our support team...** \n\nI'm transferring you to one of our specialists who can provide more detailed assistance. Please hold on while I connect you.",
-        senderType: "bot",
-        senderName: "AI Assistant",
-        senderAvatar: "/placeholder.svg?height=32&width=32",
-        timestamp: new Date().toISOString(),
-        escalated: true,
-      }
-
-      setUnifiedMessages((prev) => [...prev, handoffMessage])
-
-      // Simulate admin joining after a short delay
-      setTimeout(() => {
-        setAdminJoined(true)
-        const adminJoinMessage: UnifiedMessage = {
-          id: `admin-join-${Date.now()}`,
-          content:
-            "Hello! I'm here to help you. I can see our AI assistant has been helping you, and I'm ready to continue from where we left off. How can I assist you further?",
-          senderType: "admin",
-          senderName: "Support Team",
-          senderAvatar: "/placeholder.svg?height=32&width=32",
-          timestamp: new Date().toISOString(),
-        }
-        setUnifiedMessages((prev) => [...prev, adminJoinMessage])
-      }, 2000)
-
-      // Notify admin about escalation
-      setTimeout(() => {
-        const escalationNotification = {
-          type: "chatEscalation",
-          userId: user?.id,
-          userName: user?.name,
-          chatHistory: unifiedMessages,
-          timestamp: new Date().toISOString(),
-        }
-
-        localStorage.setItem("admin-escalation", JSON.stringify(escalationNotification))
-        setTimeout(() => localStorage.removeItem("admin-escalation"), 1000)
-      }, 500)
+    const handoffMsg: UnifiedMessage = {
+      id: `handoff-${Date.now()}`,
+      content: "🔄 Connecting you with our support team... A specialist will respond shortly.",
+      senderType: "bot",
+      senderName: "AI Assistant",
+      timestamp: new Date().toISOString(),
+      escalated: true,
     }
-  }, [isEscalated, isHandedOffToAdmin, unifiedMessages, user])
+    setUnifiedMessages(prev => [...prev, handoffMsg])
 
-  // Merge admin messages from chat context
+    // Write escalation notice to DB so admin sees it
+    postToDb("🔄 [Customer requested human support — chat escalated from AI assistant]", true)
+  }, [isEscalated, isHandedOffToAdmin, postToDb])
+
+  // ── Polling for admin replies ─────────────────────────────────────────────────
+
   useEffect(() => {
-    if (isHandedOffToAdmin && adminJoined) {
-      const adminMessages = getChatHistory().filter(
-        (msg) => msg.senderType === "admin" && !unifiedMessages.some((um) => um.id === msg.id),
-      )
+    if (!isHandedOffToAdmin || !user) return
+    pollRef.current = setInterval(fetchAdminReplies, 5000)
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  }, [isHandedOffToAdmin, user, fetchAdminReplies])
 
-      if (adminMessages.length > 0) {
-        const convertedAdminMessages: UnifiedMessage[] = adminMessages.map((msg) => ({
-          id: msg.id,
-          content: msg.content,
-          senderType: "admin",
-          senderName: "Support Team",
-          senderAvatar: "/placeholder.svg?height=32&width=32",
-          timestamp: msg.timestamp,
-          read: msg.read,
-        }))
+  // ── On open: load DB history + clear unread ──────────────────────────────────
 
-        setUnifiedMessages((prev) => {
-          const existingIds = new Set(prev.map((m) => m.id))
-          const newMessages = convertedAdminMessages.filter((m) => !existingIds.has(m.id))
-          if (newMessages.length > 0) {
-            return [...prev, ...newMessages].sort(
-              (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-            )
-          }
-          return prev
-        })
-      }
-    }
-  }, [getChatHistory, isHandedOffToAdmin, adminJoined, unifiedMessages])
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [unifiedMessages, typingIndicators, botIsTyping])
-
-  // Mark messages as read when chat is opened
-  useEffect(() => {
-    if (isOpen && !isMinimized && isHandedOffToAdmin) {
-      getChatHistory()
-        .filter((msg) => !msg.read && msg.senderId !== user?.id)
-        .forEach((msg) => markAsRead(msg.id))
-    }
-  }, [isOpen, isMinimized, isHandedOffToAdmin, getChatHistory, user?.id, markAsRead])
-
-  // Focus input when chat opens
   useEffect(() => {
     if (isOpen && !isMinimized) {
+      setUnreadCount(0)
+      loadHistory()
       setTimeout(() => inputRef.current?.focus(), 100)
     }
-  }, [isOpen, isMinimized])
+  }, [isOpen, isMinimized]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Auto-scroll ───────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [unifiedMessages, botIsTyping])
+
+  // ── Send message ──────────────────────────────────────────────────────────────
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!messageInput.trim()) return
-
-    // Add user message to unified thread
-    const userMessage: UnifiedMessage = {
-      id: `user-${Date.now()}`,
-      content: messageInput.trim(),
-      senderType: "user",
-      senderName: user?.name || "You",
-      senderAvatar: user?.avatar,
-      timestamp: new Date().toISOString(),
-    }
-
-    setUnifiedMessages((prev) => [...prev, userMessage])
-
-    if (isHandedOffToAdmin && adminJoined) {
-      // Send to admin via chat system
-      sendChatMessage(messageInput)
-      stopTyping()
-      setIsTyping(false)
-    } else {
-      // Send to bot
-      await sendBotMessage(messageInput)
-    }
-
+    const text = messageInput.trim()
     setMessageInput("")
+
+    if (isHandedOffToAdmin) {
+      // Optimistically add to UI
+      const optimistic: UnifiedMessage = {
+        id: `user-opt-${Date.now()}`,
+        content: text,
+        senderType: "user",
+        senderName: user?.name || "You",
+        timestamp: new Date().toISOString(),
+      }
+      setUnifiedMessages(prev => [...prev, optimistic])
+      await postToDb(text)
+    } else {
+      await sendBotMessage(text)
+    }
   }
 
   const handleFollowUpClick = async (followUp: string) => {
-    // Add user message for follow-up
-    const userMessage: UnifiedMessage = {
-      id: `user-followup-${Date.now()}`,
-      content: followUp,
-      senderType: "user",
-      senderName: user?.name || "You",
-      senderAvatar: user?.avatar,
-      timestamp: new Date().toISOString(),
-    }
-
-    setUnifiedMessages((prev) => [...prev, userMessage])
-
-    if (isHandedOffToAdmin && adminJoined) {
-      sendChatMessage(followUp)
+    if (isHandedOffToAdmin) {
+      const optimistic: UnifiedMessage = {
+        id: `user-opt-${Date.now()}`,
+        content: followUp,
+        senderType: "user",
+        senderName: user?.name || "You",
+        timestamp: new Date().toISOString(),
+      }
+      setUnifiedMessages(prev => [...prev, optimistic])
+      await postToDb(followUp)
     } else {
       await sendFollowUp(followUp)
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMessageInput(e.target.value)
-
-    if (isHandedOffToAdmin && adminJoined) {
-      if (!isTyping && e.target.value.trim()) {
-        setIsTyping(true)
-        startTyping()
-      } else if (isTyping && !e.target.value.trim()) {
-        setIsTyping(false)
-        stopTyping()
-      }
-    }
-  }
-
-  const handleInputKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage(e)
-    }
-  }
-
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
-
-  const formatLastSeen = (lastSeen: string) => {
-    const now = new Date()
-    const lastSeenDate = new Date(lastSeen)
-    const diffInMinutes = Math.floor((now.getTime() - lastSeenDate.getTime()) / (1000 * 60))
-
-    if (diffInMinutes < 1) return "Just now"
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
-    return lastSeenDate.toLocaleDateString()
-  }
+  const formatTime = (ts: string) =>
+    new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 
   if (!user) return null
 
   return (
     <>
-      {/* Chat Toggle Button */}
+      {/* Toggle Button */}
       {!isOpen && (
         <div className="fixed bottom-6 right-6 z-50">
           <Button
@@ -339,26 +278,14 @@ export function UnifiedChatWidget() {
             size="icon"
           >
             <MessageCircle className="h-6 w-6 text-white" />
-            {!isHandedOffToAdmin && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-              </div>
-            )}
-            {isHandedOffToAdmin && adminJoined && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
-                <User className="h-2 w-2 text-white" />
-              </div>
-            )}
-            {unreadCount > 0 && isHandedOffToAdmin && (
-              <Badge className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full" />
+            {unreadCount > 0 && (
+              <Badge className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </Badge>
             )}
             <div className="absolute -top-12 right-0 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              {!isHandedOffToAdmin
-                ? "Chat with AI Assistant"
-                : adminJoined
-                  ? "Chat with Support Team"
-                  : "Connecting to Support..."}
+              {isHandedOffToAdmin ? "Chat with Support Team" : "Chat with AI Assistant"}
             </div>
           </Button>
         </div>
@@ -366,267 +293,119 @@ export function UnifiedChatWidget() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div
-          className={cn(
-            "fixed bottom-6 right-6 z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300 flex flex-col",
-            isMinimized ? "w-80 h-14" : "w-96 h-[520px] md:w-[420px] md:h-[580px]",
-          )}
-        >
-          {/* Chat Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-blue-600 text-white rounded-t-lg">
+        <div className={cn(
+          "fixed bottom-6 right-6 z-50 bg-white rounded-lg shadow-2xl border flex flex-col transition-all duration-300",
+          isMinimized ? "w-80 h-14" : "w-96 h-[520px] md:w-[420px] md:h-[580px]"
+        )}>
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b bg-blue-600 text-white rounded-t-lg flex-shrink-0">
             <div className="flex items-center space-x-3">
-              <div className="relative">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                  <AvatarFallback>{!isHandedOffToAdmin ? "AI" : adminJoined ? "ST" : "..."}</AvatarFallback>
-                </Avatar>
-                {!isHandedOffToAdmin && (
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-white flex items-center justify-center">
-                    <Bot className="h-2 w-2 text-white" />
-                  </div>
-                )}
-                {isHandedOffToAdmin && adminJoined && (
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-purple-500 rounded-full border border-white flex items-center justify-center">
-                    <User className="h-1.5 w-1.5 text-white" />
-                  </div>
-                )}
-              </div>
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-blue-500 text-white text-xs">
+                  {isHandedOffToAdmin ? "ST" : "AI"}
+                </AvatarFallback>
+              </Avatar>
               <div>
-                <h3 className="font-semibold text-sm flex items-center space-x-2">
-                  {!isHandedOffToAdmin ? (
-                    <span>One Estela Place</span>
-                  ) : adminJoined ? (
-                    <>
-                      <User className="h-4 w-4" />
-                      <span>Support Team</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="h-4 w-4 animate-pulse" />
-                      <span>Connecting...</span>
-                    </>
-                  )}
+                <h3 className="font-semibold text-sm">
+                  {isHandedOffToAdmin ? "Support Team" : "One Estela Place"}
                 </h3>
                 <div className="flex items-center space-x-1">
-                  <div
-                    className={cn(
-                      "w-2 h-2 rounded-full",
-                      !isHandedOffToAdmin
-                        ? "bg-green-400"
-                        : adminJoined && supportStatus.isOnline
-                          ? "bg-green-400"
-                          : isHandedOffToAdmin && !adminJoined
-                            ? "bg-yellow-400 animate-pulse"
-                            : "bg-gray-400",
-                    )}
-                  />
+                  <div className={cn("w-2 h-2 rounded-full", isHandedOffToAdmin ? "bg-purple-300" : "bg-green-400")} />
                   <span className="text-xs opacity-90">
-                    {!isHandedOffToAdmin
-                      ? "Always available"
-                      : adminJoined
-                        ? supportStatus.isOnline
-                          ? "Online"
-                          : `Last seen ${formatLastSeen(supportStatus.lastSeen)}`
-                        : "Connecting to support..."}
+                    {isHandedOffToAdmin ? "Human support" : "AI Assistant"}
                   </span>
                 </div>
               </div>
             </div>
             <div className="flex items-center space-x-1">
-              {isHandedOffToAdmin && !isConnected && (
-                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" title="Connecting..." />
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsMinimized(!isMinimized)}
-                className="h-8 w-8 text-white hover:bg-blue-700"
-              >
+              <Button variant="ghost" size="icon" onClick={() => setIsMinimized(!isMinimized)} className="h-8 w-8 text-white hover:bg-blue-700">
                 {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsOpen(false)}
-                className="h-8 w-8 text-white hover:bg-blue-700"
-              >
+              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8 text-white hover:bg-blue-700">
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          {/* Chat Content */}
           {!isMinimized && (
             <>
-              {/* Status Bar */}
+              {/* Escalation banner */}
               {isHandedOffToAdmin && (
-                <div className="px-4 py-2 bg-purple-50 border-b border-purple-200">
+                <div className="px-4 py-2 bg-purple-50 border-b border-purple-200 flex-shrink-0">
                   <div className="flex items-center space-x-2">
                     <AlertCircle className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm text-purple-700 font-medium">
-                      {adminJoined ? "🤖➡️👨‍💼 Connected with Support Team" : "🔄 Transferring to Support Team..."}
-                    </span>
+                    <span className="text-sm text-purple-700 font-medium">Connected with Support Team</span>
                   </div>
-                  <p className="text-xs text-purple-600 mt-1">
-                    {adminJoined
-                      ? "Our team can see the full conversation history and will continue to help you."
-                      : "Please wait while we connect you with a human specialist."}
-                  </p>
+                  <p className="text-xs text-purple-600 mt-0.5">Our team will respond to your messages shortly.</p>
                 </div>
               )}
 
-              {/* Messages Area */}
-              <ScrollArea className="flex-1 h-[280px] md:h-[340px] p-4">
+              {/* Messages */}
+              <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
-                  {unifiedMessages.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                      <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Bot className="h-6 w-6 text-blue-600" />
+                  {unifiedMessages.map((message, index) => (
+                    <div key={message.id}>
+                      <div className={cn("flex", message.senderType === "user" ? "justify-end" : "justify-start")}>
+                        <div className={cn(
+                          "flex items-end space-x-2 max-w-[85%]",
+                          message.senderType === "user" ? "flex-row-reverse space-x-reverse" : "flex-row"
+                        )}>
+                          <Avatar className="h-6 w-6 flex-shrink-0">
+                            <AvatarFallback className="text-xs">
+                              {message.senderType === "bot" ? "AI" : message.senderType === "admin" ? "ST" : "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className={cn(
+                            "rounded-lg px-3 py-2",
+                            message.senderType === "bot" ? "bg-green-600 text-white" :
+                            message.senderType === "admin" ? "bg-purple-600 text-white" :
+                            "bg-blue-600 text-white"
+                          )}>
+                            <div className="flex items-start space-x-1">
+                              {message.senderType === "bot" && <Sparkles className="h-3 w-3 mt-0.5 text-green-200 flex-shrink-0" />}
+                              {message.senderType === "admin" && <User className="h-3 w-3 mt-0.5 text-purple-200 flex-shrink-0" />}
+                              <div>
+                                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                <p className="text-xs mt-1 opacity-70">{formatTime(message.timestamp)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm font-medium">Start a conversation!</p>
-                      <p className="text-xs text-gray-400 mt-1">I can help with venue info, pricing, and bookings</p>
+
+                      {/* Follow-up suggestions */}
+                      {message.senderType === "bot" &&
+                        message.followUps &&
+                        message.followUps.length > 0 &&
+                        index === unifiedMessages.length - 1 &&
+                        !isHandedOffToAdmin && (
+                          <div className="mt-2 flex flex-wrap gap-2 justify-start">
+                            {message.followUps.map((fu, i) => (
+                              <Button
+                                key={i}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleFollowUpClick(fu)}
+                                className="text-xs h-7 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                              >
+                                {fu}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
                     </div>
-                  ) : (
-                    unifiedMessages.map((message, index) => (
-                      <div key={message.id}>
-                        <div className={cn("flex", message.senderType === "user" ? "justify-end" : "justify-start")}>
-                          <div
-                            className={cn(
-                              "flex items-end space-x-2 max-w-[85%]",
-                              message.senderType === "user" ? "flex-row-reverse space-x-reverse" : "flex-row",
-                            )}
-                          >
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={message.senderAvatar || "/placeholder.svg"} />
-                              <AvatarFallback>
-                                {message.senderType === "bot" ? "AI" : message.senderType === "admin" ? "ST" : "U"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div
-                              className={cn(
-                                "rounded-lg px-3 py-2 relative",
-                                message.senderType === "bot"
-                                  ? "bg-green-600 text-white"
-                                  : message.senderType === "admin"
-                                    ? "bg-purple-600 text-white"
-                                    : "bg-blue-600 text-white",
-                              )}
-                            >
-                              <div className="flex items-start space-x-2">
-                                {message.senderType === "bot" && <Sparkles className="h-3 w-3 mt-0.5 text-green-200" />}
-                                {message.senderType === "admin" && <User className="h-3 w-3 mt-0.5 text-purple-200" />}
-                                <div className="flex-1">
-                                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                                  <div
-                                    className={cn(
-                                      "flex items-center justify-between mt-1 space-x-2",
-                                      message.senderType === "bot"
-                                        ? "text-green-100"
-                                        : message.senderType === "admin"
-                                          ? "text-purple-100"
-                                          : "text-blue-100",
-                                    )}
-                                  >
-                                    <span className="text-xs">{formatTime(message.timestamp)}</span>
-                                    {message.senderType === "user" && isHandedOffToAdmin && (
-                                      <div className="flex items-center">
-                                        {message.read ? (
-                                          <CheckCheck className="h-3 w-3" />
-                                        ) : (
-                                          <Check className="h-3 w-3" />
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              {message.escalated && (
-                                <div className="absolute -top-2 -right-2 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
-                                  <AlertCircle className="h-2 w-2 text-white" />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+                  ))}
 
-                        {/* Follow-up suggestions for bot messages */}
-                        {message.senderType === "bot" &&
-                          message.followUps &&
-                          message.followUps.length > 0 &&
-                          index === unifiedMessages.length - 1 &&
-                          !isHandedOffToAdmin && (
-                            <div className="mt-2 flex flex-wrap gap-2 justify-start">
-                              {message.followUps.map((followUp, followUpIndex) => (
-                                <Button
-                                  key={followUpIndex}
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleFollowUpClick(followUp)}
-                                  className="text-xs h-7 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                                >
-                                  {followUp}
-                                </Button>
-                              ))}
-                            </div>
-                          )}
-                      </div>
-                    ))
-                  )}
-
-                  {/* Typing Indicators */}
-                  {isHandedOffToAdmin &&
-                    adminJoined &&
-                    typingIndicators
-                      .filter((indicator) => indicator.userId !== user.id)
-                      .map((indicator) => (
-                        <div key={indicator.userId} className="flex justify-start">
-                          <div className="flex items-end space-x-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src="/placeholder.svg?height=24&width=24" />
-                              <AvatarFallback>ST</AvatarFallback>
-                            </Avatar>
-                            <div className="bg-purple-100 rounded-lg px-3 py-2">
-                              <div className="flex items-center space-x-2">
-                                <div className="flex space-x-1">
-                                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" />
-                                  <div
-                                    className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
-                                    style={{ animationDelay: "0.1s" }}
-                                  />
-                                  <div
-                                    className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
-                                    style={{ animationDelay: "0.2s" }}
-                                  />
-                                </div>
-                                <span className="text-xs text-purple-600">Support team is typing...</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                  {/* Bot typing indicator */}
+                  {/* Bot typing */}
                   {!isHandedOffToAdmin && botIsTyping && (
                     <div className="flex justify-start">
                       <div className="flex items-end space-x-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src="/placeholder.svg?height=24&width=24" />
-                          <AvatarFallback>AI</AvatarFallback>
-                        </Avatar>
+                        <Avatar className="h-6 w-6"><AvatarFallback className="text-xs">AI</AvatarFallback></Avatar>
                         <div className="bg-green-100 rounded-lg px-3 py-2">
-                          <div className="flex items-center space-x-2">
-                            <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" />
-                              <div
-                                className="w-2 h-2 bg-green-400 rounded-full animate-bounce"
-                                style={{ animationDelay: "0.1s" }}
-                              />
-                              <div
-                                className="w-2 h-2 bg-green-400 rounded-full animate-bounce"
-                                style={{ animationDelay: "0.2s" }}
-                              />
-                            </div>
-                            <span className="text-xs text-green-600">AI is thinking...</span>
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" />
+                            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
+                            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
                           </div>
                         </div>
                       </div>
@@ -637,52 +416,26 @@ export function UnifiedChatWidget() {
                 </div>
               </ScrollArea>
 
-              {/* Message Input */}
-              <div className="p-4 border-t">
+              {/* Input */}
+              <div className="p-4 border-t flex-shrink-0">
                 <form onSubmit={handleSendMessage} className="flex space-x-2">
                   <Input
                     ref={inputRef}
                     value={messageInput}
-                    onChange={handleInputChange}
-                    onKeyPress={handleInputKeyPress}
-                    placeholder={
-                      !isHandedOffToAdmin
-                        ? "Ask me about venues, pricing, or bookings..."
-                        : adminJoined
-                          ? "Type your message..."
-                          : "Please wait while we connect you..."
-                    }
+                    onChange={e => setMessageInput(e.target.value)}
+                    placeholder={isHandedOffToAdmin ? "Type your message..." : "Ask about venues, pricing, bookings..."}
                     className="flex-1"
-                    disabled={isHandedOffToAdmin && (!isConnected || !adminJoined)}
                   />
-                  <Button
-                    type="submit"
-                    size="icon"
-                    disabled={!messageInput.trim() || (isHandedOffToAdmin && (!isConnected || !adminJoined))}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
+                  <Button type="submit" size="icon" disabled={!messageInput.trim()} className="bg-blue-600 hover:bg-blue-700">
                     <Send className="h-4 w-4" />
                   </Button>
                 </form>
-                {!isHandedOffToAdmin && (
-                  <p className="text-xs text-green-600 mt-1 flex items-center">
-                  </p>
-                )}
-                {isHandedOffToAdmin && !adminJoined && (
-                  <p className="text-xs text-yellow-600 mt-1 flex items-center">
-                    <AlertCircle className="h-3 w-3 mr-1 animate-pulse" />
-                    Connecting to support team...
-                  </p>
-                )}
-                {isHandedOffToAdmin && adminJoined && !isConnected && (
-                  <p className="text-xs text-gray-500 mt-1">Connecting to chat...</p>
-                )}
-                {isHandedOffToAdmin && adminJoined && isConnected && (
-                  <p className="text-xs text-purple-600 mt-1 flex items-center">
-                    <User className="h-3 w-3 mr-1" />
-                    Support Team • Real-time chat
-                  </p>
-                )}
+                <p className="text-xs mt-1 flex items-center gap-1">
+                  {isHandedOffToAdmin
+                    ? <><User className="h-3 w-3 text-purple-500" /><span className="text-purple-600">Support Team • replies may take a moment</span></>
+                    : <><Bot className="h-3 w-3 text-green-500" /><span className="text-green-600">AI Assistant • always available</span></>
+                  }
+                </p>
               </div>
             </>
           )}

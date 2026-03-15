@@ -1,53 +1,104 @@
+"use client"
+
 import { MainLayout } from "@/components/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { useReports } from "@/components/reports-context"
+import { useBookings } from "@/components/booking-context"
 import {
-  Calendar,
-  Users,
-  Star,
-  FileText,
-  CheckCircle,
-  XCircle,
-  Edit,
-  RotateCcw,
-  Shield,
-  Clock,
-  Lock,
-  Unlock,
-  Settings,
-  Download,
-  BarChart3,
-  TrendingUp,
-  DollarSign,
+  Calendar, Users, Star, FileText, DollarSign, TrendingUp,
+  TrendingDown, RefreshCw, CheckCircle, XCircle, Clock, MessageSquare,
 } from "lucide-react"
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, BarChart, Bar,
+} from "recharts"
+import { useToast } from "@/hooks/use-toast"
+
+function pctChange(current: number, previous: number) {
+  if (previous === 0) return current > 0 ? 100 : 0
+  return Math.round(((current - previous) / previous) * 100)
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    confirmed: "bg-green-100 text-green-800",
+    pending: "bg-yellow-100 text-yellow-800",
+    cancelled: "bg-red-100 text-red-800",
+    completed: "bg-blue-100 text-blue-800",
+  }
+  return (
+    <span className={`rounded-full px-2 py-1 text-xs font-medium ${map[status] || "bg-gray-100 text-gray-800"}`}>
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  )
+}
 
 export default function DashboardPage() {
+  const { stats, generateReports, isLoading } = useReports()
+  const { updateBookingStatus } = useBookings()
+  const { toast } = useToast()
+
+  const s = stats?.summary
+  const bookingDelta = pctChange(stats?.thisMonth.bookings ?? 0, stats?.lastMonth.bookings ?? 0)
+  const revenueDelta = pctChange(stats?.thisMonth.revenue ?? 0, stats?.lastMonth.revenue ?? 0)
+
+  const handleStatusUpdate = async (id: string, status: "confirmed" | "cancelled") => {
+    await updateBookingStatus(id, status)
+    generateReports()
+    toast({ title: `Booking ${status}`, description: `Booking #${id} has been ${status}.` })
+  }
+
   return (
     <MainLayout>
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Owner Dashboard</h1>
-        <p className="text-muted-foreground">Welcome to the One Estela Place reservation system.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Real-time overview of One Estela Place</p>
+          </div>
+          <Button onClick={generateReports} disabled={isLoading} variant="outline">
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-muted-foreground">+2 from last month</p>
-            </CardContent>
-          </Card>
-
+        {/* KPI Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">145</div>
-              <p className="text-xs text-muted-foreground">+24 from last month</p>
+              <div className="text-2xl font-bold">{s?.totalBookings ?? 0}</div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                {bookingDelta >= 0
+                  ? <TrendingUp className="h-3 w-3 text-green-500" />
+                  : <TrendingDown className="h-3 w-3 text-red-500" />}
+                <span className={bookingDelta >= 0 ? "text-green-600" : "text-red-600"}>
+                  {bookingDelta >= 0 ? "+" : ""}{bookingDelta}%
+                </span> vs last month
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">₱{(s?.totalRevenue ?? 0).toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                {revenueDelta >= 0
+                  ? <TrendingUp className="h-3 w-3 text-green-500" />
+                  : <TrendingDown className="h-3 w-3 text-red-500" />}
+                <span className={revenueDelta >= 0 ? "text-green-600" : "text-red-600"}>
+                  {revenueDelta >= 0 ? "+" : ""}{revenueDelta}%
+                </span> vs last month
+              </p>
             </CardContent>
           </Card>
 
@@ -57,704 +108,222 @@ export default function DashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">32</div>
-              <p className="text-xs text-muted-foreground">+3 from last month</p>
+              <div className="text-2xl font-bold">{s?.totalUsers ?? 0}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                <span className="text-yellow-600">{s?.pending ?? 0} pending</span> bookings
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+              <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
               <Star className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">4.8</div>
-              <p className="text-xs text-muted-foreground">+0.2 from last month</p>
+              <div className="text-2xl font-bold">{s?.avgRating ?? "—"}</div>
+              <p className="text-xs text-muted-foreground mt-1">{s?.totalReviews ?? 0} reviews</p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="mt-10 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-purple-600" />
-              Booking Calendar - Venue Management
-            </h2>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="bg-transparent">
-                <Settings className="h-4 w-4 mr-2" />
-                Calendar Rules
-              </Button>
-              <Button size="sm" variant="outline" className="bg-transparent">
-                <Clock className="h-4 w-4 mr-2" />
-                Time Slots
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Calendar View */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">June 2025 - Venue Availability</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-7 gap-2 text-center text-sm">
-                    {/* Calendar Header */}
-                    <div className="font-medium text-muted-foreground">Sun</div>
-                    <div className="font-medium text-muted-foreground">Mon</div>
-                    <div className="font-medium text-muted-foreground">Tue</div>
-                    <div className="font-medium text-muted-foreground">Wed</div>
-                    <div className="font-medium text-muted-foreground">Thu</div>
-                    <div className="font-medium text-muted-foreground">Fri</div>
-                    <div className="font-medium text-muted-foreground">Sat</div>
-
-                    {/* Calendar Days */}
-                    <div className="p-2 text-muted-foreground">1</div>
-                    <div className="p-2 text-muted-foreground">2</div>
-                    <div className="p-2 text-muted-foreground">3</div>
-                    <div className="p-2 text-muted-foreground">4</div>
-                    <div className="p-2 text-muted-foreground">5</div>
-                    <div className="p-2 text-muted-foreground">6</div>
-                    <div className="p-2 text-muted-foreground">7</div>
-
-                    <div className="p-2 text-muted-foreground">8</div>
-                    <div className="p-2 text-muted-foreground">9</div>
-                    <div className="p-2 text-muted-foreground">10</div>
-                    <div className="p-2 text-muted-foreground">11</div>
-                    <div className="p-2 text-muted-foreground">12</div>
-                    <div className="p-2 text-muted-foreground">13</div>
-                    <div className="p-2 text-muted-foreground">14</div>
-
-                    {/* Reserved Date - Red */}
-                    <div className="p-2 bg-red-100 text-red-800 rounded font-medium cursor-pointer hover:bg-red-200">
-                      15
-                    </div>
-                    <div className="p-2 text-muted-foreground">16</div>
-                    <div className="p-2 text-muted-foreground">17</div>
-                    <div className="p-2 text-muted-foreground">18</div>
-                    <div className="p-2 text-muted-foreground">19</div>
-                    <div className="p-2 text-muted-foreground">20</div>
-                    <div className="p-2 text-muted-foreground">21</div>
-
-                    {/* Reserved Date - Red */}
-                    <div className="p-2 bg-red-100 text-red-800 rounded font-medium cursor-pointer hover:bg-red-200">
-                      22
-                    </div>
-                    <div className="p-2 text-muted-foreground">23</div>
-                    <div className="p-2 text-muted-foreground">24</div>
-                    <div className="p-2 text-muted-foreground">25</div>
-                    <div className="p-2 text-muted-foreground">26</div>
-                    <div className="p-2 text-muted-foreground">27</div>
-                    <div className="p-2 text-muted-foreground">28</div>
-
-                    <div className="p-2 text-muted-foreground">29</div>
-                    {/* Reserved Date - Red */}
-                    <div className="p-2 bg-red-100 text-red-800 rounded font-medium cursor-pointer hover:bg-red-200">
-                      30
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-red-100 border border-red-200 rounded"></div>
-                      <span>Reserved Dates</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-gray-100 border border-gray-200 rounded"></div>
-                      <span>Available Dates</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-yellow-100 border border-yellow-200 rounded"></div>
-                      <span>Blocked by Owner</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Calendar Controls */}
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Venue Availability Controls</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Date Management</h4>
-                    <div className="space-y-2">
-                      <Button size="sm" variant="outline" className="w-full justify-start bg-transparent">
-                        <Lock className="h-4 w-4 mr-2 text-red-600" />
-                        Block Selected Dates
-                      </Button>
-                      <Button size="sm" variant="outline" className="w-full justify-start bg-transparent">
-                        <Unlock className="h-4 w-4 mr-2 text-green-600" />
-                        Open Selected Dates
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2">Schedule Management</h4>
-                    <div className="space-y-2">
-                      <Button size="sm" variant="outline" className="w-full justify-start bg-transparent">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Manage Event Schedules
-                      </Button>
-                      <Button size="sm" variant="outline" className="w-full justify-start bg-transparent">
-                        <Clock className="h-4 w-4 mr-2" />
-                        Adjust Time Slots
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2">Calendar Rules</h4>
-                    <div className="space-y-2">
-                      <Button size="sm" variant="outline" className="w-full justify-start bg-transparent">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Booking Rules
-                      </Button>
-                      <Button size="sm" variant="outline" className="w-full justify-start bg-transparent">
-                        <Shield className="h-4 w-4 mr-2" />
-                        Override Restrictions
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Current Reservations</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between items-center p-2 bg-red-50 rounded">
-                      <div>
-                        <div className="font-medium">Jun 15 - Wedding</div>
-                        <div className="text-muted-foreground">Maria Santos</div>
-                      </div>
-                      <div className="text-red-600 font-medium">Reserved</div>
-                    </div>
-                    <div className="flex justify-between items-center p-2 bg-red-50 rounded">
-                      <div>
-                        <div className="font-medium">Jun 22 - Corporate</div>
-                        <div className="text-muted-foreground">Tech Solutions</div>
-                      </div>
-                      <div className="text-red-600 font-medium">Reserved</div>
-                    </div>
-                    <div className="flex justify-between items-center p-2 bg-red-50 rounded">
-                      <div>
-                        <div className="font-medium">Jun 30 - Birthday</div>
-                        <div className="text-muted-foreground">John Miller</div>
-                      </div>
-                      <div className="text-red-600 font-medium">Reserved</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+        {/* Status Summary Row */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="pt-4 flex items-center gap-3">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div>
+                <div className="text-2xl font-bold text-green-700">{s?.confirmed ?? 0}</div>
+                <div className="text-sm text-green-600">Confirmed</div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardContent className="pt-4 flex items-center gap-3">
+              <Clock className="h-8 w-8 text-yellow-600" />
+              <div>
+                <div className="text-2xl font-bold text-yellow-700">{s?.pending ?? 0}</div>
+                <div className="text-sm text-yellow-600">Pending</div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="pt-4 flex items-center gap-3">
+              <XCircle className="h-8 w-8 text-red-600" />
+              <div>
+                <div className="text-2xl font-bold text-red-700">{s?.cancelled ?? 0}</div>
+                <div className="text-sm text-red-600">Cancelled</div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="pt-4 flex items-center gap-3">
+              <MessageSquare className="h-8 w-8 text-blue-600" />
+              <div>
+                <div className="text-2xl font-bold text-blue-700">{s?.unreadMessages ?? 0}</div>
+                <div className="text-sm text-blue-600">Unread Messages</div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <h2 className="mt-10 text-xl font-semibold">Recent Bookings</h2>
-        <div className="rounded-md border">
-          <div className="p-4">
-            <table className="w-full">
+        {/* Charts */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" /> Monthly Bookings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={stats?.monthlyBookings ?? []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="count" stroke="#8884d8" fill="#8884d8" fillOpacity={0.4} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" /> Monthly Revenue (₱)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={stats?.monthlyRevenue ?? []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(v) => [`₱${Number(v).toLocaleString()}`, "Revenue"]} />
+                  <Area type="monotone" dataKey="amount" stroke="#22c55e" fill="#22c55e" fillOpacity={0.4} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Bookings by Room */}
+        {(stats?.bookingsByRoom?.length ?? 0) > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Bookings by Room</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={stats?.bookingsByRoom ?? []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="area" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recent Bookings */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <FileText className="h-5 w-5" /> Recent Bookings
+          </h2>
+          <div className="rounded-md border overflow-x-auto">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="border-b">
-                  <th className="pb-3 text-left font-medium">Event</th>
-                  <th className="pb-3 text-left font-medium">Date</th>
-                  <th className="pb-3 text-left font-medium">Client</th>
-                  <th className="pb-3 text-left font-medium">Status</th>
+                <tr className="border-b bg-gray-50">
+                  <th className="px-4 py-3 text-left font-medium">ID</th>
+                  <th className="px-4 py-3 text-left font-medium">Client</th>
+                  <th className="px-4 py-3 text-left font-medium">Room</th>
+                  <th className="px-4 py-3 text-left font-medium">Date</th>
+                  <th className="px-4 py-3 text-left font-medium">Amount</th>
+                  <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-left font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b">
-                  <td className="py-3">Wedding Reception</td>
-                  <td className="py-3">Jun 15, 2025</td>
-                  <td className="py-3">Maria Santos</td>
-                  <td className="py-3">
-                    <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">Confirmed</span>
-                  </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-3">Corporate Seminar</td>
-                  <td className="py-3">Jun 22, 2025</td>
-                  <td className="py-3">Tech Solutions Inc.</td>
-                  <td className="py-3">
-                    <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs text-yellow-800">Pending</span>
-                  </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-3">Birthday Party</td>
-                  <td className="py-3">Jun 30, 2025</td>
-                  <td className="py-3">John Miller</td>
-                  <td className="py-3">
-                    <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">Confirmed</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-3">Charity Gala</td>
-                  <td className="py-3">Jul 05, 2025</td>
-                  <td className="py-3">Hope Foundation</td>
-                  <td className="py-3">
-                    <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800">New</span>
-                  </td>
-                </tr>
+                {(stats?.recentBookings ?? []).length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                      No bookings yet
+                    </td>
+                  </tr>
+                ) : (
+                  (stats?.recentBookings ?? []).map((b: any) => (
+                    <tr key={b.id} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-3 text-muted-foreground">#{b.id}</td>
+                      <td className="px-4 py-3 font-medium">{b.client_name || "—"}</td>
+                      <td className="px-4 py-3">{b.room_name || "—"}</td>
+                      <td className="px-4 py-3">
+                        {b.check_in_date ? new Date(b.check_in_date).toLocaleDateString() : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        {b.total_price ? `₱${Number(b.total_price).toLocaleString()}` : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={b.status} />
+                      </td>
+                      <td className="px-4 py-3">
+                        {b.status === "pending" && (
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm" variant="outline"
+                              className="h-7 px-2 text-green-600 border-green-200 hover:bg-green-50"
+                              onClick={() => handleStatusUpdate(b.id.toString(), "confirmed")}
+                            >
+                              <CheckCircle className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm" variant="outline"
+                              className="h-7 px-2 text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={() => handleStatusUpdate(b.id.toString(), "cancelled")}
+                            >
+                              <XCircle className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        <div className="mt-10 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Shield className="h-5 w-5 text-blue-600" />
-              Booking Management - Owner Controls
+        {/* Top Customers */}
+        {(stats?.topCustomers?.length ?? 0) > 0 && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Users className="h-5 w-5" /> Top Customers
             </h2>
-            <div className="text-sm text-muted-foreground">Final Authority Override Available</div>
-          </div>
-
-          <div className="rounded-md border">
-            <div className="p-4">
-              <table className="w-full">
+            <div className="rounded-md border overflow-x-auto">
+              <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b">
-                    <th className="pb-3 text-left font-medium">Event</th>
-                    <th className="pb-3 text-left font-medium">Date</th>
-                    <th className="pb-3 text-left font-medium">Client</th>
-                    <th className="pb-3 text-left font-medium">Status</th>
-                    <th className="pb-3 text-left font-medium">Manager Decision</th>
-                    <th className="pb-3 text-left font-medium">Owner Actions</th>
+                  <tr className="border-b bg-gray-50">
+                    <th className="px-4 py-3 text-left font-medium">Customer</th>
+                    <th className="px-4 py-3 text-left font-medium">Bookings</th>
+                    <th className="px-4 py-3 text-left font-medium">Total Revenue</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b">
-                    <td className="py-3">Wedding Reception</td>
-                    <td className="py-3">Jun 15, 2025</td>
-                    <td className="py-3">Maria Santos</td>
-                    <td className="py-3">
-                      <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">Confirmed</span>
-                    </td>
-                    <td className="py-3">
-                      <span className="text-sm text-green-600">Approved</span>
-                    </td>
-                    <td className="py-3">
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="outline" className="h-7 px-2 bg-transparent">
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-7 px-2 bg-transparent">
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-3">Corporate Seminar</td>
-                    <td className="py-3">Jun 22, 2025</td>
-                    <td className="py-3">Tech Solutions Inc.</td>
-                    <td className="py-3">
-                      <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs text-yellow-800">
-                        Pending Review
-                      </span>
-                    </td>
-                    <td className="py-3">
-                      <span className="text-sm text-gray-500">Awaiting Decision</span>
-                    </td>
-                    <td className="py-3">
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 px-2 text-green-600 border-green-200 hover:bg-green-50 bg-transparent"
-                        >
-                          <CheckCircle className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 px-2 text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
-                        >
-                          <XCircle className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-7 px-2 bg-transparent">
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-3">Birthday Party</td>
-                    <td className="py-3">Jun 30, 2025</td>
-                    <td className="py-3">John Miller</td>
-                    <td className="py-3">
-                      <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">Confirmed</span>
-                    </td>
-                    <td className="py-3">
-                      <span className="text-sm text-green-600">Approved</span>
-                    </td>
-                    <td className="py-3">
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="outline" className="h-7 px-2 bg-transparent">
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-7 px-2 bg-transparent">
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-3">Charity Gala</td>
-                    <td className="py-3">Jul 05, 2025</td>
-                    <td className="py-3">Hope Foundation</td>
-                    <td className="py-3">
-                      <span className="rounded-full bg-red-100 px-2 py-1 text-xs text-red-800">Manager Denied</span>
-                    </td>
-                    <td className="py-3">
-                      <span className="text-sm text-red-600">Denied - Conflict</span>
-                    </td>
-                    <td className="py-3">
-                      <div className="flex gap-1">
-                        <Button size="sm" className="h-7 px-2 bg-blue-600 hover:bg-blue-700 text-white">
-                          <Shield className="h-3 w-3 mr-1" />
-                          Override
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-7 px-2 bg-transparent">
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3">Product Launch</td>
-                    <td className="py-3">Jul 12, 2025</td>
-                    <td className="py-3">Innovation Corp</td>
-                    <td className="py-3">
-                      <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800">New Request</span>
-                    </td>
-                    <td className="py-3">
-                      <span className="text-sm text-gray-500">Pending Review</span>
-                    </td>
-                    <td className="py-3">
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 px-2 text-green-600 border-green-200 hover:bg-green-50 bg-transparent"
-                        >
-                          <CheckCircle className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 px-2 text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
-                        >
-                          <XCircle className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-7 px-2 bg-transparent">
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                  {stats?.topCustomers.map((c, i) => (
+                    <tr key={i} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium">{c.name}</td>
+                      <td className="px-4 py-3">{c.bookings}</td>
+                      <td className="px-4 py-3 text-green-600 font-medium">₱{Number(c.revenue).toLocaleString()}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span>Approve Request</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <XCircle className="h-4 w-4 text-red-600" />
-              <span>Deny Request</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Edit className="h-4 w-4 text-gray-600" />
-              <span>Reschedule/Edit</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-blue-600" />
-              <span>Override Manager Decision</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Reports section with comprehensive reporting functionality */}
-        <div className="mt-10 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-green-600" />
-              Reports
-            </h2>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="bg-transparent">
-                <Download className="h-4 w-4 mr-2" />
-                Export All
-              </Button>
-              <Button size="sm" variant="outline" className="bg-transparent">
-                <Settings className="h-4 w-4 mr-2" />
-                Report Settings
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Financial Reports */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-green-600" />
-                  Financial Reports
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Monthly Revenue</div>
-                      <div className="text-sm text-muted-foreground">June 2025</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-green-600">₱125,000</div>
-                      <div className="text-xs text-green-600">+15%</div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Pending Payments</div>
-                      <div className="text-sm text-muted-foreground">Outstanding</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-blue-600">₱35,000</div>
-                      <div className="text-xs text-blue-600">5 clients</div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Total Deposits</div>
-                      <div className="text-sm text-muted-foreground">This month</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-purple-600">₱45,000</div>
-                      <div className="text-xs text-purple-600">12 bookings</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Button size="sm" variant="outline" className="w-full justify-start bg-transparent">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Financial Report
-                  </Button>
-                  <Button size="sm" variant="outline" className="w-full justify-start bg-transparent">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Revenue Trends
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Booking Reports */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-blue-600" />
-                  Booking Reports
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Total Bookings</div>
-                      <div className="text-sm text-muted-foreground">This month</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-blue-600">24</div>
-                      <div className="text-xs text-blue-600">+8 from last month</div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Confirmed Events</div>
-                      <div className="text-sm text-muted-foreground">Approved</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-green-600">18</div>
-                      <div className="text-xs text-green-600">75% rate</div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Pending Requests</div>
-                      <div className="text-sm text-muted-foreground">Awaiting review</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-yellow-600">4</div>
-                      <div className="text-xs text-yellow-600">Needs attention</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Button size="sm" variant="outline" className="w-full justify-start bg-transparent">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Booking Report
-                  </Button>
-                  <Button size="sm" variant="outline" className="w-full justify-start bg-transparent">
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    Booking Analytics
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Customer Reports */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="h-5 w-5 text-purple-600" />
-                  Customer Reports
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Active Customers</div>
-                      <div className="text-sm text-muted-foreground">This month</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-purple-600">32</div>
-                      <div className="text-xs text-purple-600">+5 new clients</div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Repeat Customers</div>
-                      <div className="text-sm text-muted-foreground">Return rate</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-orange-600">12</div>
-                      <div className="text-xs text-orange-600">38% rate</div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-pink-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Customer Satisfaction</div>
-                      <div className="text-sm text-muted-foreground">Average rating</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-pink-600">4.8/5</div>
-                      <div className="text-xs text-pink-600">28 reviews</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Button size="sm" variant="outline" className="w-full justify-start bg-transparent">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Customer Report
-                  </Button>
-                  <Button size="sm" variant="outline" className="w-full justify-start bg-transparent">
-                    <Star className="h-4 w-4 mr-2" />
-                    Review Analytics
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Report Summary Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Monthly Report Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="pb-3 text-left font-medium">Report Type</th>
-                      <th className="pb-3 text-left font-medium">Period</th>
-                      <th className="pb-3 text-left font-medium">Key Metrics</th>
-                      <th className="pb-3 text-left font-medium">Status</th>
-                      <th className="pb-3 text-left font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="py-3">Financial Report</td>
-                      <td className="py-3">June 2025</td>
-                      <td className="py-3">₱125,000 Revenue, ₱35,000 Pending</td>
-                      <td className="py-3">
-                        <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">Complete</span>
-                      </td>
-                      <td className="py-3">
-                        <Button size="sm" variant="outline" className="h-7 px-2 bg-transparent">
-                          <Download className="h-3 w-3" />
-                        </Button>
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-3">Booking Report</td>
-                      <td className="py-3">June 2025</td>
-                      <td className="py-3">24 Bookings, 75% Confirmation Rate</td>
-                      <td className="py-3">
-                        <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">Complete</span>
-                      </td>
-                      <td className="py-3">
-                        <Button size="sm" variant="outline" className="h-7 px-2 bg-transparent">
-                          <Download className="h-3 w-3" />
-                        </Button>
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-3">Customer Report</td>
-                      <td className="py-3">June 2025</td>
-                      <td className="py-3">32 Active, 4.8/5 Rating</td>
-                      <td className="py-3">
-                        <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">Complete</span>
-                      </td>
-                      <td className="py-3">
-                        <Button size="sm" variant="outline" className="h-7 px-2 bg-transparent">
-                          <Download className="h-3 w-3" />
-                        </Button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-3">Quarterly Summary</td>
-                      <td className="py-3">Q2 2025</td>
-                      <td className="py-3">₱350,000 Total, 68 Events</td>
-                      <td className="py-3">
-                        <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs text-yellow-800">Generating</span>
-                      </td>
-                      <td className="py-3">
-                        <Button size="sm" variant="outline" className="h-7 px-2 bg-transparent" disabled>
-                          <Clock className="h-3 w-3" />
-                        </Button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        )}
       </div>
     </MainLayout>
   )

@@ -4,23 +4,29 @@ import { executeQuery } from '@/lib/db';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
     const bookingId = searchParams.get('bookingId');
-    const userId = searchParams.get('userId');
+    const status = searchParams.get('status');
 
     let query = 'SELECT * FROM payment_proofs WHERE 1=1';
     const params: any[] = [];
+
+    if (id) {
+      query += ' AND id = ?';
+      params.push(id);
+    }
 
     if (bookingId) {
       query += ' AND booking_id = ?';
       params.push(bookingId);
     }
 
-    if (userId) {
-      query += ' AND user_id = ?';
-      params.push(userId);
+    if (status) {
+      query += ' AND status = ?';
+      params.push(status);
     }
 
-    query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY uploaded_at DESC';
 
     const proofs = await executeQuery(query, params);
 
@@ -36,9 +42,20 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { bookingId, userId, paymentMethod, amount, proofUrl } = await request.json();
+    const {
+      bookingId,
+      fileId,
+      fileName,
+      fileUrl,
+      fileSize,
+      fileType,
+      paymentMethod,
+      paymentAmount,
+      paymentDate,
+      paymentReference,
+    } = await request.json();
 
-    if (!bookingId || !userId || !amount || !proofUrl) {
+    if (!bookingId || !fileId || !fileName || !paymentMethod || !paymentAmount || !paymentDate) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -47,15 +64,17 @@ export async function POST(request: NextRequest) {
 
     const result = await executeQuery(
       `INSERT INTO payment_proofs 
-       (booking_id, user_id, payment_method, amount, proof_url, status)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [bookingId, userId, paymentMethod, amount, proofUrl, 'pending']
+       (booking_id, file_id, file_name, file_url, file_size, file_type, payment_method, payment_amount, payment_date, payment_reference, status, uploaded_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+      [bookingId, fileId, fileName, fileUrl, fileSize, fileType, paymentMethod, paymentAmount, paymentDate, paymentReference || null]
     );
 
-    return NextResponse.json(
-      { message: 'Payment proof uploaded', proofId: (result as any).insertId },
-      { status: 201 }
-    );
+    const insertId = (result as any).insertId;
+
+    // Fetch the created proof
+    const [proof] = await executeQuery('SELECT * FROM payment_proofs WHERE id = ?', [insertId]) as any[];
+
+    return NextResponse.json(proof, { status: 201 });
   } catch (error) {
     console.error('Error creating payment proof:', error);
     return NextResponse.json(
@@ -72,47 +91,23 @@ export async function PUT(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json(
-        { error: 'Payment proof ID is required' },
+        { error: 'Missing proof ID' },
         { status: 400 }
       );
     }
 
-    const body = await request.json();
-    const updates: string[] = [];
-    const values: any[] = [];
-
-    if (body.status !== undefined) {
-      updates.push('status = ?');
-      values.push(body.status);
-    }
-    if (body.verifiedBy !== undefined) {
-      updates.push('verified_by = ?');
-      values.push(body.verifiedBy);
-    }
-    if (body.verifiedAt !== undefined) {
-      updates.push('verified_at = ?');
-      values.push(body.verifiedAt);
-    }
-    if (body.notes !== undefined) {
-      updates.push('notes = ?');
-      values.push(body.notes);
-    }
-
-    if (updates.length === 0) {
-      return NextResponse.json(
-        { error: 'No fields to update' },
-        { status: 400 }
-      );
-    }
-
-    values.push(id);
+    const { status, verifiedBy, adminNote } = await request.json();
 
     await executeQuery(
-      `UPDATE payment_proofs SET ${updates.join(', ')} WHERE id = ?`,
-      values
+      `UPDATE payment_proofs 
+       SET status = ?, verified_by = ?, verified_at = NOW(), admin_note = ?
+       WHERE id = ?`,
+      [status, verifiedBy, adminNote || null, id]
     );
 
-    return NextResponse.json({ message: 'Payment proof updated successfully' });
+    const [proof] = await executeQuery('SELECT * FROM payment_proofs WHERE id = ?', [id]) as any[];
+
+    return NextResponse.json(proof);
   } catch (error) {
     console.error('Error updating payment proof:', error);
     return NextResponse.json(
