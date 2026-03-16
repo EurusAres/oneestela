@@ -131,7 +131,7 @@ export default function CalendarPage() {
                 Dates highlighted in red are reserved by customers
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex justify-center">
+            <CardContent className="flex justify-center p-6">
               <style>{`
                 .rdp-day_button:has([data-reserved="true"]) {
                   background-color: #ef4444 !important;
@@ -152,7 +152,11 @@ export default function CalendarPage() {
                 modifiersClassNames={{
                   reserved: "!bg-red-500 !text-white !font-bold hover:!bg-red-600",
                 }}
-                className="rounded-md border"
+                className="rounded-md border scale-125 origin-center"
+                style={{
+                  fontSize: '1.1rem',
+                  '--cell-size': '3rem'
+                } as any}
                 components={{
                   DayButton: ({ day, modifiers, ...props }: any) => {
                     const isReserved = modifiers.reserved
