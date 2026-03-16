@@ -49,6 +49,23 @@ export default function PaymentsPage() {
   const pendingProofs = getPendingPaymentProofs()
   const verifiedProofs = allProofs.filter((proof) => proof.status === "verified")
   const rejectedProofs = allProofs.filter((proof) => proof.status === "rejected")
+  
+  // Get bookings to check cancellation status
+  const { getAllBookings } = useBookings()
+  const allBookings = getAllBookings()
+  
+  // Filter proofs by booking status
+  const proofsWithBookingStatus = allProofs.map(proof => {
+    const booking = allBookings.find(b => b.id === proof.bookingId)
+    return {
+      ...proof,
+      bookingStatus: booking?.status || 'unknown'
+    }
+  })
+  
+  const cancelledProofs = proofsWithBookingStatus.filter(
+    proof => proof.bookingStatus === 'cancelled'
+  )
 
   const handleReviewProof = (proof: any, action: "verify" | "reject") => {
     setSelectedProof(proof)
@@ -180,14 +197,23 @@ export default function PaymentsPage() {
     console.log('Rendering PaymentProofCard with proof:', proof)
     console.log('Proof fileUrl:', proof.fileUrl)
     
+    const isCancelled = proof.bookingStatus === 'cancelled'
+    
     return (
-      <Card className="mb-4">
+      <Card className={`mb-4 ${isCancelled ? 'border-red-300 bg-red-50' : ''}`}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               {getStatusIcon(proof.status)}
               <div>
-                <CardTitle className="text-lg">{proof.eventName || "Booking"}</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  {proof.eventName || "Booking"}
+                  {isCancelled && (
+                    <Badge className="bg-red-100 text-red-800">
+                      Booking Cancelled
+                    </Badge>
+                  )}
+                </CardTitle>
                 <CardDescription>
                   Booking ID: {proof.bookingId} • Uploaded {new Date(proof.uploadedAt).toLocaleDateString()}
                 </CardDescription>
@@ -199,6 +225,17 @@ export default function PaymentsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {isCancelled && (
+            <div className="bg-red-100 border border-red-300 p-4 rounded-lg mb-4">
+              <p className="text-sm text-red-800 font-medium">
+                ⚠️ This booking has been cancelled by the customer. Payment proof is no longer valid.
+              </p>
+              <p className="text-xs text-red-700 mt-1">
+                Refund processing may be required based on cancellation policy.
+              </p>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div className="flex items-center space-x-2">
               <CreditCard className="h-4 w-4 text-gray-500" />
@@ -269,7 +306,7 @@ export default function PaymentsPage() {
               <Download className="h-4 w-4 mr-2" />
               Download
             </Button>
-            {proof.status === "pending" && (
+            {proof.status === "pending" && !isCancelled && (
               <>
                 <Button
                   size="sm"
@@ -285,6 +322,16 @@ export default function PaymentsPage() {
                 </Button>
               </>
             )}
+            {isCancelled && proof.status === "pending" && (
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={() => handleReviewProof(proof, "reject")}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Mark as Cancelled
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -299,7 +346,7 @@ export default function PaymentsPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-6 md:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
@@ -339,6 +386,18 @@ export default function PaymentsPage() {
               <div className="text-2xl font-bold">{rejectedProofs.length}</div>
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Cancelled</CardTitle>
+              <XCircle className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{cancelledProofs.length}</div>
+              {cancelledProofs.length > 0 && (
+                <Badge className="bg-red-100 text-red-800 mt-2">Refund Required</Badge>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Payment Proofs Tabs */}
@@ -356,6 +415,10 @@ export default function PaymentsPage() {
               <XCircle className="h-4 w-4 mr-2" />
               Rejected ({rejectedProofs.length})
             </TabsTrigger>
+            <TabsTrigger value="cancelled" className="text-red-600">
+              <XCircle className="h-4 w-4 mr-2" />
+              Cancelled ({cancelledProofs.length})
+            </TabsTrigger>
             <TabsTrigger value="all">All ({allProofs.length})</TabsTrigger>
           </TabsList>
 
@@ -369,7 +432,9 @@ export default function PaymentsPage() {
                   </CardContent>
                 </Card>
               ) : (
-                pendingProofs.map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
+                proofsWithBookingStatus
+                  .filter(p => p.status === 'pending')
+                  .map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
               )}
             </div>
           </TabsContent>
@@ -384,7 +449,9 @@ export default function PaymentsPage() {
                   </CardContent>
                 </Card>
               ) : (
-                verifiedProofs.map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
+                proofsWithBookingStatus
+                  .filter(p => p.status === 'verified')
+                  .map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
               )}
             </div>
           </TabsContent>
@@ -399,7 +466,33 @@ export default function PaymentsPage() {
                   </CardContent>
                 </Card>
               ) : (
-                rejectedProofs.map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
+                proofsWithBookingStatus
+                  .filter(p => p.status === 'rejected')
+                  .map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="cancelled">
+            <div className="space-y-4">
+              {cancelledProofs.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <XCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p className="text-gray-500">No cancelled bookings with payment proofs</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <Card className="bg-red-50 border-red-200">
+                    <CardContent className="pt-6">
+                      <p className="text-sm text-red-800">
+                        <strong>Note:</strong> These bookings have been cancelled by customers. Review refund eligibility based on the cancellation policy and process refunds accordingly.
+                      </p>
+                    </CardContent>
+                  </Card>
+                  {cancelledProofs.map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)}
+                </>
               )}
             </div>
           </TabsContent>
@@ -414,7 +507,7 @@ export default function PaymentsPage() {
                   </CardContent>
                 </Card>
               ) : (
-                allProofs.map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
+                proofsWithBookingStatus.map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
               )}
             </div>
           </TabsContent>

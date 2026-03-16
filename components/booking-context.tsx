@@ -128,13 +128,19 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
 
   const cancelBooking = async (id: string) => {
     try {
-      await fetch(`/api/bookings?id=${id}`, {
+      const response = await fetch(`/api/bookings?id=${id}`, {
         method: "DELETE",
       })
-      const updatedBookings = bookings.map((booking) =>
-        booking.id === id ? { ...booking, status: "cancelled" } : booking,
-      )
-      setBookings(updatedBookings)
+      
+      if (response.ok) {
+        const updatedBookings = bookings.map((booking) =>
+          booking.id === id ? { ...booking, status: "cancelled" } : booking,
+        )
+        setBookings(updatedBookings)
+        
+        // Trigger a reload of payment proofs to reflect cancellation
+        window.dispatchEvent(new CustomEvent('booking-cancelled', { detail: { bookingId: id } }))
+      }
     } catch (error) {
       console.error("Cancel booking error:", error)
     }
