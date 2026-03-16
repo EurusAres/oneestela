@@ -90,3 +90,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom calendar styles for reserved dates */
+.rdp-day_button[data-reserved="true"] {
+  background-color: #ef4444 !important;
+  color: white !important;
+  font-weight: bold !important;
+}
+
+.rdp-day_button[data-reserved="true"]:hover {
+  background-color: #dc2626 !important;
+}
+
+/* Alternative approach using modifiers */
+.rdp .rdp-day.reserved button,
+.rdp button[data-day].reserved {
+  background-color: #ef4444 !important;
+  color: white !important;
+  font-weight: bold !important;
+}
+
+.rdp .rdp-day.reserved button:hover,
+.rdp button[data-day].reserved:hover {
+  background-color: #dc2626 !important;
+}
