@@ -3,6 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 import { FileUploadService, type UploadedFile } from "@/lib/file-upload"
+import { useAuth } from "@/components/auth-context"
 
 export interface PaymentProof {
   id: string
@@ -53,6 +54,7 @@ const PaymentProofContext = createContext<PaymentProofContextType | undefined>(u
 export function PaymentProofProvider({ children }: { children: React.ReactNode }) {
   const [paymentProofs, setPaymentProofs] = useState<PaymentProof[]>([])
   const fileUploadService = FileUploadService.getInstance()
+  const { user } = useAuth()
 
   useEffect(() => {
     // Load payment proofs from database on mount
@@ -120,15 +122,9 @@ export function PaymentProofProvider({ children }: { children: React.ReactNode }
     },
   ): Promise<PaymentProof> => {
     try {
-      // Get user from localStorage or sessionStorage (where auth context stores it)
-      const userStr = localStorage.getItem("user") || sessionStorage.getItem("user")
-      if (!userStr) {
+      // Check if user is authenticated
+      if (!user || !user.id) {
         throw new Error("User not authenticated. Please log in to upload payment proof.")
-      }
-      
-      const user = JSON.parse(userStr)
-      if (!user.id) {
-        throw new Error("Invalid user session. Please log in again.")
       }
       
       // Upload file first
