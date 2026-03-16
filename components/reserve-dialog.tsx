@@ -112,7 +112,12 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
   }
 
   const handleDateSelect = (date: Date | undefined) => {
-    if (date && date < minDate) {
+    if (!date) {
+      setSelectedDate(date)
+      return
+    }
+    
+    if (date < minDate) {
       toast({
         title: "Invalid Date",
         description: "Reservations must be made at least 1 month in advance.",
@@ -120,6 +125,16 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
       })
       return
     }
+    
+    if (isDateReserved(date)) {
+      toast({
+        title: "Date Unavailable",
+        description: "This date is already reserved. Please select another date.",
+        variant: "destructive",
+      })
+      return
+    }
+    
     setSelectedDate(date)
   }
 
@@ -377,8 +392,8 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
             <TabsContent value="datetime" className="space-y-4">
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
                 <p className="text-sm text-blue-800">
-                  <strong>Booking Policy:</strong> Reservations must be made at least 1 month in advance. Dates marked
-                  in red are already reserved.
+                  <strong>Booking Policy:</strong> Reservations must be made at least 1 month in advance. Dates highlighted
+                  in red are already reserved and cannot be selected.
                 </p>
               </div>
 
@@ -389,7 +404,7 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
                     mode="single"
                     selected={selectedDate}
                     onSelect={handleDateSelect}
-                    disabled={(date) => date < minDate}
+                    disabled={(date) => date < minDate || isDateReserved(date)}
                     modifiers={{
                       reserved: reservedDates,
                     }}
@@ -398,6 +413,7 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
                         backgroundColor: "#ef4444",
                         color: "white",
                         fontWeight: "bold",
+                        textDecoration: "line-through",
                       },
                     }}
                     className="rounded-md border"
@@ -405,11 +421,15 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
                   <div className="mt-2 text-xs text-gray-600 space-y-1">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-red-500 rounded"></div>
-                      <span>Reserved dates</span>
+                      <span>Reserved dates (unavailable)</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-gray-300 rounded"></div>
                       <span>Unavailable (less than 1 month)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 border-2 border-blue-500 rounded"></div>
+                      <span>Available dates</span>
                     </div>
                   </div>
                 </div>
@@ -451,7 +471,7 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
                     </Select>
                   </div>
                   {selectedDate && (
-                    <div className="p-4 bg-blue-50 rounded-lg">
+                    <div className={`p-4 rounded-lg ${isDateReserved(selectedDate) ? 'bg-red-50 border border-red-200' : 'bg-blue-50'}`}>
                       <h4 className="font-medium mb-2">Selected Date</h4>
                       <p className="text-sm text-gray-600">
                         {selectedDate.toLocaleDateString("en-US", {
@@ -462,7 +482,9 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
                         })}
                       </p>
                       {isDateReserved(selectedDate) && (
-                        <p className="text-sm text-red-600 mt-1 font-medium">⚠️ This date is already reserved</p>
+                        <p className="text-sm text-red-600 mt-2 font-medium">
+                          ⚠️ This date is already reserved and cannot be booked
+                        </p>
                       )}
                     </div>
                   )}
@@ -492,7 +514,11 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
                 </div>
               </div>
               <div className="flex justify-end">
-                <Button onClick={handleBookingSubmit} className="w-full md:w-auto">
+                <Button 
+                  onClick={handleBookingSubmit} 
+                  className="w-full md:w-auto"
+                  disabled={!selectedDate || isDateReserved(selectedDate) || !bookingData.startTime || !bookingData.endTime || !agreedToTerms}
+                >
                   Submit Reservation Request
                 </Button>
               </div>

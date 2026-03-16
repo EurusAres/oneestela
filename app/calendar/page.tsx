@@ -2,156 +2,233 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { MainLayout } from "@/components/main-layout"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { useBookings } from "@/components/booking-context"
 import { useToast } from "@/hooks/use-toast"
-
-// Mock data for events
-const events = [
-  { id: 1, title: "Wedding Reception", client: "Maria Santos", date: new Date(2025, 5, 15), status: "confirmed" },
-  { id: 2, title: "Corporate Seminar", client: "Tech Solutions Inc.", date: new Date(2025, 5, 22), status: "pending" },
-  { id: 3, title: "Birthday Party", client: "John Miller", date: new Date(2025, 5, 30), status: "confirmed" },
-  { id: 4, title: "Charity Gala", client: "Hope Foundation", date: new Date(2025, 6, 5), status: "new" },
-]
+import { Calendar as CalendarIcon, Clock, Users, MapPin } from "lucide-react"
 
 export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date())
-  const [selectedEvent, setSelectedEvent] = useState<any>(null)
+  const { getAllBookings } = useBookings()
   const { toast } = useToast()
-
-  // Find events for the selected date
-  const eventsForSelectedDate = date
-    ? events.filter(
-        (event) =>
-          event.date.getDate() === date.getDate() &&
-          event.date.getMonth() === date.getMonth() &&
-          event.date.getFullYear() === date.getFullYear(),
-      )
+  
+  const allBookings = getAllBookings()
+  
+  // Get all confirmed and pending bookings
+  const reservedBookings = allBookings.filter(
+    (booking) => booking.status === "confirmed" || booking.status === "pending"
+  )
+  
+  // Extract dates from bookings
+  const reservedDates = reservedBookings.map((booking) => new Date(booking.date))
+  
+  // Find bookings for the selected date
+  const bookingsForSelectedDate = date
+    ? reservedBookings.filter((booking) => {
+        const bookingDate = new Date(booking.date)
+        return (
+          bookingDate.getDate() === date.getDate() &&
+          bookingDate.getMonth() === date.getMonth() &&
+          bookingDate.getFullYear() === date.getFullYear()
+        )
+      })
     : []
 
-  const handleAddBooking = (e: React.FormEvent) => {
-    e.preventDefault()
-    toast({
-      title: "Booking added",
-      description: "The new booking has been successfully added",
-    })
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "confirmed":
+        return "bg-green-100 text-green-800"
+      case "pending":
+        return "bg-yellow-100 text-yellow-800"
+      case "cancelled":
+        return "bg-red-100 text-red-800"
+      case "completed":
+        return "bg-blue-100 text-blue-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
   }
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Booking Calendar</h1>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>Add Booking</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Add New Booking</DialogTitle>
-                <DialogDescription>Create a new event booking. Click save when you're done.</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleAddBooking}>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="event-title">Event Title</Label>
-                    <Input id="event-title" placeholder="Enter event title" required />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="client-name">Client Name</Label>
-                    <Input id="client-name" placeholder="Enter client name" required />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="event-date">Event Date</Label>
-                    <Input id="event-date" type="date" required />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="event-status">Status</Label>
-                    <Select defaultValue="new">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="new">New</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="event-notes">Notes</Label>
-                    <Textarea id="event-notes" placeholder="Add any additional notes here" />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit">Save Booking</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <div>
+            <h1 className="text-3xl font-bold">Booking Calendar</h1>
+            <p className="text-muted-foreground">View all customer reservations and bookings</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="gap-1">
+              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+              Reserved Dates
+            </Badge>
+          </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-[1fr_300px]">
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{allBookings.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Confirmed</CardTitle>
+              <CalendarIcon className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {allBookings.filter((b) => b.status === "confirmed").length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Pending</CardTitle>
+              <CalendarIcon className="h-4 w-4 text-yellow-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {allBookings.filter((b) => b.status === "pending").length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">This Month</CardTitle>
+              <CalendarIcon className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {allBookings.filter((b) => {
+                  const bookingDate = new Date(b.date)
+                  const now = new Date()
+                  return (
+                    bookingDate.getMonth() === now.getMonth() &&
+                    bookingDate.getFullYear() === now.getFullYear()
+                  )
+                }).length}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
           <Card>
             <CardHeader>
               <CardTitle>Event Calendar</CardTitle>
-              <CardDescription>View and manage all your event bookings</CardDescription>
+              <CardDescription>
+                Dates highlighted in red are reserved by customers
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Calendar mode="single" selected={date} onSelect={setDate} className="rounded-md border" />
+            <CardContent className="flex justify-center">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                modifiers={{
+                  reserved: reservedDates,
+                }}
+                modifiersStyles={{
+                  reserved: {
+                    backgroundColor: "#ef4444",
+                    color: "white",
+                    fontWeight: "bold",
+                  },
+                }}
+                className="rounded-md border"
+              />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Events for {date?.toLocaleDateString()}</CardTitle>
+              <CardTitle>
+                {date?.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </CardTitle>
               <CardDescription>
-                {eventsForSelectedDate.length === 0
-                  ? "No events scheduled for this date"
-                  : `${eventsForSelectedDate.length} event(s) scheduled`}
+                {bookingsForSelectedDate.length === 0
+                  ? "No bookings scheduled for this date"
+                  : `${bookingsForSelectedDate.length} booking(s) scheduled`}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {eventsForSelectedDate.map((event) => (
-                  <div key={event.id} className="rounded-md border p-4">
-                    <div className="font-medium">{event.title}</div>
-                    <div className="text-sm text-muted-foreground">Client: {event.client}</div>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span
-                        className={`rounded-full px-2 py-1 text-xs ${
-                          event.status === "confirmed"
-                            ? "bg-green-100 text-green-800"
-                            : event.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-                      </span>
-                      <Button variant="outline" size="sm" onClick={() => setSelectedEvent(event)}>
-                        View Details
-                      </Button>
-                    </div>
+                {bookingsForSelectedDate.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <CalendarIcon className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                    <p>No events on this date</p>
                   </div>
-                ))}
+                ) : (
+                  bookingsForSelectedDate.map((booking) => (
+                    <div key={booking.id} className="rounded-lg border p-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-semibold text-lg">{booking.eventName}</h4>
+                          <p className="text-sm text-muted-foreground capitalize">{booking.eventType}</p>
+                        </div>
+                        <Badge className={getStatusColor(booking.status)}>
+                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                        </Badge>
+                      </div>
+
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Users className="h-4 w-4" />
+                          <span>{booking.guestCount} guests</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Clock className="h-4 w-4" />
+                          <span>
+                            {booking.startTime} - {booking.endTime}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Users className="h-4 w-4" />
+                          <span>{booking.userInfo?.name || "Unknown"}</span>
+                        </div>
+                      </div>
+
+                      {booking.specialRequests && (
+                        <div className="pt-2 border-t">
+                          <p className="text-xs font-medium text-gray-700">Special Requests:</p>
+                          <p className="text-xs text-gray-600 mt-1">{booking.specialRequests}</p>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => {
+                            toast({
+                              title: "Booking Details",
+                              description: `Booking ID: ${booking.id}`,
+                            })
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
