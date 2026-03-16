@@ -98,11 +98,18 @@ export default function PaymentsPage() {
 
   const handleViewImage = async (proof: any) => {
     console.log('View image - proof object:', proof)
+    console.log('File URL:', proof.fileUrl)
+    console.log('File URL type:', typeof proof.fileUrl)
+    console.log('File URL starts with:', proof.fileUrl?.substring(0, 50))
+    
     // File URL is stored directly in the proof object from the database
     if (proof.fileUrl || proof.file_url) {
-      setSelectedImage(proof.fileUrl || proof.file_url)
+      const imageUrl = proof.fileUrl || proof.file_url
+      console.log('Setting image URL:', imageUrl?.substring(0, 100))
+      setSelectedImage(imageUrl)
       setShowImageDialog(true)
     } else {
+      console.error('No file URL found in proof:', proof)
       toast({
         title: "File not found",
         description: "Unable to load the payment proof file.",
@@ -170,8 +177,9 @@ export default function PaymentsPage() {
   }
 
   const PaymentProofCard = ({ proof }: { proof: any }) => {
-    const booking = getBookingById(proof.bookingId)
-
+    console.log('Rendering PaymentProofCard with proof:', proof)
+    console.log('Proof fileUrl:', proof.fileUrl)
+    
     return (
       <Card className="mb-4">
         <CardHeader>
@@ -179,7 +187,7 @@ export default function PaymentsPage() {
             <div className="flex items-center space-x-3">
               {getStatusIcon(proof.status)}
               <div>
-                <CardTitle className="text-lg">{booking?.eventName || "Unknown Event"}</CardTitle>
+                <CardTitle className="text-lg">{proof.eventName || "Booking"}</CardTitle>
                 <CardDescription>
                   Booking ID: {proof.bookingId} • Uploaded {new Date(proof.uploadedAt).toLocaleDateString()}
                 </CardDescription>
@@ -203,7 +211,7 @@ export default function PaymentsPage() {
               <DollarSign className="h-4 w-4 text-gray-500" />
               <div>
                 <p className="text-sm font-medium">Amount</p>
-                <p className="text-sm text-gray-600">{proof.paymentAmount}</p>
+                <p className="text-sm text-gray-600">₱{Number(proof.paymentAmount).toLocaleString()}</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -217,7 +225,10 @@ export default function PaymentsPage() {
               <User className="h-4 w-4 text-gray-500" />
               <div>
                 <p className="text-sm font-medium">Customer</p>
-                <p className="text-sm text-gray-600">{booking?.userInfo.name || "Unknown"}</p>
+                <p className="text-sm text-gray-600">{proof.customerName || "Unknown"}</p>
+                {proof.customerEmail && (
+                  <p className="text-xs text-gray-500">{proof.customerEmail}</p>
+                )}
               </div>
             </div>
           </div>
@@ -459,11 +470,24 @@ export default function PaymentsPage() {
             <DialogTitle>Payment Proof</DialogTitle>
           </DialogHeader>
           <div className="flex justify-center">
-            <img
-              src={selectedImage || "/placeholder.svg"}
-              alt="Payment proof"
-              className="max-w-full max-h-[70vh] object-contain rounded-lg"
-            />
+            {selectedImage ? (
+              <img
+                src={selectedImage}
+                alt="Payment proof"
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                onError={(e) => {
+                  console.error('Image failed to load:', selectedImage?.substring(0, 100))
+                  console.error('Error event:', e)
+                }}
+                onLoad={() => {
+                  console.log('Image loaded successfully')
+                }}
+              />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No image to display</p>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

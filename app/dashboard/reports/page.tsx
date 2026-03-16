@@ -61,7 +61,7 @@ export default function ReportsPage() {
         </div>
 
         {/* KPI Overview */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
@@ -82,18 +82,6 @@ export default function ReportsPage() {
             <CardContent>
               <div className="text-2xl font-bold">₱{(s?.totalRevenue ?? 0).toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">All time</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Messages</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{s?.totalMessages ?? 0}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-blue-600">{s?.unreadMessages ?? 0} unread</span>
-              </p>
             </CardContent>
           </Card>
           <Card>
@@ -451,7 +439,7 @@ export default function ReportsPage() {
               </Card>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader><CardTitle>Customer Stats</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
@@ -479,24 +467,6 @@ export default function ReportsPage() {
                       <span className="text-3xl font-bold">{s?.avgRating ?? "—"}</span>
                     </div>
                     <p className="text-sm text-muted-foreground">{s?.totalReviews ?? 0} reviews</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader><CardTitle>Messages</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Total</span>
-                    <Badge variant="secondary">{s?.totalMessages ?? 0}</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Unread</span>
-                    <Badge className="bg-blue-100 text-blue-800">{s?.unreadMessages ?? 0}</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Response Rate</span>
-                    <Badge className="bg-green-100 text-green-800">{inquiryReport.responseRate}%</Badge>
                   </div>
                 </CardContent>
               </Card>

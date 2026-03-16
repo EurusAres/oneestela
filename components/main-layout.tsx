@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -22,8 +22,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { useMessages } from "@/components/message-context"
 import { usePaymentProof } from "@/components/payment-proof-context"
+import { ChangePasswordDialog } from "@/components/change-password-dialog"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -33,38 +33,55 @@ export function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { toast } = useToast()
-  const { getUnreadCount } = useMessages()
   const { getPendingPaymentProofs } = usePaymentProof()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [userRole, setUserRole] = useState<string>('admin')
+  const [userId, setUserId] = useState<string>('')
 
-  const unreadCount = getUnreadCount()
   const pendingPayments = getPendingPaymentProofs().length
 
-  const menuItems = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Booking Calendar", href: "/calendar", icon: Calendar },
-    { name: "Booking Management", href: "/dashboard/bookings", icon: BookOpen },
-    {
-      name: "Contact Messages",
-      href: "/dashboard/messages",
-      icon: MessageSquare,
-      badge: unreadCount > 0 ? unreadCount : undefined,
-    },
-    { name: "Customer Chat", href: "/dashboard/chat", icon: MessageSquare },
+  // Get user role and ID from localStorage/sessionStorage
+  useEffect(() => {
+    const userStr = localStorage.getItem("user") || sessionStorage.getItem("user")
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        setUserRole(user.role || 'admin')
+        setUserId(user.id || '')
+      } catch (error) {
+        console.error('Error parsing user data:', error)
+      }
+    }
+  }, [])
+
+  // Define all menu items with role restrictions
+  const allMenuItems = [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ['admin', 'staff'] },
+    { name: "Booking Calendar", href: "/calendar", icon: Calendar, roles: ['admin', 'staff'] },
+    { name: "Booking Management", href: "/dashboard/bookings", icon: BookOpen, roles: ['admin', 'staff'] },
+    { name: "Customer Chat", href: "/dashboard/chat", icon: MessageSquare, roles: ['admin', 'staff'] },
     {
       name: "Payment Verification",
       href: "/dashboard/payments",
       icon: CreditCard,
       badge: pendingPayments > 0 ? pendingPayments : undefined,
+      roles: ['admin', 'staff']
     },
-    { name: "Reports & Analytics", href: "/dashboard/reports", icon: BarChart3 },
-    { name: "Staff Management", href: "/dashboard/staff", icon: UserCheck },
-    { name: "CMS - Content Management", href: "/dashboard/cms", icon: Settings },
-    { name: "Reviews", href: "/reviews", icon: Star },
-    { name: "Users Information", href: "/users", icon: Users },
+    { name: "Reports & Analytics", href: "/dashboard/reports", icon: BarChart3, roles: ['admin', 'staff'] },
+    { name: "Staff Management", href: "/dashboard/staff", icon: UserCheck, roles: ['admin'] },
+    { name: "CMS - Content Management", href: "/dashboard/cms", icon: Settings, roles: ['admin'] },
+    { name: "Reviews", href: "/reviews", icon: Star, roles: ['admin'] },
+    { name: "Users Information", href: "/users", icon: Users, roles: ['admin'] },
   ]
 
+  // Filter menu items based on user role
+  const menuItems = allMenuItems.filter(item => item.roles.includes(userRole))
+
   const handleLogout = () => {
+    // Clear user data
+    localStorage.removeItem("user")
+    sessionStorage.removeItem("user")
+    
     toast({
       title: "Logged out",
       description: "You have been successfully logged out",
@@ -128,7 +145,11 @@ export function MainLayout({ children }: MainLayoutProps) {
               )
             })}
           </nav>
-          <div className="border-t p-4">
+          <div className="border-t p-4 space-y-2">
+            {/* Show change password option for staff members */}
+            {userRole === 'staff' && userId && (
+              <ChangePasswordDialog userId={userId} userRole={userRole} />
+            )}
             <Button variant="outline" className="flex w-full items-center justify-start bg-transparent" onClick={handleLogout}>
               <LogOut className="mr-3 h-5 w-5" />
               Logout

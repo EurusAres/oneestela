@@ -23,37 +23,55 @@ export class FileUploadService {
     // Validate file
     this.validateFile(file)
 
-    // Generate unique file ID
-    const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    try {
+      // Upload file to server
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('bookingId', bookingId)
 
-    // In a real implementation, you would upload to a cloud storage service
-    // For demo purposes, we'll convert to base64 and store in memory only
-    const base64Data = await this.fileToBase64(file)
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
 
-    const uploadedFile: UploadedFile = {
-      id: fileId,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url: base64Data,
-      uploadedAt: new Date().toISOString(),
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to upload file')
+      }
+
+      const data = await response.json()
+
+      // Generate unique file ID
+      const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+      const uploadedFile: UploadedFile = {
+        id: fileId,
+        name: data.fileName,
+        size: data.fileSize,
+        type: data.fileType,
+        url: data.fileUrl, // This is now a path like /uploads/payment-proofs/filename.jpg
+        uploadedAt: new Date().toISOString(),
+      }
+
+      // Store file reference in memory
+      this.uploadedFiles.set(fileId, uploadedFile)
+
+      // Store metadata in localStorage for persistence
+      const existingMeta = JSON.parse(localStorage.getItem("uploaded-files-meta") || "{}")
+      existingMeta[fileId] = {
+        id: fileId,
+        name: uploadedFile.name,
+        size: uploadedFile.size,
+        type: uploadedFile.type,
+        url: uploadedFile.url,
+        uploadedAt: uploadedFile.uploadedAt,
+      }
+      localStorage.setItem("uploaded-files-meta", JSON.stringify(existingMeta))
+
+      return uploadedFile
+    } catch (error) {
+      throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
-
-    // Store file reference in memory only (not localStorage due to size limits)
-    this.uploadedFiles.set(fileId, uploadedFile)
-
-    // Store only metadata in localStorage for persistence
-    const existingMeta = JSON.parse(localStorage.getItem("uploaded-files-meta") || "{}")
-    existingMeta[fileId] = {
-      id: fileId,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      uploadedAt: uploadedFile.uploadedAt,
-    }
-    localStorage.setItem("uploaded-files-meta", JSON.stringify(existingMeta))
-
-    return uploadedFile
   }
 
   private validateFile(file: File): void {

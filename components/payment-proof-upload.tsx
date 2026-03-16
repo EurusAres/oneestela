@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,6 +29,7 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
   const [isUploading, setIsUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [dragActive, setDragActive] = useState(false)
+  const [showUploadForm, setShowUploadForm] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [paymentDetails, setPaymentDetails] = useState({
@@ -40,6 +41,14 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
 
   const booking = getBookingById(bookingId)
   const existingProof = getPaymentProofByBooking(bookingId)
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      setShowUploadForm(false)
+      setSelectedFile(null)
+    }
+  }, [open])
 
   const handleFileSelect = (file: File) => {
     // Validate file size (10MB limit)
@@ -131,6 +140,7 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
         paymentDate: "",
         paymentReference: "",
       })
+      setShowUploadForm(false)
 
       onOpenChange(false)
     } catch (error) {
@@ -184,7 +194,7 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
           <DialogDescription>Upload proof of payment for your booking: {booking?.eventName}</DialogDescription>
         </DialogHeader>
 
-        {existingProof ? (
+        {existingProof && !showUploadForm ? (
           // Show existing payment proof status
           <Card>
             <CardHeader>
@@ -249,8 +259,7 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
                   <Button
                     className="mt-2"
                     onClick={() => {
-                      // Allow re-upload by clearing existing proof (in real app, you might want to keep history)
-                      setSelectedFile(null)
+                      setShowUploadForm(true)
                     }}
                   >
                     Upload New Proof

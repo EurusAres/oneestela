@@ -12,8 +12,6 @@ export interface DashboardStats {
     completed: number
     totalRevenue: number
     totalUsers: number
-    avgRating: string
-    totalReviews: number
     unreadMessages: number
     totalMessages: number
   }
@@ -25,7 +23,6 @@ export interface DashboardStats {
   bookingsByRoom: { area: string; count: number }[]
   statusBreakdown: { status: string; count: number; amount: number }[]
   newSignups: { month: string; count: number }[]
-  topCustomers: { name: string; bookings: number; revenue: number }[]
 }
 
 interface ReportsContextType {
@@ -40,7 +37,7 @@ interface ReportsContextType {
 }
 
 const defaultStats: DashboardStats = {
-  summary: { totalBookings: 0, confirmed: 0, pending: 0, cancelled: 0, completed: 0, totalRevenue: 0, totalUsers: 0, avgRating: '0.0', totalReviews: 0, unreadMessages: 0, totalMessages: 0 },
+  summary: { totalBookings: 0, confirmed: 0, pending: 0, cancelled: 0, completed: 0, totalRevenue: 0, totalUsers: 0, unreadMessages: 0, totalMessages: 0 },
   thisMonth: { bookings: 0, revenue: 0 },
   lastMonth: { bookings: 0, revenue: 0 },
   recentBookings: [],
@@ -49,7 +46,6 @@ const defaultStats: DashboardStats = {
   bookingsByRoom: [],
   statusBreakdown: [],
   newSignups: [],
-  topCustomers: [],
 }
 
 const ReportsContext = createContext<ReportsContextType | undefined>(undefined)
@@ -126,11 +122,9 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
   const customerReport = {
     totalCustomers: s.summary.totalUsers,
     newSignups: s.newSignups,
-    repeatCustomers: s.topCustomers.filter(c => c.bookings > 1).length,
-    customerRetentionRate: s.summary.totalUsers > 0
-      ? Math.round((s.topCustomers.filter(c => c.bookings > 1).length / s.summary.totalUsers) * 100)
-      : 0,
-    topCustomers: s.topCustomers,
+    repeatCustomers: 0,
+    customerRetentionRate: 0,
+    topCustomers: [],
   }
 
   return (
