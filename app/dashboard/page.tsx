@@ -14,6 +14,7 @@ import {
   ResponsiveContainer, BarChart, Bar,
 } from "recharts"
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
 
 function pctChange(current: number, previous: number) {
   if (previous === 0) return current > 0 ? 100 : 0
@@ -38,6 +39,7 @@ export default function DashboardPage() {
   const { stats, generateReports, isLoading } = useReports()
   const { updateBookingStatus } = useBookings()
   const { toast } = useToast()
+  const router = useRouter()
 
   const s = stats?.summary
   const bookingDelta = pctChange(stats?.thisMonth.bookings ?? 0, stats?.lastMonth.bookings ?? 0)
@@ -47,6 +49,21 @@ export default function DashboardPage() {
     await updateBookingStatus(id, status)
     generateReports()
     toast({ title: `Booking ${status}`, description: `Booking #${id} has been ${status}.` })
+  }
+
+  const handleCardClick = (type: string) => {
+    switch (type) {
+      case 'confirmed':
+      case 'pending':
+      case 'cancelled':
+        router.push(`/dashboard/bookings?status=${type}`)
+        break
+      case 'messages':
+        router.push('/dashboard/chat')
+        break
+      default:
+        break
+    }
   }
 
   // Show loading state on initial load
@@ -149,7 +166,10 @@ export default function DashboardPage() {
 
         {/* Status Summary Row */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-green-200 bg-green-50">
+          <Card 
+            className="border-green-200 bg-green-50 cursor-pointer hover:bg-green-100 transition-colors"
+            onClick={() => handleCardClick('confirmed')}
+          >
             <CardContent className="pt-4 flex items-center gap-3">
               <CheckCircle className="h-8 w-8 text-green-600" />
               <div>
@@ -158,7 +178,10 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-yellow-200 bg-yellow-50">
+          <Card 
+            className="border-yellow-200 bg-yellow-50 cursor-pointer hover:bg-yellow-100 transition-colors"
+            onClick={() => handleCardClick('pending')}
+          >
             <CardContent className="pt-4 flex items-center gap-3">
               <Clock className="h-8 w-8 text-yellow-600" />
               <div>
@@ -167,7 +190,10 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-red-200 bg-red-50">
+          <Card 
+            className="border-red-200 bg-red-50 cursor-pointer hover:bg-red-100 transition-colors"
+            onClick={() => handleCardClick('cancelled')}
+          >
             <CardContent className="pt-4 flex items-center gap-3">
               <XCircle className="h-8 w-8 text-red-600" />
               <div>
@@ -176,7 +202,10 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-blue-200 bg-blue-50">
+          <Card 
+            className="border-blue-200 bg-blue-50 cursor-pointer hover:bg-blue-100 transition-colors"
+            onClick={() => handleCardClick('messages')}
+          >
             <CardContent className="pt-4 flex items-center gap-3">
               <MessageSquare className="h-8 w-8 text-blue-600" />
               <div>
