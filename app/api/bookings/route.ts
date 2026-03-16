@@ -206,6 +206,12 @@ export async function DELETE(request: NextRequest) {
       ['cancelled', id]
     );
 
+    // Also update any associated payment proofs to cancelled status
+    await executeQuery(
+      'UPDATE payment_proofs SET status = ?, verification_notes = ? WHERE booking_id = ? AND status = ?',
+      ['rejected', 'Booking was cancelled by customer', id, 'pending']
+    );
+
     return NextResponse.json({ message: 'Booking cancelled successfully' });
   } catch (error) {
     console.error('Error cancelling booking:', error);

@@ -108,7 +108,19 @@ export function PaymentProofProvider({ children }: { children: React.ReactNode }
         console.error("Load payment proofs error:", error)
       }
     }
+    
     loadProofs()
+    
+    // Listen for booking cancellations to reload proofs
+    const handleBookingCancelled = () => {
+      loadProofs()
+    }
+    
+    window.addEventListener('booking-cancelled', handleBookingCancelled)
+    
+    return () => {
+      window.removeEventListener('booking-cancelled', handleBookingCancelled)
+    }
   }, [])
 
   const uploadPaymentProof = async (
