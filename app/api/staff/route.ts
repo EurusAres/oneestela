@@ -273,13 +273,26 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Soft delete - set status to inactive
-    await executeQuery(
-      'UPDATE staff SET status = ?, updated_at = NOW() WHERE id = ?',
-      ['inactive', id]
-    );
+    // Get the user_id before deleting the staff record
+    const [staffRecord] = await executeQuery(
+      'SELECT user_id FROM staff WHERE id = ?',
+      [id]
+    ) as any[];
 
-    return NextResponse.json({ message: 'Staff member deactivated successfully' });
+    if (!staffRecord) {
+      return NextResponse.json(
+        { error: 'Staff member not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete the staff record
+    await executeQuery('DELETE FROM staff WHERE id = ?', [id]);
+
+    // Delete the associated user account
+    await executeQuery('DELETE FROM users WHERE id = ?', [staffRecord.user_id]);
+
+    return NextResponse.json({ message: 'Staff member removed successfully' });
   } catch (error) {
     console.error('Error deleting staff:', error);
     return NextResponse.json(

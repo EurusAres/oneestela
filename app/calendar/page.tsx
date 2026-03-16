@@ -24,8 +24,11 @@ export default function CalendarPage() {
     (booking) => booking.status === "confirmed" || booking.status === "pending"
   )
   
-  // Extract dates from bookings
-  const reservedDates = reservedBookings.map((booking) => new Date(booking.date))
+  // Extract dates from bookings - parse as local date to avoid timezone issues
+  const reservedDates = reservedBookings.map((booking) => {
+    const [year, month, day] = booking.date.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  })
   
   // Find bookings for the selected date
   const bookingsForSelectedDate = date
@@ -123,7 +126,7 @@ export default function CalendarPage() {
           </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+        <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
           <Card>
             <CardHeader>
               <CardTitle>Event Calendar</CardTitle>
@@ -132,48 +135,36 @@ export default function CalendarPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center p-6">
-              <style>{`
-                .rdp-day_button:has([data-reserved="true"]) {
-                  background-color: #ef4444 !important;
-                  color: white !important;
-                  font-weight: bold !important;
-                }
-                .rdp-day_button:has([data-reserved="true"]):hover {
-                  background-color: #dc2626 !important;
-                }
-              `}</style>
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                modifiers={{
-                  reserved: reservedDates,
-                }}
-                modifiersClassNames={{
-                  reserved: "!bg-red-500 !text-white !font-bold hover:!bg-red-600",
-                }}
-                className="rounded-md border scale-125 origin-center"
-                style={{
-                  fontSize: '1.1rem',
-                  '--cell-size': '3rem'
-                } as any}
-                components={{
-                  DayButton: ({ day, modifiers, ...props }: any) => {
-                    const isReserved = modifiers.reserved
-                    return (
-                      <button
-                        {...props}
-                        data-reserved={isReserved}
-                        style={isReserved ? {
-                          backgroundColor: '#ef4444',
-                          color: 'white',
-                          fontWeight: 'bold'
-                        } : undefined}
-                        className={`${props.className} ${isReserved ? 'bg-red-500 text-white font-bold hover:bg-red-600' : ''}`}
-                      />
-                    )
-                  }
-                }}
+              <div style={{ transform: 'scaleX(1.15)' }}>
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  modifiers={{
+                    reserved: reservedDates,
+                  }}
+                  modifiersClassNames={{
+                    reserved: "!bg-red-500 !text-white !font-bold hover:!bg-red-600",
+                  }}
+                  className="rounded-md border scale-125 origin-center"
+                  style={{
+                    fontSize: '1.1rem',
+                    '--cell-size': '3rem'
+                  } as any}
+                  components={{
+                    DayButton: ({ day, modifiers, ...props }: any) => {
+                      const isReserved = modifiers?.reserved || false
+                      return (
+                        <button
+                          {...props}
+                          data-reserved={isReserved ? "true" : "false"}
+                          className={`${props.className || ''} ${isReserved ? '!bg-red-500 !text-white !font-bold hover:!bg-red-600' : ''}`}
+                        />
+                      )
+                    }
+                  }}
+                />
+              </div>
               />
             </CardContent>
           </Card>

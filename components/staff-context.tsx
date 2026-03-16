@@ -33,6 +33,7 @@ interface StaffContextType {
   updateStaff: (id: string, staffData: Partial<StaffAccount>) => Promise<void>
   deactivateStaff: (id: string) => Promise<void>
   activateStaff: (id: string) => Promise<void>
+  removeStaff: (id: string) => Promise<void>
   getStaffById: (id: string) => StaffAccount | undefined
   refreshStaff: () => Promise<void>
 }
@@ -167,6 +168,27 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
     [refreshStaff],
   )
 
+  const removeStaff = useCallback(
+    async (id: string) => {
+      try {
+        const response = await fetch(`/api/staff?id=${id}`, {
+          method: 'DELETE',
+        })
+
+        if (response.ok) {
+          await refreshStaff()
+        } else {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to remove staff')
+        }
+      } catch (error) {
+        console.error('Error removing staff:', error)
+        throw error
+      }
+    },
+    [refreshStaff],
+  )
+
   const getStaffById = useCallback(
     (id: string) => {
       return staff.find((s) => s.id === id)
@@ -181,6 +203,7 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
     updateStaff,
     deactivateStaff,
     activateStaff,
+    removeStaff,
     getStaffById,
     refreshStaff,
   }

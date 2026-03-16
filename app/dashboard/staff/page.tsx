@@ -18,13 +18,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Edit2, Power, RotateCcw, Mail, Phone, Briefcase, Calendar, DollarSign } from 'lucide-react'
+import { Plus, Edit2, Trash2, RotateCcw, Mail, Phone, Briefcase, Calendar, DollarSign } from 'lucide-react'
 
 export default function StaffManagementPage() {
-  const { staff, isLoading, addStaff, updateStaff, deactivateStaff, activateStaff } = useStaff()
+  const { staff, isLoading, addStaff, updateStaff, removeStaff, activateStaff } = useStaff()
   const { toast } = useToast()
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false)
+  const [staffToRemove, setStaffToRemove] = useState<StaffAccount | null>(null)
   const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [formData, setFormData] = useState({
@@ -161,14 +163,7 @@ export default function StaffManagementPage() {
 
   const handleToggleStatus = async (staffMember: StaffAccount) => {
     try {
-      if (staffMember.status === 'active') {
-        await deactivateStaff(staffMember.id)
-        toast({
-          title: 'Staff Deactivated',
-          description: `${staffMember.firstName} ${staffMember.lastName} has been deactivated`,
-          variant: 'destructive',
-        })
-      } else {
+      if (staffMember.status === 'inactive') {
         await activateStaff(staffMember.id)
         toast({
           title: 'Staff Activated',
@@ -179,6 +174,32 @@ export default function StaffManagementPage() {
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to update staff status',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleOpenRemoveDialog = (staffMember: StaffAccount) => {
+    setStaffToRemove(staffMember)
+    setIsRemoveDialogOpen(true)
+  }
+
+  const handleRemoveStaff = async () => {
+    if (!staffToRemove) return
+
+    try {
+      await removeStaff(staffToRemove.id)
+      toast({
+        title: 'Staff Removed',
+        description: `${staffToRemove.firstName} ${staffToRemove.lastName} has been permanently removed`,
+        variant: 'destructive',
+      })
+      setIsRemoveDialogOpen(false)
+      setStaffToRemove(null)
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to remove staff member',
         variant: 'destructive',
       })
     }
@@ -416,24 +437,27 @@ export default function StaffManagementPage() {
                         <Edit2 className="h-4 w-4" />
                         Edit
                       </Button>
-                      <Button
-                        size="sm"
-                        className="gap-2"
-                        variant={staffMember.status === 'active' ? 'destructive' : 'default'}
-                        onClick={() => handleToggleStatus(staffMember)}
-                      >
-                        {staffMember.status === 'active' ? (
-                          <>
-                            <Power className="h-4 w-4" />
-                            Deactivate
-                          </>
-                        ) : (
-                          <>
-                            <RotateCcw className="h-4 w-4" />
-                            Activate
-                          </>
-                        )}
-                      </Button>
+                      {staffMember.status === 'active' ? (
+                        <Button
+                          size="sm"
+                          className="gap-2"
+                          variant="destructive"
+                          onClick={() => handleOpenRemoveDialog(staffMember)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Remove
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="gap-2"
+                          variant="default"
+                          onClick={() => handleToggleStatus(staffMember)}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          Activate
+                        </Button>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-end">
@@ -561,6 +585,38 @@ export default function StaffManagementPage() {
                 Cancel
               </Button>
               <Button onClick={handleEditStaff}>Update Staff</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Remove Confirmation Dialog */}
+        <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Remove Staff Member</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to permanently remove this staff member? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            {staffToRemove && (
+              <div className="p-4 rounded-lg bg-red-50 border border-red-200">
+                <p className="font-semibold text-red-900">
+                  {staffToRemove.firstName} {staffToRemove.lastName}
+                </p>
+                <p className="text-sm text-red-700 mt-1">{staffToRemove.email}</p>
+                <p className="text-sm text-red-700">{staffToRemove.position}</p>
+                <p className="text-xs text-red-600 mt-3">
+                  This will permanently delete the staff record and associated user account.
+                </p>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsRemoveDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleRemoveStaff}>
+                Remove Permanently
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
