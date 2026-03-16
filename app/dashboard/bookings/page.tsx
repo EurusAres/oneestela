@@ -1,10 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { MainLayout } from "@/components/main-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog"
@@ -99,10 +101,22 @@ function BookingDetailDialog({ booking, open, onClose }: { booking: Booking | nu
 export default function BookingsPage() {
   const { getAllBookings, updateBookingStatus } = useBookings()
   const { toast } = useToast()
+  const searchParams = useSearchParams()
   const allBookings = getAllBookings()
 
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState("all")
+
+  // Get status from URL parameter
+  const statusFilter = searchParams.get('status')
+
+  useEffect(() => {
+    // Set active tab based on URL parameter
+    if (statusFilter && ['pending', 'confirmed', 'cancelled', 'completed'].includes(statusFilter)) {
+      setActiveTab(statusFilter)
+    }
+  }, [statusFilter])
 
   useEffect(() => {
     const recentCancellations = allBookings.filter(
@@ -144,6 +158,96 @@ export default function BookingsPage() {
   const pendingBookings   = allBookings.filter((b) => b.status === "pending")
   const confirmedBookings = allBookings.filter((b) => b.status === "confirmed")
   const completedBookings = allBookings.filter((b) => b.status === "completed")
+  const cancelledBookings = allBookings.filter((b) => b.status === "cancelled")
+
+  const renderBookingList = (bookings: Booking[]) => (
+    <div className="space-y-4">
+      {bookings.map((booking) => (
+        <div key={booking.id} className="rounded-lg border p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold">{booking.eventName}</h3>
+            <Badge className={getStatusColor(booking.status)}>
+              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
+            <div className="flex items-center">
+              <Calendar className="mr-2 h-4 w-4" />
+              {new Date(booking.date).toLocaleDateString()}
+            </div>
+            <div className="flex items-center">
+              <Clock className="mr-2 h-4 w-4" />
+              {booking.startTime} - {booking.endTime}
+            </div>
+            <div className="flex items-center">
+              <Users className="mr-2 h-4 w-4" />
+              {booking.guestCount} guests
+            </div>
+          </div>
+
+          <div className="bg-gray-50 rounded-lg p-4 mb-4">
+            <h4 className="font-medium mb-2">Customer Information</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <p className="font-medium">{booking.userInfo?.name}</p>
+              <div className="flex items-center">
+                <Mail className="mr-2 h-4 w-4" />
+                {booking.userInfo?.email}
+              </div>
+              <div className="flex items-center">
+                <Phone className="mr-2 h-4 w-4" />
+                {booking.userInfo?.phone}
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-4 text-sm text-gray-600 space-y-1">
+            <p><span className="font-medium">Event Type:</span> {booking.eventType}</p>
+            <p><span className="font-medium">Booking ID:</span> {booking.id}</p>
+            <p><span className="font-medium">Submitted:</span> {new Date(booking.submittedAt).toLocaleDateString()}</p>
+            {booking.specialRequests && (
+              <p><span className="font-medium">Special Requests:</span> {booking.specialRequests}</p>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {booking.status === "pending" && (
+              <>
+                <Button size="sm" className="bg-green-600 hover:bg-green-700"
+                  onClick={() => handleStatusUpdate(booking.id, "confirmed")}>
+                  Confirm Booking
+                </Button>
+                <Button size="sm" variant="destructive"
+                  onClick={() => handleStatusUpdate(booking.id, "declined")}>
+                  Decline Booking
+                </Button>
+              </>
+            )}
+            {booking.status === "confirmed" && (
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => handleStatusUpdate(booking.id, "completed")}>
+                Mark as Completed
+              </Button>
+            )}
+            <Button size="sm" variant="outline"
+              onClick={() => handleContactCustomer(booking)}>
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Contact Customer
+            </Button>
+            <Button size="sm" variant="outline"
+              onClick={() => handleViewDetails(booking)}>
+              <FileText className="mr-2 h-4 w-4" />
+              View Details
+            </Button>
+          </div>
+        </div>
+      ))}
+
+      {bookings.length === 0 && (
+        <div className="text-center py-8 text-gray-500">No bookings found</div>
+      )}
+    </div>
+  )
 
   return (
     <MainLayout>
@@ -170,96 +274,39 @@ export default function BookingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>All Booking Requests</CardTitle>
-            <CardDescription>Manage and update booking statuses</CardDescription>
+            <CardTitle>Booking Management</CardTitle>
+            <CardDescription>Manage and update booking statuses by category</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {allBookings.map((booking) => (
-                <div key={booking.id} className="rounded-lg border p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold">{booking.eventName}</h3>
-                    <Badge className={getStatusColor(booking.status)}>
-                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
-                    <div className="flex items-center">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {new Date(booking.date).toLocaleDateString()}
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="mr-2 h-4 w-4" />
-                      {booking.startTime} - {booking.endTime}
-                    </div>
-                    <div className="flex items-center">
-                      <Users className="mr-2 h-4 w-4" />
-                      {booking.guestCount} guests
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                    <h4 className="font-medium mb-2">Customer Information</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <p className="font-medium">{booking.userInfo?.name}</p>
-                      <div className="flex items-center">
-                        <Mail className="mr-2 h-4 w-4" />
-                        {booking.userInfo?.email}
-                      </div>
-                      <div className="flex items-center">
-                        <Phone className="mr-2 h-4 w-4" />
-                        {booking.userInfo?.phone}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mb-4 text-sm text-gray-600 space-y-1">
-                    <p><span className="font-medium">Event Type:</span> {booking.eventType}</p>
-                    <p><span className="font-medium">Booking ID:</span> {booking.id}</p>
-                    <p><span className="font-medium">Submitted:</span> {new Date(booking.submittedAt).toLocaleDateString()}</p>
-                    {booking.specialRequests && (
-                      <p><span className="font-medium">Special Requests:</span> {booking.specialRequests}</p>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {booking.status === "pending" && (
-                      <>
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700"
-                          onClick={() => handleStatusUpdate(booking.id, "confirmed")}>
-                          Confirm Booking
-                        </Button>
-                        <Button size="sm" variant="destructive"
-                          onClick={() => handleStatusUpdate(booking.id, "declined")}>
-                          Decline Booking
-                        </Button>
-                      </>
-                    )}
-                    {booking.status === "confirmed" && (
-                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700"
-                        onClick={() => handleStatusUpdate(booking.id, "completed")}>
-                        Mark as Completed
-                      </Button>
-                    )}
-                    <Button size="sm" variant="outline"
-                      onClick={() => handleContactCustomer(booking)}>
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      Contact Customer
-                    </Button>
-                    <Button size="sm" variant="outline"
-                      onClick={() => handleViewDetails(booking)}>
-                      <FileText className="mr-2 h-4 w-4" />
-                      View Details
-                    </Button>
-                  </div>
-                </div>
-              ))}
-
-              {allBookings.length === 0 && (
-                <div className="text-center py-8 text-gray-500">No booking requests found</div>
-              )}
-            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="all">All ({allBookings.length})</TabsTrigger>
+                <TabsTrigger value="pending">Pending ({pendingBookings.length})</TabsTrigger>
+                <TabsTrigger value="confirmed">Confirmed ({confirmedBookings.length})</TabsTrigger>
+                <TabsTrigger value="completed">Completed ({completedBookings.length})</TabsTrigger>
+                <TabsTrigger value="cancelled">Cancelled ({cancelledBookings.length})</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="all" className="mt-6">
+                {renderBookingList(allBookings)}
+              </TabsContent>
+              
+              <TabsContent value="pending" className="mt-6">
+                {renderBookingList(pendingBookings)}
+              </TabsContent>
+              
+              <TabsContent value="confirmed" className="mt-6">
+                {renderBookingList(confirmedBookings)}
+              </TabsContent>
+              
+              <TabsContent value="completed" className="mt-6">
+                {renderBookingList(completedBookings)}
+              </TabsContent>
+              
+              <TabsContent value="cancelled" className="mt-6">
+                {renderBookingList(cancelledBookings)}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
