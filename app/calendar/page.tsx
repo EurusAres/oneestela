@@ -139,12 +139,8 @@ export default function CalendarPage() {
                 modifiers={{
                   reserved: reservedDates,
                 }}
-                modifiersStyles={{
-                  reserved: {
-                    backgroundColor: "#ef4444",
-                    color: "white",
-                    fontWeight: "bold",
-                  },
+                modifiersClassNames={{
+                  reserved: "bg-red-500 text-white font-bold hover:bg-red-600",
                 }}
                 className="rounded-md border"
               />
