@@ -400,6 +400,16 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
                   <Label className="text-base font-medium">Select Date</Label>
+                  <style>{`
+                    .rdp-day_button:has([data-reserved="true"]) {
+                      background-color: #ef4444 !important;
+                      color: white !important;
+                      font-weight: bold !important;
+                    }
+                    .rdp-day_button:has([data-reserved="true"]):hover {
+                      background-color: #dc2626 !important;
+                    }
+                  `}</style>
                   <Calendar
                     mode="single"
                     selected={selectedDate}
@@ -409,9 +419,27 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
                       reserved: reservedDates,
                     }}
                     modifiersClassNames={{
-                      reserved: "bg-red-500 text-white font-bold line-through hover:bg-red-600",
+                      reserved: "!bg-red-500 !text-white !font-bold line-through hover:!bg-red-600",
                     }}
                     className="rounded-md border"
+                    components={{
+                      DayButton: ({ day, modifiers, ...props }: any) => {
+                        const isReserved = modifiers.reserved
+                        return (
+                          <button
+                            {...props}
+                            data-reserved={isReserved}
+                            style={isReserved ? {
+                              backgroundColor: '#ef4444',
+                              color: 'white',
+                              fontWeight: 'bold',
+                              textDecoration: 'line-through'
+                            } : undefined}
+                            className={`${props.className} ${isReserved ? 'bg-red-500 text-white font-bold hover:bg-red-600' : ''}`}
+                          />
+                        )
+                      }
+                    }}
                   />
                   <div className="mt-2 text-xs text-gray-600 space-y-1">
                     <div className="flex items-center gap-2">
