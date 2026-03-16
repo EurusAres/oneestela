@@ -146,8 +146,8 @@ export function MainLayout({ children }: MainLayoutProps) {
             })}
           </nav>
           <div className="border-t p-4 space-y-2">
-            {/* Show change password option for staff members */}
-            {userRole === 'staff' && userId && (
+            {/* Show change password option for admin and staff members */}
+            {(userRole === 'admin' || userRole === 'staff') && userId && (
               <ChangePasswordDialog userId={userId} userRole={userRole} />
             )}
             <Button variant="outline" className="flex w-full items-center justify-start bg-transparent" onClick={handleLogout}>
