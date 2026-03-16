@@ -132,6 +132,16 @@ export default function CalendarPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
+              <style>{`
+                .rdp-day_button:has([data-reserved="true"]) {
+                  background-color: #ef4444 !important;
+                  color: white !important;
+                  font-weight: bold !important;
+                }
+                .rdp-day_button:has([data-reserved="true"]):hover {
+                  background-color: #dc2626 !important;
+                }
+              `}</style>
               <Calendar
                 mode="single"
                 selected={date}
@@ -140,9 +150,26 @@ export default function CalendarPage() {
                   reserved: reservedDates,
                 }}
                 modifiersClassNames={{
-                  reserved: "bg-red-500 text-white font-bold hover:bg-red-600",
+                  reserved: "!bg-red-500 !text-white !font-bold hover:!bg-red-600",
                 }}
                 className="rounded-md border"
+                components={{
+                  DayButton: ({ day, modifiers, ...props }: any) => {
+                    const isReserved = modifiers.reserved
+                    return (
+                      <button
+                        {...props}
+                        data-reserved={isReserved}
+                        style={isReserved ? {
+                          backgroundColor: '#ef4444',
+                          color: 'white',
+                          fontWeight: 'bold'
+                        } : undefined}
+                        className={`${props.className} ${isReserved ? 'bg-red-500 text-white font-bold hover:bg-red-600' : ''}`}
+                      />
+                    )
+                  }
+                }}
               />
             </CardContent>
           </Card>
