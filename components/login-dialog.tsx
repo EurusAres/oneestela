@@ -74,6 +74,12 @@ export function LoginDialog({ className }: LoginDialogProps) {
             description: "Redirecting to dashboard...",
           })
           router.push("/dashboard")
+        } else if (user.role === "staff") {
+          toast({
+            title: "Welcome Staff!",
+            description: "Redirecting to dashboard...",
+          })
+          router.push("/dashboard")
         } else {
           toast({
             title: "Success",

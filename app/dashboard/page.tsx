@@ -3,11 +3,10 @@
 import { MainLayout } from "@/components/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { useReports } from "@/components/reports-context"
 import { useBookings } from "@/components/booking-context"
 import {
-  Calendar, Users, Star, FileText, DollarSign, TrendingUp,
+  Calendar, FileText, DollarSign, TrendingUp,
   TrendingDown, RefreshCw, CheckCircle, XCircle, Clock, MessageSquare,
 } from "lucide-react"
 import {
@@ -50,13 +49,32 @@ export default function DashboardPage() {
     toast({ title: `Booking ${status}`, description: `Booking #${id} has been ${status}.` })
   }
 
+  // Show loading state on initial load
+  if (!stats && isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">Loading dashboard data...</p>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
   return (
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground">Real-time overview of One Estela Place</p>
+            {stats && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Last updated: {new Date().toLocaleTimeString()}
+              </p>
+            )}
           </div>
           <Button onClick={generateReports} disabled={isLoading} variant="outline">
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
@@ -104,25 +122,27 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Monthly Bookings</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{s?.totalUsers ?? 0}</div>
+              <div className="text-2xl font-bold">{stats?.thisMonth.bookings ?? 0}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                <span className="text-yellow-600">{s?.pending ?? 0} pending</span> bookings
+                This month
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{s?.avgRating ?? "—"}</div>
-              <p className="text-xs text-muted-foreground mt-1">{s?.totalReviews ?? 0} reviews</p>
+              <div className="text-2xl font-bold">₱{(stats?.thisMonth.revenue ?? 0).toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                This month
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -229,101 +249,128 @@ export default function DashboardPage() {
         )}
 
         {/* Recent Bookings */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <FileText className="h-5 w-5" /> Recent Bookings
-          </h2>
-          <div className="rounded-md border overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left font-medium">ID</th>
-                  <th className="px-4 py-3 text-left font-medium">Client</th>
-                  <th className="px-4 py-3 text-left font-medium">Room</th>
-                  <th className="px-4 py-3 text-left font-medium">Date</th>
-                  <th className="px-4 py-3 text-left font-medium">Amount</th>
-                  <th className="px-4 py-3 text-left font-medium">Status</th>
-                  <th className="px-4 py-3 text-left font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(stats?.recentBookings ?? []).length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                      No bookings yet
-                    </td>
-                  </tr>
-                ) : (
-                  (stats?.recentBookings ?? []).map((b: any) => (
-                    <tr key={b.id} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-3 text-muted-foreground">#{b.id}</td>
-                      <td className="px-4 py-3 font-medium">{b.client_name || "—"}</td>
-                      <td className="px-4 py-3">{b.room_name || "—"}</td>
-                      <td className="px-4 py-3">
-                        {b.check_in_date ? new Date(b.check_in_date).toLocaleDateString() : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        {b.total_price ? `₱${Number(b.total_price).toLocaleString()}` : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={b.status} />
-                      </td>
-                      <td className="px-4 py-3">
-                        {b.status === "pending" && (
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm" variant="outline"
-                              className="h-7 px-2 text-green-600 border-green-200 hover:bg-green-50"
-                              onClick={() => handleStatusUpdate(b.id.toString(), "confirmed")}
-                            >
-                              <CheckCircle className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm" variant="outline"
-                              className="h-7 px-2 text-red-600 border-red-200 hover:bg-red-50"
-                              onClick={() => handleStatusUpdate(b.id.toString(), "cancelled")}
-                            >
-                              <XCircle className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Top Customers */}
-        {(stats?.topCustomers?.length ?? 0) > 0 && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Users className="h-5 w-5" /> Top Customers
-            </h2>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" /> Recent Customer Bookings
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Showing {stats?.recentBookings?.length ?? 0} most recent bookings from customers
+                </p>
+              </div>
+              {stats?.recentBookings && stats.recentBookings.length > 0 && (
+                <div className="text-right">
+                  <div className="text-2xl font-bold">{stats.recentBookings.length}</div>
+                  <div className="text-xs text-muted-foreground">Total shown</div>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
             <div className="rounded-md border overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-gray-50">
-                    <th className="px-4 py-3 text-left font-medium">Customer</th>
-                    <th className="px-4 py-3 text-left font-medium">Bookings</th>
-                    <th className="px-4 py-3 text-left font-medium">Total Revenue</th>
+                    <th className="px-4 py-3 text-left font-medium">ID</th>
+                    <th className="px-4 py-3 text-left font-medium">Client</th>
+                    <th className="px-4 py-3 text-left font-medium">Room</th>
+                    <th className="px-4 py-3 text-left font-medium">Check-in Date</th>
+                    <th className="px-4 py-3 text-left font-medium">Guests</th>
+                    <th className="px-4 py-3 text-left font-medium">Amount</th>
+                    <th className="px-4 py-3 text-left font-medium">Status</th>
+                    <th className="px-4 py-3 text-left font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {stats?.topCustomers.map((c, i) => (
-                    <tr key={i} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium">{c.name}</td>
-                      <td className="px-4 py-3">{c.bookings}</td>
-                      <td className="px-4 py-3 text-green-600 font-medium">₱{Number(c.revenue).toLocaleString()}</td>
+                  {(stats?.recentBookings ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                        No customer bookings found
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    (stats?.recentBookings ?? []).map((b: any) => (
+                      <tr key={b.id} className="border-b hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-muted-foreground font-mono">#{b.id}</td>
+                        <td className="px-4 py-3">
+                          <div className="font-medium">{b.client_name || "—"}</div>
+                          {b.client_email && (
+                            <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+                              {b.client_email}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-medium">{b.room_name || "—"}</div>
+                          {b.room_capacity && (
+                            <div className="text-xs text-muted-foreground">Capacity: {b.room_capacity}</div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {b.check_in_date ? (
+                            <div>
+                              <div>{new Date(b.check_in_date).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                              })}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(b.check_in_date).toLocaleTimeString('en-US', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                })}
+                              </div>
+                            </div>
+                          ) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {b.number_of_guests || "—"}
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-green-700">
+                          {b.total_price ? `₱${Number(b.total_price).toLocaleString()}` : "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={b.status} />
+                        </td>
+                        <td className="px-4 py-3">
+                          {b.status === "pending" && (
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm" 
+                                variant="outline"
+                                className="h-7 px-2 text-green-600 border-green-200 hover:bg-green-50"
+                                onClick={() => handleStatusUpdate(b.id.toString(), "confirmed")}
+                                title="Confirm booking"
+                              >
+                                <CheckCircle className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm" 
+                                variant="outline"
+                                className="h-7 px-2 text-red-600 border-red-200 hover:bg-red-50"
+                                onClick={() => handleStatusUpdate(b.id.toString(), "cancelled")}
+                                title="Cancel booking"
+                              >
+                                <XCircle className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                          {b.status !== "pending" && (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
+          </CardContent>
+        </Card>
+
+
       </div>
     </MainLayout>
   )

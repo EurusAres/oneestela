@@ -3,6 +3,8 @@ import { executeQuery } from '@/lib/db';
 
 export async function GET() {
   try {
+    console.log('Fetching dashboard stats...');
+    
     // Summary counts
     const [[totals]] = await Promise.all([
       executeQuery(`
@@ -17,25 +19,35 @@ export async function GET() {
       `) as any,
     ]);
 
+    console.log('Totals:', totals);
+
     // Active users
     const [[userStats]] = await Promise.all([
       executeQuery(`SELECT COUNT(*) as total_users FROM users WHERE role = 'user'`) as any,
     ]);
 
-    // Average rating
-    const [[ratingStats]] = await Promise.all([
-      executeQuery(`SELECT COALESCE(AVG(rating), 0) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE is_approved = 1`) as any,
-    ]);
 
-    // Recent bookings (last 10)
+
+    // Recent bookings (last 10) - ordered by most recent first
     const recentBookings = await executeQuery(`
-      SELECT b.id, b.status, b.check_in_date, b.check_out_date, b.total_price,
-             b.special_requests, b.created_at,
-             u.full_name as client_name, u.email as client_email,
-             o.name as room_name
+      SELECT 
+        b.id, 
+        b.status, 
+        b.check_in_date, 
+        b.check_out_date, 
+        b.total_price,
+        b.number_of_guests,
+        b.special_requests, 
+        b.created_at,
+        b.updated_at,
+        u.full_name as client_name, 
+        u.email as client_email,
+        u.phone as client_phone,
+        o.name as room_name,
+        o.capacity as room_capacity
       FROM bookings b
-      LEFT JOIN users u ON b.user_id = u.id
-      LEFT JOIN office_rooms o ON b.office_room_id = o.id
+      INNER JOIN users u ON b.user_id = u.id
+      INNER JOIN office_rooms o ON b.office_room_id = o.id
       ORDER BY b.created_at DESC
       LIMIT 10
     `) as any[];
@@ -86,16 +98,7 @@ export async function GET() {
       ORDER BY month ASC
     `) as any[];
 
-    // Top customers by booking count
-    const topCustomers = await executeQuery(`
-      SELECT u.full_name as name, COUNT(b.id) as bookings,
-             COALESCE(SUM(b.total_price), 0) as revenue
-      FROM bookings b
-      JOIN users u ON b.user_id = u.id
-      GROUP BY u.id, u.full_name
-      ORDER BY revenue DESC
-      LIMIT 5
-    `) as any[];
+
 
     // Contact messages stats
     const [[msgStats]] = await Promise.all([
@@ -125,6 +128,12 @@ export async function GET() {
       `) as any,
     ]);
 
+    console.log('This month:', thisMonth);
+    console.log('Last month:', lastMonth);
+    console.log('Recent bookings count:', recentBookings.length);
+    console.log('Monthly bookings data:', monthlyBookings);
+    console.log('Monthly revenue data:', monthlyRevenue);
+
     return NextResponse.json({
       summary: {
         totalBookings: totals.total_bookings,
@@ -134,8 +143,6 @@ export async function GET() {
         completed: totals.completed,
         totalRevenue: parseFloat(totals.total_revenue),
         totalUsers: userStats.total_users,
-        avgRating: parseFloat(ratingStats.avg_rating).toFixed(1),
-        totalReviews: ratingStats.total_reviews,
         unreadMessages: msgStats.unread,
         totalMessages: msgStats.total,
       },
@@ -153,7 +160,6 @@ export async function GET() {
       bookingsByRoom,
       statusBreakdown,
       newSignups,
-      topCustomers,
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);

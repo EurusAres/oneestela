@@ -236,8 +236,9 @@ export default function BookingsPage() {
                         </Button>
                       </>
                     )}
-                    {booking.status === "confirmed" && new Date(booking.date) < new Date() && (
-                      <Button size="sm" onClick={() => handleStatusUpdate(booking.id, "completed")}>
+                    {booking.status === "confirmed" && (
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700"
+                        onClick={() => handleStatusUpdate(booking.id, "completed")}>
                         Mark as Completed
                       </Button>
                     )}

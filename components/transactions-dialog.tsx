@@ -94,6 +94,7 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
 
     return {
       status: paymentProof.status,
+      adminNote: paymentProof.adminNote,
       icon: paymentProof.status === "verified" ? CheckCircle : paymentProof.status === "rejected" ? AlertCircle : Clock,
       color:
         paymentProof.status === "verified"
@@ -157,6 +158,33 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
                         {booking.specialRequests && (
                           <p className="text-sm text-gray-600">Special Requests: {booking.specialRequests}</p>
                         )}
+                        
+                        {/* Show rejection reason if payment was rejected */}
+                        {paymentStatus?.status === "rejected" && paymentStatus.adminNote && (
+                          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <div className="flex items-start space-x-2">
+                              <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-red-800">Payment Rejected</p>
+                                <p className="text-sm text-red-700 mt-1">{paymentStatus.adminNote}</p>
+                                <p className="text-xs text-red-600 mt-2">Please upload a new payment proof or contact support.</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Show verification success message */}
+                        {paymentStatus?.status === "verified" && (
+                          <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="flex items-start space-x-2">
+                              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-green-800">Payment Verified</p>
+                                <p className="text-sm text-green-700 mt-1">Your payment has been verified and your booking is confirmed.</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-semibold">{booking.total || "Pending Quote"}</p>
@@ -176,10 +204,18 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
                       variant="outline"
                       size="sm"
                       onClick={() => handleUploadPaymentProof(booking)}
-                      className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                      className={
+                        paymentStatus?.status === "rejected"
+                          ? "bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                          : "bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                      }
                     >
                       <Upload className="mr-2 h-4 w-4" />
-                      {getPaymentProofByBooking(booking.id) ? "View Payment Proof" : "Upload Payment Proof"}
+                      {paymentStatus?.status === "rejected"
+                        ? "Re-upload Payment Proof"
+                        : getPaymentProofByBooking(booking.id)
+                          ? "View Payment Proof"
+                          : "Upload Payment Proof"}
                     </Button>
                   )}
 

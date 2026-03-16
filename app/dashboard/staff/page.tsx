@@ -18,10 +18,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Edit2, Power, RotateCcw, Mail, Phone, Briefcase, Calendar } from 'lucide-react'
+import { Plus, Edit2, Power, RotateCcw, Mail, Phone, Briefcase, Calendar, DollarSign } from 'lucide-react'
 
 export default function StaffManagementPage() {
-  const { staff, addStaff, updateStaff, deactivateStaff, activateStaff } = useStaff()
+  const { staff, isLoading, addStaff, updateStaff, deactivateStaff, activateStaff } = useStaff()
   const { toast } = useToast()
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -33,8 +33,10 @@ export default function StaffManagementPage() {
     email: '',
     phone: '',
     position: '',
+    department: '',
     hireDate: '',
-    status: 'Active' as const,
+    salary: '',
+    status: 'active' as const,
   })
 
   const filteredStaff = staff.filter(
@@ -45,8 +47,8 @@ export default function StaffManagementPage() {
       s.position.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const activeStaffCount = staff.filter((s) => s.status === 'Active').length
-  const inactiveStaffCount = staff.filter((s) => s.status === 'Inactive').length
+  const activeStaffCount = staff.filter((s) => s.status === 'active').length
+  const inactiveStaffCount = staff.filter((s) => s.status === 'inactive').length
 
   const resetForm = () => {
     setFormData({
@@ -55,13 +57,15 @@ export default function StaffManagementPage() {
       email: '',
       phone: '',
       position: '',
+      department: '',
       hireDate: '',
-      status: 'Active',
+      salary: '',
+      status: 'active',
     })
     setEditingStaff(null)
   }
 
-  const handleAddStaff = () => {
+  const handleAddStaff = async () => {
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.position || !formData.hireDate) {
       toast({
         title: 'Validation Error',
@@ -71,26 +75,35 @@ export default function StaffManagementPage() {
       return
     }
 
-    addStaff({
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      phone: formData.phone,
-      position: formData.position,
-      hireDate: formData.hireDate,
-      status: 'Active',
-    })
+    try {
+      await addStaff({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        position: formData.position,
+        department: formData.department,
+        hireDate: formData.hireDate,
+        salary: formData.salary || '0',
+      })
 
-    toast({
-      title: 'Staff Added Successfully',
-      description: `${formData.firstName} ${formData.lastName} has been added with Staff role`,
-    })
+      toast({
+        title: 'Staff Added Successfully',
+        description: `${formData.firstName} ${formData.lastName} has been added with Staff role`,
+      })
 
-    resetForm()
-    setIsAddDialogOpen(false)
+      resetForm()
+      setIsAddDialogOpen(false)
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to add staff member',
+        variant: 'destructive',
+      })
+    }
   }
 
-  const handleEditStaff = () => {
+  const handleEditStaff = async () => {
     if (!editingStaff) return
 
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.position || !formData.hireDate) {
@@ -102,22 +115,32 @@ export default function StaffManagementPage() {
       return
     }
 
-    updateStaff(editingStaff.id, {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      phone: formData.phone,
-      position: formData.position,
-      hireDate: formData.hireDate,
-    })
+    try {
+      await updateStaff(editingStaff.id, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        position: formData.position,
+        department: formData.department,
+        hireDate: formData.hireDate,
+        salary: formData.salary,
+      })
 
-    toast({
-      title: 'Staff Updated Successfully',
-      description: `${formData.firstName} ${formData.lastName}'s information has been updated`,
-    })
+      toast({
+        title: 'Staff Updated Successfully',
+        description: `${formData.firstName} ${formData.lastName}'s information has been updated`,
+      })
 
-    resetForm()
-    setIsEditDialogOpen(false)
+      resetForm()
+      setIsEditDialogOpen(false)
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update staff member',
+        variant: 'destructive',
+      })
+    }
   }
 
   const handleOpenEditDialog = (staffMember: StaffAccount) => {
@@ -128,25 +151,35 @@ export default function StaffManagementPage() {
       email: staffMember.email,
       phone: staffMember.phone,
       position: staffMember.position,
+      department: staffMember.department,
       hireDate: staffMember.hireDate,
+      salary: staffMember.salary,
       status: staffMember.status,
     })
     setIsEditDialogOpen(true)
   }
 
-  const handleToggleStatus = (staffMember: StaffAccount) => {
-    if (staffMember.status === 'Active') {
-      deactivateStaff(staffMember.id)
+  const handleToggleStatus = async (staffMember: StaffAccount) => {
+    try {
+      if (staffMember.status === 'active') {
+        await deactivateStaff(staffMember.id)
+        toast({
+          title: 'Staff Deactivated',
+          description: `${staffMember.firstName} ${staffMember.lastName} has been deactivated`,
+          variant: 'destructive',
+        })
+      } else {
+        await activateStaff(staffMember.id)
+        toast({
+          title: 'Staff Activated',
+          description: `${staffMember.firstName} ${staffMember.lastName} has been activated`,
+        })
+      }
+    } catch (error) {
       toast({
-        title: 'Staff Deactivated',
-        description: `${staffMember.firstName} ${staffMember.lastName} has been deactivated`,
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update staff status',
         variant: 'destructive',
-      })
-    } else {
-      activateStaff(staffMember.id)
-      toast({
-        title: 'Staff Activated',
-        description: `${staffMember.firstName} ${staffMember.lastName} has been activated`,
       })
     }
   }
@@ -225,13 +258,45 @@ export default function StaffManagementPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="hireDate">Hire Date *</Label>
+                  <Label htmlFor="department">Department</Label>
                   <Input
-                    id="hireDate"
-                    type="date"
-                    value={formData.hireDate}
-                    onChange={(e) => setFormData({ ...formData, hireDate: e.target.value })}
+                    id="department"
+                    placeholder="e.g., Operations"
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="hireDate">Hire Date *</Label>
+                    <Input
+                      id="hireDate"
+                      type="date"
+                      value={formData.hireDate}
+                      onChange={(e) => setFormData({ ...formData, hireDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="salary">Salary (₱)</Label>
+                    <Input
+                      id="salary"
+                      type="number"
+                      placeholder="0.00"
+                      value={formData.salary}
+                      onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    <strong>Role:</strong> Staff (automatically assigned)
+                  </p>
+                  <p className="text-xs text-blue-700 mt-2">
+                    <strong>Default Password:</strong> staff123
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    New staff members can log in using their email and this password.
+                  </p>
                 </div>
               </div>
               <DialogFooter>
@@ -299,7 +364,11 @@ export default function StaffManagementPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {filteredStaff.length > 0 ? (
+            {isLoading ? (
+              <div className="py-8 text-center text-muted-foreground">
+                Loading staff members...
+              </div>
+            ) : filteredStaff.length > 0 ? (
               <div className="space-y-4">
                 {filteredStaff.map((staffMember) => (
                   <div
@@ -322,11 +391,18 @@ export default function StaffManagementPage() {
                         <div className="flex items-center gap-2">
                           <Briefcase className="h-4 w-4 flex-shrink-0" />
                           <span>{staffMember.position}</span>
+                          {staffMember.department && <span className="text-xs">• {staffMember.department}</span>}
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 flex-shrink-0" />
                           <span>Hired: {new Date(staffMember.hireDate).toLocaleDateString()}</span>
                         </div>
+                        {staffMember.salary && parseFloat(staffMember.salary) > 0 && (
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4 flex-shrink-0" />
+                            <span>₱{parseFloat(staffMember.salary).toLocaleString()}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -343,10 +419,10 @@ export default function StaffManagementPage() {
                       <Button
                         size="sm"
                         className="gap-2"
-                        variant={staffMember.status === 'Active' ? 'destructive' : 'default'}
+                        variant={staffMember.status === 'active' ? 'destructive' : 'default'}
                         onClick={() => handleToggleStatus(staffMember)}
                       >
-                        {staffMember.status === 'Active' ? (
+                        {staffMember.status === 'active' ? (
                           <>
                             <Power className="h-4 w-4" />
                             Deactivate
@@ -363,12 +439,12 @@ export default function StaffManagementPage() {
                     <div className="flex items-center justify-end">
                       <span
                         className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                          staffMember.status === 'Active'
+                          staffMember.status === 'active'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-amber-100 text-amber-800'
                         }`}
                       >
-                        {staffMember.status}
+                        {staffMember.status.charAt(0).toUpperCase() + staffMember.status.slice(1)}
                       </span>
                     </div>
                   </div>
@@ -439,17 +515,44 @@ export default function StaffManagementPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-hireDate">Hire Date *</Label>
+                <Label htmlFor="edit-department">Department</Label>
                 <Input
-                  id="edit-hireDate"
-                  type="date"
-                  value={formData.hireDate}
-                  onChange={(e) => setFormData({ ...formData, hireDate: e.target.value })}
+                  id="edit-department"
+                  placeholder="e.g., Operations"
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-hireDate">Hire Date *</Label>
+                  <Input
+                    id="edit-hireDate"
+                    type="date"
+                    value={formData.hireDate}
+                    onChange={(e) => setFormData({ ...formData, hireDate: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-salary">Salary (₱)</Label>
+                  <Input
+                    id="edit-salary"
+                    type="number"
+                    placeholder="0.00"
+                    value={formData.salary}
+                    onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
                 <p className="text-sm text-blue-800">
                   <strong>Role:</strong> Staff (permanent and cannot be changed)
+                </p>
+                <p className="text-xs text-blue-700 mt-2">
+                  <strong>Default Password:</strong> staff123
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  Staff members can log in using their email and this password.
                 </p>
               </div>
             </div>
