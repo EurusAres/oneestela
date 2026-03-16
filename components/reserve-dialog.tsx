@@ -51,7 +51,10 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
   const allBookings = getAllBookings()
   const reservedDates = allBookings
     .filter((booking) => booking.status === "confirmed" || booking.status === "pending")
-    .map((booking) => new Date(booking.date))
+    .map((booking) => {
+      const [year, month, day] = booking.date.split('-').map(Number)
+      return new Date(year, month - 1, day)
+    })
 
   const isDateReserved = (date: Date) => {
     return reservedDates.some((reservedDate) => reservedDate.toDateString() === date.toDateString())
@@ -158,12 +161,20 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
     }
 
     // Add booking to the system
+    // Format date as YYYY-MM-DD without timezone conversion
+    const formatLocalDate = (date: Date) => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
     addBooking({
       userId: user.id,
       eventName: bookingData.eventName,
       eventType: bookingData.eventType,
       guestCount: Number.parseInt(bookingData.guestCount),
-      date: selectedDate?.toISOString().split("T")[0] || "",
+      date: selectedDate ? formatLocalDate(selectedDate) : "",
       startTime: bookingData.startTime,
       endTime: bookingData.endTime,
       specialRequests: bookingData.specialRequests,
@@ -397,19 +408,9 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
                 </p>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-6 md:grid-cols-[1.2fr_1fr]">
                 <div className="flex flex-col">
                   <Label className="text-base font-medium mb-2">Select Date</Label>
-                  <style>{`
-                    .rdp-day_button:has([data-reserved="true"]) {
-                      background-color: #ef4444 !important;
-                      color: white !important;
-                      font-weight: bold !important;
-                    }
-                    .rdp-day_button:has([data-reserved="true"]):hover {
-                      background-color: #dc2626 !important;
-                    }
-                  `}</style>
                   <div className="flex justify-center">
                     <Calendar
                       mode="single"
@@ -422,25 +423,19 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
                       modifiersClassNames={{
                         reserved: "!bg-red-500 !text-white !font-bold line-through hover:!bg-red-600",
                       }}
-                      className="rounded-md border"
+                      className="rounded-md border w-full"
                       style={{
-                        fontSize: '0.95rem',
-                        '--cell-size': '2.5rem'
+                        fontSize: '1rem',
+                        '--cell-size': '2.8rem'
                       } as any}
                       components={{
                         DayButton: ({ day, modifiers, ...props }: any) => {
-                          const isReserved = modifiers.reserved
+                          const isReserved = modifiers?.reserved || false
                           return (
                             <button
                               {...props}
-                              data-reserved={isReserved}
-                              style={isReserved ? {
-                                backgroundColor: '#ef4444',
-                                color: 'white',
-                                fontWeight: 'bold',
-                                textDecoration: 'line-through'
-                              } : undefined}
-                              className={`${props.className} ${isReserved ? 'bg-red-500 text-white font-bold hover:bg-red-600' : ''}`}
+                              data-reserved={isReserved ? "true" : "false"}
+                              className={`${props.className || ''} ${isReserved ? '!bg-red-500 !text-white !font-bold hover:!bg-red-600' : ''}`}
                             />
                           )
                         }

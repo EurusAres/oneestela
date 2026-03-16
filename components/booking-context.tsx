@@ -54,7 +54,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
             eventName: b.eventName || b.event_name || 'Event Booking',
             eventType: b.eventType || b.event_type || 'general',
             guestCount: b.guestCount || b.number_of_guests || 0,
-            date: b.date || (b.check_in_date ? new Date(b.check_in_date).toISOString().split('T')[0] : ''),
+            date: b.date || (b.check_in_date ? b.check_in_date.split('T')[0] : ''),
             startTime: b.startTime || (b.check_in_date ? new Date(b.check_in_date).toTimeString().slice(0,5) : ''),
             endTime: b.endTime || (b.check_out_date ? new Date(b.check_out_date).toTimeString().slice(0,5) : ''),
             submittedAt: b.submittedAt || b.created_at || new Date().toISOString(),
