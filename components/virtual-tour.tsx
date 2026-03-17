@@ -23,6 +23,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { PanoramicViewer } from "@/components/panoramic-viewer"
 
 interface VirtualTourProps {
   open: boolean
@@ -103,18 +104,25 @@ export function VirtualTour({ open, onOpenChange }: VirtualTourProps) {
               })
             }
 
-            // Only add venue if it has at least one image
-            if (angles.length > 0) {
-              areas.push({
-                id: `venue-${venue.id}`,
-                name: venue.name,
-                description: venue.description || 'Experience this beautiful event venue',
-                capacity: venue.capacity ? `Up to ${venue.capacity} guests` : undefined,
-                amenities: venue.amenities ? JSON.parse(venue.amenities) : [],
-                category: 'event',
-                angles,
+            // If no images, add a placeholder
+            if (angles.length === 0) {
+              angles.push({
+                id: `${venue.id}-placeholder`,
+                name: 'Main View',
+                image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1400&h=700&fit=crop',
+                thumbnail: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=150&h=90&fit=crop',
               })
             }
+
+            areas.push({
+              id: `venue-${venue.id}`,
+              name: venue.name,
+              description: venue.description || 'Experience this beautiful event venue',
+              capacity: venue.capacity ? `Up to ${venue.capacity} guests` : undefined,
+              amenities: venue.amenities ? JSON.parse(venue.amenities) : [],
+              category: 'event',
+              angles,
+            })
           })
         }
 
@@ -143,28 +151,35 @@ export function VirtualTour({ open, onOpenChange }: VirtualTourProps) {
               })
             }
 
-            // Only add room if it has at least one image
-            if (angles.length > 0) {
-              // Determine floor based on room name or ID
-              let floor: 'ground' | 'second' | undefined = undefined
-              const roomNumber = parseInt(room.name.match(/\d+/)?.[0] || '0')
-              if (roomNumber >= 1 && roomNumber <= 8) {
-                floor = 'ground'
-              } else if (roomNumber >= 9 && roomNumber <= 16) {
-                floor = 'second'
-              }
-
-              areas.push({
-                id: `room-${room.id}`,
-                name: room.name,
-                description: room.description || 'Modern office space with premium amenities',
-                capacity: room.capacity ? `${room.capacity} workstations` : undefined,
-                amenities: room.amenities ? JSON.parse(room.amenities) : [],
-                category: 'office',
-                floor,
-                angles,
+            // If no images, add a placeholder
+            if (angles.length === 0) {
+              angles.push({
+                id: `${room.id}-placeholder`,
+                name: 'Main View',
+                image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&h=700&fit=crop',
+                thumbnail: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=150&h=90&fit=crop',
               })
             }
+
+            // Determine floor based on room name or ID
+            let floor: 'ground' | 'second' | undefined = undefined
+            const roomNumber = parseInt(room.name.match(/\d+/)?.[0] || '0')
+            if (roomNumber >= 1 && roomNumber <= 8) {
+              floor = 'ground'
+            } else if (roomNumber >= 9 && roomNumber <= 16) {
+              floor = 'second'
+            }
+
+            areas.push({
+              id: `room-${room.id}`,
+              name: room.name,
+              description: room.description || 'Modern office space with premium amenities',
+              capacity: room.capacity ? `${room.capacity} workstations` : undefined,
+              amenities: room.amenities ? JSON.parse(room.amenities) : [],
+              category: 'office',
+              floor,
+              angles,
+            })
           })
         }
 
@@ -345,44 +360,38 @@ export function VirtualTour({ open, onOpenChange }: VirtualTourProps) {
               </div>
 
               {/* Panoramic View */}
-              <div
-                ref={tourRef}
-                className="relative w-full h-full cursor-grab active:cursor-grabbing select-none"
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                style={{
-                  backgroundImage: `url(${currentAngle.image})`,
-                  backgroundSize: `${150 * zoom}% ${100 * zoom}%`,
-                  backgroundPosition: `${panX}px center`,
-                  backgroundRepeat: "no-repeat",
-                }}
-              >
-                {/* Navigation Instructions */}
-                <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-sm">
-                  <div className="flex items-center space-x-2">
-                    <Navigation className="w-4 h-4" />
-                    <span>Drag to pan • Use controls to zoom • Switch views using thumbnails</span>
+              {currentAngle.name.includes('360°') ? (
+                <PanoramicViewer 
+                  imageUrl={currentAngle.image}
+                  className="absolute inset-0 w-full h-full"
+                />
+              ) : (
+                <div
+                  ref={tourRef}
+                  className="relative w-full h-full cursor-grab active:cursor-grabbing select-none"
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  style={{
+                    backgroundImage: `url(${currentAngle.image})`,
+                    backgroundSize: `${150 * zoom}% ${100 * zoom}%`,
+                    backgroundPosition: `${panX}px center`,
+                    backgroundRepeat: "no-repeat",
+                  }}
+                >
+                  {/* Navigation Instructions */}
+                  <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-sm">
+                    <div className="flex items-center space-x-2">
+                      <Navigation className="w-4 h-4" />
+                      <span>Drag to pan • Use controls to zoom • Switch views using thumbnails</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Controls */}
-              <div className="absolute bottom-24 right-4 z-20 flex flex-col space-y-2">
-                <Button size="sm" variant="secondary" onClick={handleZoomIn} className="bg-white/90 hover:bg-white">
-                  <ZoomIn className="w-4 h-4" />
-                </Button>
-                <Button size="sm" variant="secondary" onClick={handleZoomOut} className="bg-white/90 hover:bg-white">
-                  <ZoomOut className="w-4 h-4" />
-                </Button>
-                <Button size="sm" variant="secondary" onClick={resetView} className="bg-white/90 hover:bg-white">
-                  <RotateCcw className="w-4 h-4" />
-                </Button>
-              </div>
+              )}
 
               {/* Angle Navigation */}
               <div className="absolute bottom-24 left-4 z-20 flex space-x-2">

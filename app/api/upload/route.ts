@@ -7,14 +7,10 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const bookingId = formData.get('bookingId') as string;
+    const type = formData.get('type') as string || 'general'; // office-regular, office-360, venue-regular, venue-360, payment-proof
 
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
-    }
-
-    if (!bookingId) {
-      return NextResponse.json({ error: 'Booking ID is required' }, { status: 400 });
     }
 
     // Validate file size (10MB limit)
@@ -28,8 +24,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
     }
 
+    // Determine upload directory based on type
+    let subDir = 'general';
+    if (type.startsWith('office-')) {
+      subDir = 'office-spaces';
+    } else if (type.startsWith('venue-')) {
+      subDir = 'venues';
+    } else if (type === 'payment-proof') {
+      subDir = 'payment-proofs';
+    }
+
     // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'payment-proofs');
+    const uploadsDir = join(process.cwd(), 'public', 'uploads', subDir);
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true });
     }
@@ -38,7 +44,7 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
     const fileExtension = file.name.split('.').pop();
-    const fileName = `payment-${bookingId}-${timestamp}-${randomString}.${fileExtension}`;
+    const fileName = `${type}-${timestamp}-${randomString}.${fileExtension}`;
     const filePath = join(uploadsDir, fileName);
 
     // Convert file to buffer and save
@@ -47,11 +53,11 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, buffer);
 
     // Return the public URL
-    const fileUrl = `/uploads/payment-proofs/${fileName}`;
+    const fileUrl = `/uploads/${subDir}/${fileName}`;
 
     return NextResponse.json({
       success: true,
-      fileUrl,
+      url: fileUrl, // Changed from fileUrl to url for consistency
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type,

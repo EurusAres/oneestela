@@ -53,9 +53,14 @@ export function CMSOfficeRoomEditor() {
     pricePerHour: '',
     imageUrl: '',
     image360Url: '',
-    type: 'office',
+    type: 'meeting',
     amenities: ''
   })
+
+  // File upload states
+  const [regularImageFile, setRegularImageFile] = useState<File | null>(null)
+  const [image360File, setImage360File] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   const fetchRooms = async () => {
     try {
@@ -90,9 +95,11 @@ export function CMSOfficeRoomEditor() {
       pricePerHour: '',
       imageUrl: '',
       image360Url: '',
-      type: 'office',
+      type: 'meeting',
       amenities: ''
     })
+    setRegularImageFile(null)
+    setImage360File(null)
     setShowDialog(true)
   }
 
@@ -108,7 +115,27 @@ export function CMSOfficeRoomEditor() {
       type: room.type || 'office',
       amenities: room.amenities || ''
     })
+    setRegularImageFile(null)
+    setImage360File(null)
     setShowDialog(true)
+  }
+
+  const uploadFile = async (file: File, type: 'regular' | '360') => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', `office-${type}`)
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!response.ok) {
+      throw new Error('Upload failed')
+    }
+
+    const data = await response.json()
+    return data.url
   }
 
   const handleSubmit = async () => {
@@ -122,21 +149,33 @@ export function CMSOfficeRoomEditor() {
     }
 
     try {
+      setUploading(true)
+      
+      let imageUrl = formData.imageUrl
+      let image360Url = formData.image360Url
+
+      // Upload regular image if file is selected
+      if (regularImageFile) {
+        imageUrl = await uploadFile(regularImageFile, 'regular')
+      }
+
+      // Upload 360° image if file is selected
+      if (image360File) {
+        image360Url = await uploadFile(image360File, '360')
+      }
+
       const payload = {
         name: formData.name,
         description: formData.description,
         capacity: parseInt(formData.capacity),
         pricePerHour: parseFloat(formData.pricePerHour) || 0,
-        imageUrl: formData.imageUrl,
-        image360Url: formData.image360Url,
+        imageUrl,
+        image360Url,
         type: formData.type,
         amenities: formData.amenities.split(',').map(a => a.trim()).filter(Boolean)
       }
 
-      const url = editingRoom 
-        ? '/api/office-rooms'
-        : '/api/office-rooms'
-      
+      const url = '/api/office-rooms'
       const method = editingRoom ? 'PATCH' : 'POST'
       
       const response = await fetch(url, {
@@ -148,19 +187,23 @@ export function CMSOfficeRoomEditor() {
       if (response.ok) {
         toast({
           title: 'Success',
-          description: `Space ${editingRoom ? 'updated' : 'created'} successfully`
+          description: editingRoom ? 'Space updated successfully' : 'Space created successfully'
         })
         setShowDialog(false)
         fetchRooms()
       } else {
-        throw new Error('Failed to save')
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save space')
       }
     } catch (error) {
+      console.error('Error saving space:', error)
       toast({
         title: 'Error',
-        description: `Failed to ${editingRoom ? 'update' : 'create'} space`,
+        description: error instanceof Error ? error.message : 'Failed to save space',
         variant: 'destructive'
       })
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -313,10 +356,8 @@ export function CMSOfficeRoomEditor() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="office">Office Space</SelectItem>
                     <SelectItem value="meeting">Meeting Room</SelectItem>
                     <SelectItem value="conference">Conference Room</SelectItem>
-                    <SelectItem value="event">Event Space</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -358,34 +399,56 @@ export function CMSOfficeRoomEditor() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="imageUrl">
+              <Label htmlFor="imageFile">
                 <Image className="h-4 w-4 inline mr-2" />
-                Regular Image URL
+                Regular Image
               </Label>
               <Input
-                id="imageUrl"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                placeholder="https://example.com/image.jpg"
+                id="imageFile"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    setRegularImageFile(file)
+                  }
+                }}
               />
+              {formData.imageUrl && !regularImageFile && (
+                <p className="text-xs text-green-600">Current: {formData.imageUrl.split('/').pop()}</p>
+              )}
+              {regularImageFile && (
+                <p className="text-xs text-blue-600">Selected: {regularImageFile.name}</p>
+              )}
               <p className="text-xs text-muted-foreground">
-                Upload image to /public/images/ or use external URL
+                Upload an image file for this space
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image360Url">
+              <Label htmlFor="image360File">
                 <Camera className="h-4 w-4 inline mr-2" />
-                360° Panoramic Image URL
+                360° Panoramic Image
               </Label>
               <Input
-                id="image360Url"
-                value={formData.image360Url}
-                onChange={(e) => setFormData({ ...formData, image360Url: e.target.value })}
-                placeholder="https://example.com/360-image.jpg"
+                id="image360File"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    setImage360File(file)
+                  }
+                }}
               />
+              {formData.image360Url && !image360File && (
+                <p className="text-xs text-green-600">Current: {formData.image360Url.split('/').pop()}</p>
+              )}
+              {image360File && (
+                <p className="text-xs text-blue-600">Selected: {image360File.name}</p>
+              )}
               <p className="text-xs text-muted-foreground">
-                Add 360° panoramic image for virtual tour experience
+                Upload a 360° panoramic image for immersive virtual tour experience
               </p>
             </div>
 
@@ -401,11 +464,18 @@ export function CMSOfficeRoomEditor() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDialog(false)}>
+            <Button variant="outline" onClick={() => setShowDialog(false)} disabled={uploading}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
-              {editingRoom ? 'Update' : 'Create'} Space
+            <Button onClick={handleSubmit} disabled={uploading}>
+              {uploading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                `${editingRoom ? 'Update' : 'Create'} Space`
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

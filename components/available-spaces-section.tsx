@@ -96,15 +96,13 @@ export function AvailableSpacesSection() {
             const amenities = venue.amenities ? JSON.parse(venue.amenities) : []
             return (
               <Card key={`venue-${venue.id}`} className="overflow-hidden hover:shadow-lg transition-shadow">
-                {venue.image_url && (
-                  <div className="h-48 overflow-hidden">
-                    <img
-                      src={venue.image_url}
-                      alt={venue.name}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                )}
+                <div className="h-48 overflow-hidden">
+                  <img
+                    src={venue.image_url || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&h=600&fit=crop'}
+                    alt={venue.name}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-xl">{venue.name}</CardTitle>
@@ -162,15 +160,13 @@ export function AvailableSpacesSection() {
             const amenities = room.amenities ? JSON.parse(room.amenities) : []
             return (
               <Card key={`room-${room.id}`} className="overflow-hidden hover:shadow-lg transition-shadow">
-                {room.image_url && (
-                  <div className="h-48 overflow-hidden">
-                    <img
-                      src={room.image_url}
-                      alt={room.name}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                )}
+                <div className="h-48 overflow-hidden">
+                  <img
+                    src={room.image_url || 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop'}
+                    alt={room.name}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-xl">{room.name}</CardTitle>

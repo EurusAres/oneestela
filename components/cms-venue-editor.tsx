@@ -48,6 +48,11 @@ export function CMSVenueEditor() {
     amenities: ''
   })
 
+  // File upload states
+  const [regularImageFile, setRegularImageFile] = useState<File | null>(null)
+  const [image360File, setImage360File] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+
   const fetchVenues = async () => {
     try {
       setIsLoading(true)
@@ -84,6 +89,8 @@ export function CMSVenueEditor() {
       image360Url: '',
       amenities: ''
     })
+    setRegularImageFile(null)
+    setImage360File(null)
     setShowDialog(true)
   }
 
@@ -99,7 +106,27 @@ export function CMSVenueEditor() {
       image360Url: venue.image_360_url || '',
       amenities: venue.amenities || ''
     })
+    setRegularImageFile(null)
+    setImage360File(null)
     setShowDialog(true)
+  }
+
+  const uploadFile = async (file: File, type: 'regular' | '360') => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', `venue-${type}`)
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!response.ok) {
+      throw new Error('Upload failed')
+    }
+
+    const data = await response.json()
+    return data.url
   }
 
   const handleSubmit = async () => {
@@ -113,14 +140,29 @@ export function CMSVenueEditor() {
     }
 
     try {
+      setUploading(true)
+      
+      let imageUrl = formData.imageUrl
+      let image360Url = formData.image360Url
+
+      // Upload regular image if file is selected
+      if (regularImageFile) {
+        imageUrl = await uploadFile(regularImageFile, 'regular')
+      }
+
+      // Upload 360° image if file is selected
+      if (image360File) {
+        image360Url = await uploadFile(image360File, '360')
+      }
+
       const payload = {
         name: formData.name,
         description: formData.description,
         location: formData.location,
         capacity: parseInt(formData.capacity),
         pricePerHour: parseFloat(formData.pricePerHour) || 0,
-        imageUrl: formData.imageUrl,
-        image360Url: formData.image360Url,
+        imageUrl,
+        image360Url,
         amenities: formData.amenities.split(',').map(a => a.trim()).filter(Boolean)
       }
 
@@ -140,14 +182,18 @@ export function CMSVenueEditor() {
         setShowDialog(false)
         fetchVenues()
       } else {
-        throw new Error('Failed to save')
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save venue')
       }
     } catch (error) {
+      console.error('Error saving venue:', error)
       toast({
         title: 'Error',
-        description: `Failed to ${editingVenue ? 'update' : 'create'} venue`,
+        description: error instanceof Error ? error.message : 'Failed to save venue',
         variant: 'destructive'
       })
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -338,34 +384,56 @@ export function CMSVenueEditor() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="imageUrl">
+              <Label htmlFor="imageFile">
                 <Image className="h-4 w-4 inline mr-2" />
-                Regular Image URL
+                Regular Image
               </Label>
               <Input
-                id="imageUrl"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                placeholder="https://example.com/venue-image.jpg"
+                id="imageFile"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    setRegularImageFile(file)
+                  }
+                }}
               />
+              {formData.imageUrl && !regularImageFile && (
+                <p className="text-xs text-green-600">Current: {formData.imageUrl.split('/').pop()}</p>
+              )}
+              {regularImageFile && (
+                <p className="text-xs text-blue-600">Selected: {regularImageFile.name}</p>
+              )}
               <p className="text-xs text-muted-foreground">
-                Upload image to /public/images/ or use external URL
+                Upload an image file for this venue
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image360Url">
+              <Label htmlFor="image360File">
                 <Camera className="h-4 w-4 inline mr-2" />
-                360° Panoramic Image URL
+                360° Panoramic Image
               </Label>
               <Input
-                id="image360Url"
-                value={formData.image360Url}
-                onChange={(e) => setFormData({ ...formData, image360Url: e.target.value })}
-                placeholder="https://example.com/360-venue.jpg"
+                id="image360File"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    setImage360File(file)
+                  }
+                }}
               />
+              {formData.image360Url && !image360File && (
+                <p className="text-xs text-green-600">Current: {formData.image360Url.split('/').pop()}</p>
+              )}
+              {image360File && (
+                <p className="text-xs text-blue-600">Selected: {image360File.name}</p>
+              )}
               <p className="text-xs text-muted-foreground">
-                Add 360° panoramic image for virtual tour experience
+                Upload a 360° panoramic image for immersive virtual tour experience
               </p>
             </div>
 
@@ -381,11 +449,18 @@ export function CMSVenueEditor() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDialog(false)}>
+            <Button variant="outline" onClick={() => setShowDialog(false)} disabled={uploading}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
-              {editingVenue ? 'Update' : 'Create'} Venue
+            <Button onClick={handleSubmit} disabled={uploading}>
+              {uploading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                `${editingVenue ? 'Update' : 'Create'} Venue`
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
