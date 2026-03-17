@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const officeRoomId = searchParams.get('officeRoomId');
-    const approved = searchParams.get('approved') === 'true';
+    const approved = searchParams.get('approved');
 
     let query = `
       SELECT r.*, u.full_name, o.name as room_name
@@ -21,8 +21,10 @@ export async function GET(request: NextRequest) {
       params.push(officeRoomId);
     }
 
-    if (approved) {
+    if (approved === 'true') {
       query += ' AND r.is_approved = 1';
+    } else if (approved === 'false') {
+      query += ' AND r.is_approved = 0';
     }
 
     query += ' ORDER BY r.created_at DESC';
@@ -59,17 +61,90 @@ export async function POST(request: NextRequest) {
 
     const result = await executeQuery(
       `INSERT INTO reviews 
-       (user_id, office_room_id, booking_id, rating, title, review_text, is_approved)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [userId, officeRoomId, bookingId || null, rating, title, reviewText, false]
+       (user_id, office_room_id, booking_id, rating, title, review_text, is_approved, is_featured)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, officeRoomId, bookingId || null, rating, title || '', reviewText, false, false]
     );
 
     return NextResponse.json(
-      { message: 'Review submitted', reviewId: (result as any).insertId },
+      { message: 'Review submitted successfully', reviewId: (result as any).insertId },
       { status: 201 }
     );
   } catch (error) {
     console.error('Error creating review:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const { reviewId, action } = await request.json();
+
+    if (!reviewId || !action) {
+      return NextResponse.json(
+        { error: 'Missing reviewId or action' },
+        { status: 400 }
+      );
+    }
+
+    let query = '';
+    let params: any[] = [];
+
+    switch (action) {
+      case 'approve':
+        query = 'UPDATE reviews SET is_approved = 1 WHERE id = ?';
+        params = [reviewId];
+        break;
+      case 'unapprove':
+        query = 'UPDATE reviews SET is_approved = 0 WHERE id = ?';
+        params = [reviewId];
+        break;
+      case 'feature':
+        query = 'UPDATE reviews SET is_featured = 1, is_approved = 1 WHERE id = ?';
+        params = [reviewId];
+        break;
+      case 'unfeature':
+        query = 'UPDATE reviews SET is_featured = 0 WHERE id = ?';
+        params = [reviewId];
+        break;
+      default:
+        return NextResponse.json(
+          { error: 'Invalid action' },
+          { status: 400 }
+        );
+    }
+
+    await executeQuery(query, params);
+
+    return NextResponse.json({ message: `Review ${action}d successfully` });
+  } catch (error) {
+    console.error('Error updating review:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { reviewId } = await request.json();
+
+    if (!reviewId) {
+      return NextResponse.json(
+        { error: 'Missing reviewId' },
+        { status: 400 }
+      );
+    }
+
+    await executeQuery('DELETE FROM reviews WHERE id = ?', [reviewId]);
+
+    return NextResponse.json({ message: 'Review deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting review:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

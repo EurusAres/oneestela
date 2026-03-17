@@ -1,166 +1,395 @@
 'use client'
 
-import React from "react"
-import { useState } from 'react'
-import { useCMS } from '@/components/cms-context'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Upload, Plus, Trash2, X } from 'lucide-react'
-import type { Venue, VenueContent } from '@/lib/content-service'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useToast } from '@/hooks/use-toast'
+import { Plus, Edit, Trash2, Image, Camera, Users, DollarSign, RefreshCw, MapPin } from 'lucide-react'
+
+interface Venue {
+  id: number
+  name: string
+  description: string
+  location: string
+  capacity: number
+  price_per_hour: number
+  image_url: string
+  image_360_url: string
+  amenities: string
+}
 
 export function CMSVenueEditor() {
-  const { venues, updateVenue, addVenue, deleteVenue } = useCMS()
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [showNewForm, setShowNewForm] = useState(false)
+  const [venues, setVenues] = useState<Venue[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [showDialog, setShowDialog] = useState(false)
+  const [editingVenue, setEditingVenue] = useState<Venue | null>(null)
+  const { toast } = useToast()
 
-  const [newVenue, setNewVenue] = useState<Partial<Venue>>({
+  // Form state
+  const [formData, setFormData] = useState({
     name: '',
     description: '',
+    location: '',
     capacity: '',
-    features: [],
-    images: [],
+    pricePerHour: '',
+    imageUrl: '',
+    image360Url: '',
+    amenities: ''
   })
 
-  const handleAddVenue = () => {
-    if (newVenue.name && newVenue.description) {
-      addVenue({
-        name: newVenue.name,
-        description: newVenue.description,
-        capacity: newVenue.capacity || '100 guests',
-        features: newVenue.features || [],
-        images: newVenue.images || [],
+  const fetchVenues = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/venues')
+      if (response.ok) {
+        const data = await response.json()
+        setVenues(data.venues || [])
+      }
+    } catch (error) {
+      console.error('Error fetching venues:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load venues',
+        variant: 'destructive'
       })
-      setNewVenue({ name: '', description: '', capacity: '', features: [], images: [] })
-      setShowNewForm(false)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, venueId: string) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  useEffect(() => {
+    fetchVenues()
+  }, [])
 
-    const url = URL.createObjectURL(file)
-    const venue = venues.find((v) => v.id === venueId)
-    if (venue) {
-      const newImage = { id: `img-${Date.now()}`, url, alt: file.name, uploadedAt: new Date().toISOString() }
-      updateVenue(venueId, { images: [...(venue.images || []), newImage] })
+  const handleAdd = () => {
+    setEditingVenue(null)
+    setFormData({
+      name: '',
+      description: '',
+      location: '',
+      capacity: '',
+      pricePerHour: '',
+      imageUrl: '',
+      image360Url: '',
+      amenities: ''
+    })
+    setShowDialog(true)
+  }
+
+  const handleEdit = (venue: Venue) => {
+    setEditingVenue(venue)
+    setFormData({
+      name: venue.name,
+      description: venue.description || '',
+      location: venue.location || '',
+      capacity: venue.capacity.toString(),
+      pricePerHour: venue.price_per_hour.toString(),
+      imageUrl: venue.image_url || '',
+      image360Url: venue.image_360_url || '',
+      amenities: venue.amenities || ''
+    })
+    setShowDialog(true)
+  }
+
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.capacity) {
+      toast({
+        title: 'Validation Error',
+        description: 'Name and capacity are required',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    try {
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        location: formData.location,
+        capacity: parseInt(formData.capacity),
+        pricePerHour: parseFloat(formData.pricePerHour) || 0,
+        imageUrl: formData.imageUrl,
+        image360Url: formData.image360Url,
+        amenities: formData.amenities.split(',').map(a => a.trim()).filter(Boolean)
+      }
+
+      const method = editingVenue ? 'PATCH' : 'POST'
+      
+      const response = await fetch('/api/venues', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingVenue ? { ...payload, id: editingVenue.id } : payload)
+      })
+
+      if (response.ok) {
+        toast({
+          title: 'Success',
+          description: `Venue ${editingVenue ? 'updated' : 'created'} successfully`
+        })
+        setShowDialog(false)
+        fetchVenues()
+      } else {
+        throw new Error('Failed to save')
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: `Failed to ${editingVenue ? 'update' : 'create'} venue`,
+        variant: 'destructive'
+      })
     }
   }
 
-  const handleRemoveImage = (venueId: string, imageId: string) => {
-    const venue = venues.find((v) => v.id === venueId)
-    if (venue) {
-      updateVenue(venueId, { images: venue.images.filter((img) => img.id !== imageId) })
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this venue?')) return
+
+    try {
+      const response = await fetch('/api/venues', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+
+      if (response.ok) {
+        toast({
+          title: 'Success',
+          description: 'Venue deleted successfully'
+        })
+        fetchVenues()
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete venue',
+        variant: 'destructive'
+      })
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      <Button onClick={() => setShowNewForm(!showNewForm)} className="gap-2">
-        <Plus className="h-4 w-4" />
-        Add New Venue
-      </Button>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">
+          Manage event venues. Add 360° images for immersive virtual tours.
+        </p>
+        <Button onClick={handleAdd}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Venue
+        </Button>
+      </div>
 
-      {showNewForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Venue</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input placeholder="Venue Name" value={newVenue.name} onChange={(e) => setNewVenue({ ...newVenue, name: e.target.value })} />
-            <Textarea placeholder="Venue Description" value={newVenue.description} onChange={(e) => setNewVenue({ ...newVenue, description: e.target.value })} />
-            <Input placeholder="Capacity (e.g., '500 guests')" value={newVenue.capacity} onChange={(e) => setNewVenue({ ...newVenue, capacity: e.target.value })} />
-            <div className="flex gap-2">
-              <Button onClick={handleAddVenue} className="flex-1">
-                Create Venue
-              </Button>
-              <Button onClick={() => setShowNewForm(false)} variant="outline">
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {venues.map((venue) => (
           <Card key={venue.id}>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
+              <div className="flex items-start justify-between">
+                <div>
                   <CardTitle className="text-lg">{venue.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{venue.capacity}</p>
+                  {venue.location && (
+                    <CardDescription className="mt-1 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {venue.location}
+                    </CardDescription>
+                  )}
                 </div>
-                <Button variant="destructive" size="sm" onClick={() => deleteVenue(venue.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEdit(venue)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(venue.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {editingId === venue.id ? (
-                <div className="space-y-3">
-                  <Textarea placeholder="Description" value={venue.description} onChange={(e) => updateVenue(venue.id, { description: e.target.value })} />
-                  <Input placeholder="Capacity" value={venue.capacity} onChange={(e) => updateVenue(venue.id, { capacity: e.target.value })} />
-                  <Button size="sm" onClick={() => setEditingId(null)}>
-                    Done Editing
-                  </Button>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-sm text-muted-foreground">{venue.description}</p>
-                  <Button size="sm" variant="outline" onClick={() => setEditingId(venue.id)} className="mt-2">
-                    Edit Details
-                  </Button>
-                </div>
+            <CardContent>
+              {venue.image_url && (
+                <img
+                  src={venue.image_url}
+                  alt={venue.name}
+                  className="w-full h-32 object-cover rounded-md mb-3"
+                />
               )}
-
-              <div className="space-y-3">
-                <h4 className="font-medium text-sm">Venue Images</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  {venue.images.map((image) => (
-                    <div key={image.id} className="relative group">
-                      <div className="bg-gray-100 rounded-lg overflow-hidden h-32">
-                        <img src={image.url || "/placeholder.svg"} alt={image.alt} className="w-full h-full object-cover" />
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
-                        onClick={() => handleRemoveImage(venue.id, image.id)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span>Up to {venue.capacity} guests</span>
                 </div>
-
-                <label>
-                  <Button variant="outline" size="sm" className="w-full gap-2 bg-transparent" asChild>
-                    <span>
-                      <Upload className="h-4 w-4" />
-                      Upload Image
-                    </span>
-                  </Button>
-                  <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, venue.id)} hidden />
-                </label>
-              </div>
-
-              <div className="space-y-2 pt-4 border-t">
-                <h4 className="font-medium text-sm">Features</h4>
-                <div className="flex flex-wrap gap-2">
-                  {venue.features.map((feature, idx) => (
-                    <span key={idx} className="px-2 py-1 bg-gray-100 rounded text-xs">
-                      {feature}
-                    </span>
-                  ))}
+                {venue.price_per_hour > 0 && (
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <span>₱{venue.price_per_hour}/hour</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-muted-foreground" />
+                  <span className={venue.image_360_url ? 'text-green-600' : 'text-gray-400'}>
+                    {venue.image_360_url ? '360° Available' : 'No 360° image'}
+                  </span>
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {venues.length === 0 && (
+        <div className="text-center py-12 border-2 border-dashed rounded-lg">
+          <p className="text-muted-foreground mb-4">No event venues added yet</p>
+          <Button onClick={handleAdd}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Your First Venue
+          </Button>
+        </div>
+      )}
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingVenue ? 'Edit Venue' : 'Add New Venue'}
+            </DialogTitle>
+            <DialogDescription>
+              Add event venues with 360° panoramic images for virtual tours
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Venue Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., The Milestone Event Place"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Describe the venue..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="e.g., Main Entrance View"
+              />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Capacity *</Label>
+                <Input
+                  id="capacity"
+                  type="number"
+                  value={formData.capacity}
+                  onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                  placeholder="e.g., 500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="price">Price per Hour (₱)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  value={formData.pricePerHour}
+                  onChange={(e) => setFormData({ ...formData, pricePerHour: e.target.value })}
+                  placeholder="e.g., 5000"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl">
+                <Image className="h-4 w-4 inline mr-2" />
+                Regular Image URL
+              </Label>
+              <Input
+                id="imageUrl"
+                value={formData.imageUrl}
+                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                placeholder="https://example.com/venue-image.jpg"
+              />
+              <p className="text-xs text-muted-foreground">
+                Upload image to /public/images/ or use external URL
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="image360Url">
+                <Camera className="h-4 w-4 inline mr-2" />
+                360° Panoramic Image URL
+              </Label>
+              <Input
+                id="image360Url"
+                value={formData.image360Url}
+                onChange={(e) => setFormData({ ...formData, image360Url: e.target.value })}
+                placeholder="https://example.com/360-venue.jpg"
+              />
+              <p className="text-xs text-muted-foreground">
+                Add 360° panoramic image for virtual tour experience
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amenities">Amenities (comma-separated)</Label>
+              <Input
+                id="amenities"
+                value={formData.amenities}
+                onChange={(e) => setFormData({ ...formData, amenities: e.target.value })}
+                placeholder="Stage, Sound System, Lighting, Catering Kitchen, AC"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>
+              {editingVenue ? 'Update' : 'Create'} Venue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

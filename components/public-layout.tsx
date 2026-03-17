@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Menu, X, User, FileText, Settings, HelpCircle, LogOut } from "lucide-react"
+import { Menu, X, User, FileText, Settings, HelpCircle, LogOut, Star } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import { LoginDialog } from "@/components/login-dialog"
 import { SignupDialog } from "@/components/signup-dialog"
@@ -23,6 +23,7 @@ import { SettingsDialog } from "@/components/settings-dialog"
 import { SupportDialog } from "@/components/support-dialog"
 import { ReserveButton } from "@/components/reserve-button"
 import { UnifiedChatWidget } from "@/components/unified-chat-widget"
+import { ReviewSubmissionDialog } from "@/components/review-submission-dialog"
 
 interface PublicLayoutProps {
   children: React.ReactNode
@@ -36,10 +37,12 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   const [showProfile, setShowProfile] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showSupport, setShowSupport] = useState(false)
+  const [showReviewDialog, setShowReviewDialog] = useState(false)
 
   const navItems = [
     { name: "Home", href: "/" },
     { name: "About", href: "/about" },
+    { name: "Reviews", href: "/customer-reviews" },
     { name: "FAQs", href: "/faqs" },
     { name: "Contact", href: "/contact" },
   ]
@@ -126,6 +129,10 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                         <FileText className="mr-2 h-4 w-4" />
                         My Transactions
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowReviewDialog(true)}>
+                        <Star className="mr-2 h-4 w-4" />
+                        Write a Review
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setShowProfile(true)}>
                         <User className="mr-2 h-4 w-4" />
                         My Profile
@@ -208,6 +215,14 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                       >
                         <FileText className="mr-2 h-4 w-4" />
                         My Transactions
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start"
+                        onClick={() => setShowReviewDialog(true)}
+                      >
+                        <Star className="mr-2 h-4 w-4" />
+                        Write a Review
                       </Button>
                       <Button variant="ghost" className="w-full justify-start" onClick={() => setShowProfile(true)}>
                         <User className="mr-2 h-4 w-4" />
@@ -300,11 +315,42 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       {/* Chat Widget */}
       {user && <UnifiedChatWidget />}
 
+      {/* Floating Review Button - Only show for logged-in users */}
+      {user && (
+        <div className="fixed bottom-24 right-6 z-40">
+          <ReviewSubmissionDialog
+            trigger={
+              <Button
+                size="lg"
+                className="h-14 w-14 rounded-full shadow-lg bg-amber-600 hover:bg-amber-700 transition-all hover:scale-110"
+                title="Write a Review"
+              >
+                <Star className="h-6 w-6" />
+              </Button>
+            }
+            onSuccess={() => {
+              // Optional: Show success message or redirect
+            }}
+          />
+        </div>
+      )}
+
       {/* Dialogs */}
       <TransactionsDialog open={showTransactions} onOpenChange={setShowTransactions} />
       <ProfileDialog open={showProfile} onOpenChange={setShowProfile} />
       <SettingsDialog open={showSettings} onOpenChange={setShowSettings} />
       <SupportDialog open={showSupport} onOpenChange={setShowSupport} />
+      
+      {/* Review Dialog - Controlled by menu item */}
+      {user && (
+        <ReviewSubmissionDialog
+          open={showReviewDialog}
+          onOpenChange={setShowReviewDialog}
+          onSuccess={() => {
+            setShowReviewDialog(false)
+          }}
+        />
+      )}
     </div>
   )
 }

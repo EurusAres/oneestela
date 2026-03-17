@@ -12,6 +12,7 @@ import { ReportsProvider } from "@/components/reports-context"
 import { CMSProvider } from "@/components/cms-context"
 import { StaffProvider } from "@/components/staff-context"
 import { UsersProvider } from "@/components/users-context"
+import { ReviewsProvider } from "@/components/reviews-context"
 import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -35,20 +36,22 @@ export default function RootLayout({
           <CMSProvider>
             <StaffProvider>
               <UsersProvider>
-                <ChatbotProvider>
-                  <ChatProvider>
-                    <BookingProvider>
-                      <MessageProvider>
-                        <PaymentProofProvider>
-                          <ReportsProvider>
-                            {children}
-                            <Toaster />
-                          </ReportsProvider>
-                        </PaymentProofProvider>
-                      </MessageProvider>
-                    </BookingProvider>
-                  </ChatProvider>
-                </ChatbotProvider>
+                <ReviewsProvider>
+                  <ChatbotProvider>
+                    <ChatProvider>
+                      <BookingProvider>
+                        <MessageProvider>
+                          <PaymentProofProvider>
+                            <ReportsProvider>
+                              {children}
+                              <Toaster />
+                            </ReportsProvider>
+                          </PaymentProofProvider>
+                        </MessageProvider>
+                      </BookingProvider>
+                    </ChatProvider>
+                  </ChatbotProvider>
+                </ReviewsProvider>
               </UsersProvider>
             </StaffProvider>
           </CMSProvider>
