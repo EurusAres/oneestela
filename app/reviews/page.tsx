@@ -1,192 +1,378 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { MainLayout } from "@/components/main-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useReviews } from "@/components/reviews-context"
 import { useToast } from "@/hooks/use-toast"
-
-// Mock data for reviews
-const reviewsData = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    event: "Wedding Reception",
-    date: "May 10, 2025",
-    rating: 5,
-    comment:
-      "One Estela Place was the perfect venue for our wedding. The staff was incredibly helpful and the venue itself is stunning. Highly recommend!",
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    event: "Corporate Event",
-    date: "April 22, 2025",
-    rating: 4,
-    comment: "Great venue for our company retreat. The facilities were excellent and the staff was very accommodating.",
-  },
-  {
-    id: 3,
-    name: "Jessica Williams",
-    event: "Birthday Party",
-    date: "April 15, 2025",
-    rating: 5,
-    comment: "Had my 30th birthday here and it was amazing! The space is beautiful and everyone had a great time.",
-  },
-  {
-    id: 4,
-    name: "Robert Garcia",
-    event: "Charity Gala",
-    date: "March 28, 2025",
-    rating: 4,
-    comment: "Excellent venue for our annual charity event. Spacious and elegant with great amenities.",
-  },
-]
+import { 
+  Star, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  Trash2, 
+  Award, 
+  RefreshCw,
+  Calendar,
+  User,
+  MapPin
+} from "lucide-react"
 
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState(reviewsData)
-  const [selectedReview, setSelectedReview] = useState<any>(null)
+  const { 
+    reviews, 
+    stats, 
+    isLoading, 
+    refreshReviews, 
+    approveReview, 
+    featureReview, 
+    deleteReview 
+  } = useReviews()
   const { toast } = useToast()
+  const [activeTab, setActiveTab] = useState("all")
 
-  const handleAddReview = (e: React.FormEvent) => {
-    e.preventDefault()
-    toast({
-      title: "Review added",
-      description: "The new review has been successfully added",
-    })
+  const handleApprove = async (reviewId: string) => {
+    const success = await approveReview(reviewId)
+    if (success) {
+      toast({
+        title: "Review Approved",
+        description: "The review is now visible to customers.",
+      })
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to approve review. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleFeatureReview = (id: number) => {
-    toast({
-      title: "Review featured",
-      description: "The review has been featured on the website",
-    })
+  const handleFeature = async (reviewId: string) => {
+    const success = await featureReview(reviewId)
+    if (success) {
+      toast({
+        title: "Review Featured",
+        description: "The review is now featured on the homepage.",
+      })
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to feature review. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleDeleteReview = (id: number) => {
-    setReviews(reviews.filter((review) => review.id !== id))
-    toast({
-      title: "Review deleted",
-      description: "The review has been successfully deleted",
-      variant: "destructive",
-    })
+  const handleDelete = async (reviewId: string) => {
+    const success = await deleteReview(reviewId)
+    if (success) {
+      toast({
+        title: "Review Deleted",
+        description: "The review has been permanently removed.",
+        variant: "destructive",
+      })
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to delete review. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`h-4 w-4 ${
+              star <= rating
+                ? 'fill-yellow-400 text-yellow-400'
+                : 'text-gray-300'
+            }`}
+          />
+        ))}
+        <span className="ml-1 text-sm text-muted-foreground">({rating})</span>
+      </div>
+    )
+  }
+
+  const getStatusBadge = (review: any) => {
+    if (review.is_featured) {
+      return <Badge className="bg-purple-100 text-purple-800">Featured</Badge>
+    }
+    if (review.is_approved) {
+      return <Badge className="bg-green-100 text-green-800">Approved</Badge>
+    }
+    return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+  }
+
+  const filterReviews = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return reviews.filter(r => !r.is_approved)
+      case 'approved':
+        return reviews.filter(r => r.is_approved && !r.is_featured)
+      case 'featured':
+        return reviews.filter(r => r.is_featured)
+      default:
+        return reviews
+    }
+  }
+
+  const renderReviewCard = (review: any) => (
+    <Card key={review.id} className="mb-4">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="font-semibold">{review.full_name}</span>
+              {getStatusBadge(review)}
+            </div>
+            
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                <span>{review.room_name}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                <span>{new Date(review.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+            
+            {renderStars(review.rating)}
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        {review.title && (
+          <h4 className="font-medium mb-2">{review.title}</h4>
+        )}
+        <p className="text-gray-700 mb-4">{review.review_text}</p>
+        
+        <div className="flex items-center gap-2 flex-wrap">
+          {!review.is_approved && (
+            <Button
+              size="sm"
+              onClick={() => handleApprove(review.id)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Approve
+            </Button>
+          )}
+          
+          {review.is_approved && !review.is_featured && (
+            <Button
+              size="sm"
+              onClick={() => handleFeature(review.id)}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              <Award className="h-4 w-4 mr-1" />
+              Feature
+            </Button>
+          )}
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="destructive">
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Review</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this review? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => handleDelete(review.id)}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">Loading reviews...</p>
+          </div>
+        </div>
+      </MainLayout>
+    )
   }
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Customer Reviews</h1>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>Add Review</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Add New Review</DialogTitle>
-                <DialogDescription>Add a customer review to your website.</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleAddReview}>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="customer-name">Customer Name</Label>
-                    <Input id="customer-name" placeholder="Enter customer name" required />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="event-type">Event Type</Label>
-                    <Input id="event-type" placeholder="Enter event type" required />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="event-date">Event Date</Label>
-                    <Input id="event-date" type="date" required />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="rating">Rating</Label>
-                    <Select defaultValue="5">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select rating" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 Star</SelectItem>
-                        <SelectItem value="2">2 Stars</SelectItem>
-                        <SelectItem value="3">3 Stars</SelectItem>
-                        <SelectItem value="4">4 Stars</SelectItem>
-                        <SelectItem value="5">5 Stars</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="review-text">Review</Label>
-                    <Textarea id="review-text" placeholder="Enter customer review" required />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit">Add Review</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <div>
+            <h1 className="text-3xl font-bold">Customer Reviews</h1>
+            <p className="text-muted-foreground">
+              Manage customer feedback and testimonials
+            </p>
+          </div>
+          <Button onClick={refreshReviews} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
 
-        <div className="grid gap-6">
-          {reviews.map((review) => (
-            <Card key={review.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>{review.name}</CardTitle>
-                    <CardDescription>
-                      {review.event} - {review.date}
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill={i < review.rating ? "currentColor" : "none"}
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className={`h-5 w-5 ${i < review.rating ? "text-yellow-400" : "text-gray-300"}`}
-                      >
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                      </svg>
-                    ))}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">{review.comment}</p>
-                <div className="mt-4 flex justify-end space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => handleFeatureReview(review.id)}>
-                    Feature
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDeleteReview(review.id)}>
-                    Delete
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Statistics Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Total Reviews</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.total || 0}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4 text-yellow-600" />
+                Pending
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">{stats?.pending || 0}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                Approved
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{stats?.approved || 0}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Award className="h-4 w-4 text-purple-600" />
+                Featured
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">{stats?.featured || 0}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Star className="h-4 w-4 text-yellow-400" />
+                Avg Rating
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.averageRating || 0}</div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Reviews Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Review Management</CardTitle>
+            <CardDescription>
+              Approve, feature, or delete customer reviews
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="all">All ({stats?.total || 0})</TabsTrigger>
+                <TabsTrigger value="pending">Pending ({stats?.pending || 0})</TabsTrigger>
+                <TabsTrigger value="approved">Approved ({stats?.approved || 0})</TabsTrigger>
+                <TabsTrigger value="featured">Featured ({stats?.featured || 0})</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="all" className="mt-6">
+                <div className="space-y-4">
+                  {filterReviews('all').map(renderReviewCard)}
+                  {filterReviews('all').length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No reviews found
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="pending" className="mt-6">
+                <div className="space-y-4">
+                  {filterReviews('pending').map(renderReviewCard)}
+                  {filterReviews('pending').length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No pending reviews
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="approved" className="mt-6">
+                <div className="space-y-4">
+                  {filterReviews('approved').map(renderReviewCard)}
+                  {filterReviews('approved').length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No approved reviews
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="featured" className="mt-6">
+                <div className="space-y-4">
+                  {filterReviews('featured').map(renderReviewCard)}
+                  {filterReviews('featured').length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No featured reviews
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   )

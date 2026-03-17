@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Calendar, MapPin, Users, Star } from "lucide-react"
 import { ReserveButton } from "@/components/reserve-button"
 import { TourButton } from "@/components/tour-button"
+import { FeaturedReviewsSection } from "@/components/featured-reviews-section"
+import { AvailableSpacesSection } from "@/components/available-spaces-section"
 
 export default function HomePage() {
   return (
@@ -122,56 +124,10 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="mb-12 text-center text-3xl font-bold">What Our Clients Say</h2>
-          <div className="grid gap-8 md:grid-cols-3">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="mb-4 flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="mb-4 text-gray-600">
-                  "One Estela Place was the perfect venue for our wedding. The staff was incredibly helpful and the
-                  venue itself is stunning."
-                </p>
-                <p className="font-semibold">- Sarah Johnson</p>
-              </CardContent>
-            </Card>
+      <FeaturedReviewsSection />
 
-            <Card>
-              <CardContent className="pt-6">
-                <div className="mb-4 flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="mb-4 text-gray-600">
-                  "Great venue for our company retreat. The facilities were excellent and the staff was very
-                  accommodating."
-                </p>
-                <p className="font-semibold">- Michael Chen</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="mb-4 flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="mb-4 text-gray-600">
-                  "Had my 30th birthday here and it was amazing! The space is beautiful and everyone had a great time."
-                </p>
-                <p className="font-semibold">- Jessica Williams</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      {/* Available Spaces Section */}
+      <AvailableSpacesSection />
 
       {/* CTA Section with Chandelier Background */}
       <section className="relative py-16 bg-gray-900 text-white">
