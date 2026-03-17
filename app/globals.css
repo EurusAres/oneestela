@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Force sidebar to always be visible */
+.sidebar-always-visible {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 16rem !important;
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;
+}
+
+.sidebar-force-visible {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 16rem !important;
+  height: 100vh !important;
+  position: sticky !important;
+  top: 0 !important;
+  background-color: white !important;
+  border-right: 1px solid #e5e7eb !important;
+  flex-shrink: 0 !important;
+}
+
+@media (min-width: 768px) {
+  .sidebar-force-visible {
+    display: flex !important;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
