@@ -19,6 +19,13 @@ export async function POST(request: NextRequest) {
       [email]
     ) as any[];
 
+    console.log('Verification lookup:', {
+      email,
+      found: !!verification,
+      storedCode: verification?.code,
+      storedCodeType: typeof verification?.code
+    });
+
     if (!verification) {
       return NextResponse.json(
         { error: 'No verification code found for this email' },
@@ -37,8 +44,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify code
-    if (verification.code !== code) {
+    // Verify code (ensure both are strings and trimmed)
+    const storedCode = String(verification.code).trim();
+    const providedCode = String(code).trim();
+    
+    console.log('='.repeat(50));
+    console.log('CODE VERIFICATION ATTEMPT');
+    console.log('='.repeat(50));
+    console.log('Email:', email);
+    console.log('Stored code:', storedCode);
+    console.log('Stored code length:', storedCode.length);
+    console.log('Stored code type:', typeof storedCode);
+    console.log('Provided code:', providedCode);
+    console.log('Provided code length:', providedCode.length);
+    console.log('Provided code type:', typeof providedCode);
+    console.log('Match:', storedCode === providedCode);
+    console.log('Character comparison:');
+    for (let i = 0; i < Math.max(storedCode.length, providedCode.length); i++) {
+      console.log(`  [${i}] stored: '${storedCode[i]}' (${storedCode.charCodeAt(i)}) vs provided: '${providedCode[i]}' (${providedCode.charCodeAt(i)})`);
+    }
+    console.log('='.repeat(50));
+    
+    if (storedCode !== providedCode) {
       return NextResponse.json(
         { error: 'Invalid verification code' },
         { status: 400 }
