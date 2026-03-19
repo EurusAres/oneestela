@@ -7,36 +7,45 @@ export function useHomepageContent() {
   const [content, setContent] = useState<HomepageContent | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchContent = useCallback(async () => {
     setIsLoading(true)
     try {
-      const data = contentService.getHomepageContent()
-      setContent(data)
+      const response = await fetch('/api/homepage')
+      if (response.ok) {
+        const data = await response.json()
+        setContent(data)
+      } else {
+        console.error('Failed to fetch homepage content')
+      }
     } catch (error) {
       console.error('Error loading homepage content:', error)
     } finally {
       setIsLoading(false)
     }
+  }, [])
 
-    const handleUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent
-      if (customEvent.detail?.type === 'homepage' || customEvent.detail?.type === 'all') {
-        try {
-          const data = contentService.getHomepageContent()
-          setContent(data)
-        } catch (error) {
-          console.error('Error updating homepage content:', error)
-        }
+  useEffect(() => {
+    fetchContent()
+  }, [fetchContent])
+
+  const updateContent = useCallback(async (updates: Partial<HomepageContent>) => {
+    try {
+      const response = await fetch('/api/homepage', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      })
+      
+      if (response.ok) {
+        // Refresh content after update
+        await fetchContent()
+      } else {
+        console.error('Failed to update homepage content')
       }
+    } catch (error) {
+      console.error('Error updating homepage content:', error)
     }
-
-    window.addEventListener('cms-content-updated', handleUpdate)
-    return () => window.removeEventListener('cms-content-updated', handleUpdate)
-  }, [])
-
-  const updateContent = useCallback((updates: Partial<HomepageContent>) => {
-    contentService.updateHomepageContent(updates)
-  }, [])
+  }, [fetchContent])
 
   return { content, isLoading, updateContent }
 }

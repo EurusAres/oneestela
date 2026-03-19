@@ -6,13 +6,18 @@ export interface HomepageContent {
   heroImage: string
   aboutTitle: string
   aboutDescription: string
-  ctaText: string
+  ctaTitle: string
+  ctaDescription: string
   ctaButtonText: string
   features: Array<{
     id: string
     title: string
     description: string
   }>
+  contactLocation?: string
+  contactPhone?: string
+  contactEmail?: string
+  contactHours?: string
 }
 
 export interface Venue {

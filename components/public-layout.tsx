@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -38,6 +38,34 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   const [showSettings, setShowSettings] = useState(false)
   const [showSupport, setShowSupport] = useState(false)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
+  const [contactInfo, setContactInfo] = useState({
+    location: '123 Event Street',
+    city: 'City, State 12345',
+    phone: '(555) 123-4567',
+    email: 'info@oneestela.com'
+  })
+
+  useEffect(() => {
+    async function fetchContactInfo() {
+      try {
+        const response = await fetch('/api/homepage')
+        const data = await response.json()
+        if (data.contactLocation || data.contactPhone || data.contactEmail) {
+          // Parse location into lines
+          const locationLines = (data.contactLocation || '123 Event Street\nCity, State 12345').split('\n')
+          setContactInfo({
+            location: locationLines[0] || '123 Event Street',
+            city: locationLines.slice(1).join(', ') || 'City, State 12345',
+            phone: data.contactPhone || '(555) 123-4567',
+            email: data.contactEmail || 'info@oneestela.com'
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching contact info:', error)
+      }
+    }
+    fetchContactInfo()
+  }, [])
 
   const navItems = [
     { name: "Home", href: "/" },
@@ -299,10 +327,10 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             <div>
               <h4 className="mb-4 font-semibold">Contact Info</h4>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li>123 Event Street</li>
-                <li>City, State 12345</li>
-                <li>Phone: (555) 123-4567</li>
-                <li>Email: info@oneestela.com</li>
+                <li>{contactInfo.location}</li>
+                <li>{contactInfo.city}</li>
+                <li>Phone: {contactInfo.phone}</li>
+                <li>Email: {contactInfo.email}</li>
               </ul>
             </div>
           </div>

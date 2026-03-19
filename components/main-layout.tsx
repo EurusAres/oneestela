@@ -49,9 +49,14 @@ export function MainLayout({ children }: MainLayoutProps) {
         const user = JSON.parse(userStr)
         setUserRole(user.role || 'admin')
         setUserId(user.id || '')
+        console.log('User role:', user.role, 'User ID:', user.id)
       } catch (error) {
         console.error('Error parsing user data:', error)
+        setUserRole('admin') // Default to admin if parsing fails
       }
+    } else {
+      console.log('No user data found, defaulting to admin')
+      setUserRole('admin')
     }
   }, [])
 
@@ -77,6 +82,8 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   // Filter menu items based on user role
   const menuItems = allMenuItems.filter(item => item.roles.includes(userRole))
+  
+  console.log('Menu items count:', menuItems.length, 'User role:', userRole)
 
   const handleLogout = () => {
     // Clear user data
@@ -91,38 +98,14 @@ export function MainLayout({ children }: MainLayoutProps) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
-      {/* Mobile menu button */}
-      <div className="flex items-center justify-between border-b p-4 md:hidden">
-        <h1 className="text-xl font-bold">One Estela Place</h1>
-        <Button variant="outline" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-          <span className="sr-only">Toggle menu</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-6 w-6"
-          >
-            <line x1="4" x2="20" y1="12" y2="12" />
-            <line x1="4" x2="20" y1="6" y2="6" />
-            <line x1="4" x2="20" y1="18" y2="18" />
-          </svg>
-        </Button>
-      </div>
-
-      {/* Sidebar - Always visible on desktop */}
-      <aside className="hidden md:flex md:flex-col md:w-64 md:border-r md:bg-white md:flex-shrink-0 sidebar-force-visible">
-        <div className="flex h-full flex-col bg-gray-50">
-          <div className="hidden items-center justify-center border-b p-4 md:flex">
+    <div className="flex min-h-screen">
+      {/* Sidebar - Always visible */}
+      <aside className="w-64 border-r bg-gray-50 flex-shrink-0">
+        <div className="flex h-full flex-col">
+          <div className="flex items-center justify-center border-b p-4 bg-white">
             <h1 className="text-xl font-bold">One Estela Place</h1>
           </div>
-          <nav className="flex-1 space-y-1 p-4">
+          <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
             {menuItems.map((item) => {
               const isActive = pathname === item.href
               return (
@@ -130,7 +113,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                   key={item.name}
                   href={item.href}
                   className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium ${
-                    isActive ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    isActive ? "bg-gray-200 text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   }`}
                 >
                   <div className="flex items-center">
@@ -142,15 +125,14 @@ export function MainLayout({ children }: MainLayoutProps) {
               )
             })}
           </nav>
-          <div className="border-t p-4 space-y-2">
-            {/* Show Settings for admin, Change Password for staff */}
+          <div className="border-t p-4 space-y-2 bg-white">
             {userRole === 'admin' && userId && (
               <AdminSettingsDialog userId={userId} />
             )}
             {userRole === 'staff' && userId && (
               <ChangePasswordDialog userId={userId} userRole={userRole} />
             )}
-            <Button variant="outline" className="flex w-full items-center justify-start bg-transparent" onClick={handleLogout}>
+            <Button variant="outline" className="flex w-full items-center justify-start" onClick={handleLogout}>
               <LogOut className="mr-3 h-5 w-5" />
               Logout
             </Button>
@@ -158,62 +140,8 @@ export function MainLayout({ children }: MainLayoutProps) {
         </div>
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setIsMobileMenuOpen(false)} />
-          <aside className="fixed left-0 top-0 bottom-0 w-64 bg-white border-r">
-            <div className="flex h-full flex-col">
-              <div className="flex items-center justify-between border-b p-4">
-                <h1 className="text-xl font-bold">One Estela Place</h1>
-                <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
-                  <span className="sr-only">Close menu</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </Button>
-              </div>
-              <nav className="flex-1 space-y-1 p-4">
-                {menuItems.map((item) => {
-                  const isActive = pathname === item.href
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium ${
-                        isActive ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                      }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <div className="flex items-center">
-                        <item.icon className="mr-3 h-5 w-5" />
-                        {item.name}
-                      </div>
-                      {item.badge && <Badge className="bg-red-100 text-red-800 text-xs animate-pulse">{item.badge}</Badge>}
-                    </Link>
-                  )
-                })}
-              </nav>
-              <div className="border-t p-4 space-y-2">
-                {userRole === 'admin' && userId && (
-                  <AdminSettingsDialog userId={userId} />
-                )}
-                {userRole === 'staff' && userId && (
-                  <ChangePasswordDialog userId={userId} userRole={userRole} />
-                )}
-                <Button variant="outline" className="flex w-full items-center justify-start bg-transparent" onClick={handleLogout}>
-                  <LogOut className="mr-3 h-5 w-5" />
-                  Logout
-                </Button>
-              </div>
-            </div>
-          </aside>
-        </div>
-      )}
-
       {/* Main content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto bg-white">
         <main className="p-6">{children}</main>
       </div>
     </div>
