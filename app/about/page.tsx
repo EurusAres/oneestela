@@ -1,8 +1,61 @@
+"use client"
+
 import { PublicLayout } from "@/components/public-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, Award, Calendar, Heart } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export default function AboutPage() {
+  const [stats, setStats] = useState({
+    eventsHosted: 0,
+    yearsOfExperience: 10,
+    averageRating: 0,
+    maxCapacity: 0
+  })
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        // Fetch dashboard stats for total bookings
+        const dashboardRes = await fetch('/api/dashboard/stats')
+        const dashboardData = await dashboardRes.json()
+        
+        // Fetch reviews for average rating
+        const reviewsRes = await fetch('/api/reviews?approved=true')
+        const reviewsData = await reviewsRes.json()
+        
+        // Fetch office rooms for max capacity
+        const roomsRes = await fetch('/api/office-rooms?includeAll=true')
+        const roomsData = await roomsRes.json()
+        
+        // Calculate average rating
+        const approvedReviews = reviewsData.reviews || []
+        const avgRating = approvedReviews.length > 0
+          ? (approvedReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / approvedReviews.length).toFixed(1)
+          : '0.0'
+        
+        // Get max capacity from all rooms
+        const maxCap = roomsData.rooms?.length > 0
+          ? Math.max(...roomsData.rooms.map((r: any) => r.capacity || 0))
+          : 0
+        
+        // Calculate years since 2014
+        const yearsOfExperience = new Date().getFullYear() - 2014
+        
+        setStats({
+          eventsHosted: dashboardData.summary?.totalBookings || 0,
+          yearsOfExperience,
+          averageRating: parseFloat(avgRating),
+          maxCapacity: maxCap
+        })
+      } catch (error) {
+        console.error('Error fetching stats:', error)
+      }
+    }
+    
+    fetchStats()
+  }, [])
+
   return (
     <PublicLayout>
       <div className="container mx-auto px-4 py-12">
@@ -17,32 +70,23 @@ export default function AboutPage() {
         </div>
 
         {/* Story Section */}
-        <div className="mb-16 grid gap-12 lg:grid-cols-2">
-          <div>
-            <h2 className="mb-6 text-3xl font-bold text-gray-900 text-center text-center">Our Story</h2>
-            <div className="space-y-4 text-gray-600">
-              <p>
-                Founded in 2014, One Estela Place began as a vision to create a space where life's most precious moments
-                could be celebrated in style. Named after the founder's grandmother, Estela, our venue embodies the
-                warmth, elegance, and hospitality that she was known for.
-              </p>
-              <p>
-                What started as a single event space has grown into a comprehensive venue offering multiple rooms,
-                state-of-the-art facilities, and a team of dedicated professionals who are passionate about making every
-                event extraordinary.
-              </p>
-              <p>
-                Today, we've had the honor of hosting over 2,000 events, from intimate gatherings to grand celebrations,
-                each one unique and memorable in its own way.
-              </p>
-            </div>
-          </div>
-          <div className="h-96 rounded-lg overflow-hidden shadow-lg">
-            <img
-              src="/images/venue-chandelier.png"
-              alt="Elegant chandelier at One Estela Place venue"
-              className="w-full h-full object-cover"
-            />
+        <div className="mb-16 mx-auto max-w-4xl">
+          <h2 className="mb-6 text-3xl font-bold text-gray-900 text-center">Our Story</h2>
+          <div className="space-y-4 text-gray-600">
+            <p>
+              Founded in 2014, One Estela Place began as a vision to create a space where life's most precious moments
+              could be celebrated in style. Named after the founder's grandmother, Estela, our venue embodies the
+              warmth, elegance, and hospitality that she was known for.
+            </p>
+            <p>
+              What started as a single event space has grown into a comprehensive venue offering multiple rooms,
+              state-of-the-art facilities, and a team of dedicated professionals who are passionate about making every
+              event extraordinary.
+            </p>
+            <p>
+              Today, we've had the honor of hosting over 2,000 events, from intimate gatherings to grand celebrations,
+              each one unique and memorable in its own way.
+            </p>
           </div>
         </div>
 
@@ -100,63 +144,24 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Team Section */}
-        <div className="mb-16">
-          <h2 className="mb-12 text-center text-3xl font-bold text-gray-900">Meet Our Team</h2>
-          <div className="grid gap-8 md:grid-cols-3">
-            <Card className="border-gray-200 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6 text-center">
-                <div className="mx-auto mb-4 h-24 w-24 rounded-full bg-gradient-to-br from-orange-400 to-amber-500"></div>
-                <h3 className="mb-2 text-xl font-semibold text-gray-900">Maria Rodriguez</h3>
-                <p className="mb-2 text-orange-500 font-medium">Event Director</p>
-                <p className="text-sm text-gray-600">
-                  With 15 years of experience in event planning, Maria ensures every detail is perfect.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-gray-200 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6 text-center">
-                <div className="mx-auto mb-4 h-24 w-24 rounded-full bg-gradient-to-br from-orange-400 to-amber-500"></div>
-                <h3 className="mb-2 text-xl font-semibold text-gray-900">James Wilson</h3>
-                <p className="mb-2 text-orange-500 font-medium">Operations Manager</p>
-                <p className="text-sm text-gray-600">
-                  James oversees all venue operations and ensures everything runs smoothly.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-gray-200 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6 text-center">
-                <div className="mx-auto mb-4 h-24 w-24 rounded-full bg-gradient-to-br from-orange-400 to-amber-500"></div>
-                <h3 className="mb-2 text-xl font-semibold text-gray-900">Sarah Chen</h3>
-                <p className="mb-2 text-orange-500 font-medium">Customer Relations</p>
-                <p className="text-sm text-gray-600">
-                  Sarah is your first point of contact and helps bring your vision to life.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
         {/* Stats Section */}
         <div className="rounded-lg bg-gradient-to-r from-orange-500 to-amber-600 p-12 text-white shadow-xl">
           <h2 className="mb-8 text-center text-3xl font-bold">Our Achievements</h2>
           <div className="grid gap-8 md:grid-cols-4">
             <div className="text-center">
-              <div className="mb-2 text-4xl font-bold">2000+</div>
+              <div className="mb-2 text-4xl font-bold">{stats.eventsHosted}+</div>
               <div className="text-orange-100">Events Hosted</div>
             </div>
             <div className="text-center">
-              <div className="mb-2 text-4xl font-bold">10+</div>
+              <div className="mb-2 text-4xl font-bold">{stats.yearsOfExperience}+</div>
               <div className="text-orange-100">Years of Experience</div>
             </div>
             <div className="text-center">
-              <div className="mb-2 text-4xl font-bold">4.9</div>
+              <div className="mb-2 text-4xl font-bold">{stats.averageRating}</div>
               <div className="text-orange-100">Average Rating</div>
             </div>
             <div className="text-center">
-              <div className="mb-2 text-4xl font-bold">500</div>
+              <div className="mb-2 text-4xl font-bold">{stats.maxCapacity}</div>
               <div className="text-orange-100">Max Capacity</div>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PublicLayout } from "@/components/public-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +19,12 @@ export default function ContactPage() {
   const { addMessage } = useMessages()
   const [showTerms, setShowTerms] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [contactInfo, setContactInfo] = useState({
+    location: '123 Event Street\nDowntown District\nCity, State 12345',
+    phone: '(555) 123-4567',
+    email: 'info@oneestela.com',
+    hours: 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: By appointment only'
+  })
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -27,6 +33,26 @@ export default function ContactPage() {
     eventDate: "",
     message: "",
   })
+
+  useEffect(() => {
+    async function fetchContactInfo() {
+      try {
+        const response = await fetch('/api/homepage')
+        const data = await response.json()
+        if (data.contactLocation || data.contactPhone || data.contactEmail || data.contactHours) {
+          setContactInfo({
+            location: data.contactLocation || contactInfo.location,
+            phone: data.contactPhone || contactInfo.phone,
+            email: data.contactEmail || contactInfo.email,
+            hours: data.contactHours || contactInfo.hours
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching contact info:', error)
+      }
+    }
+    fetchContactInfo()
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -220,12 +246,8 @@ export default function ContactPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
-                  123 Event Street
-                  <br />
-                  Downtown District
-                  <br />
-                  City, State 12345
+                <p className="text-gray-600 whitespace-pre-line">
+                  {contactInfo.location}
                 </p>
               </CardContent>
             </Card>
@@ -238,7 +260,7 @@ export default function ContactPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">(555) 123-4567</p>
+                <p className="text-gray-600">{contactInfo.phone}</p>
               </CardContent>
             </Card>
 
@@ -250,7 +272,7 @@ export default function ContactPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">info@oneestela.com</p>
+                <p className="text-gray-600">{contactInfo.email}</p>
               </CardContent>
             </Card>
 
@@ -262,10 +284,8 @@ export default function ContactPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-1 text-gray-600">
-                  <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
-                  <p>Saturday: 10:00 AM - 4:00 PM</p>
-                  <p>Sunday: By appointment only</p>
+                <div className="space-y-1 text-gray-600 whitespace-pre-line">
+                  {contactInfo.hours}
                 </div>
               </CardContent>
             </Card>

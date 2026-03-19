@@ -449,7 +449,7 @@ export function VirtualTour({ open, onOpenChange }: VirtualTourProps) {
                       </TabsList>
                     </div>
 
-                    <div className="max-h-80 overflow-y-auto">
+                    <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" style={{ maxHeight: 'calc(90vh - 300px)' }}>
                       <TabsContent value="event-venues" className="mt-0 px-4 pb-4">
                         <div className="space-y-1">
                           {eventVenues.length === 0 ? (
