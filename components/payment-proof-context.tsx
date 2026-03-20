@@ -139,20 +139,33 @@ export function PaymentProofProvider({ children }: { children: React.ReactNode }
         throw new Error("User not authenticated. Please log in to upload payment proof.")
       }
       
+      console.log('Uploading payment proof:', {
+        bookingId,
+        userId: user.id,
+        paymentDetails,
+        fileName: file.name
+      })
+      
       // Upload file first
       const uploadedFile = await fileUploadService.uploadFile(file, bookingId)
+      
+      console.log('File uploaded:', uploadedFile)
 
       // Send to API with correct field names matching database
+      const requestBody = {
+        bookingId,
+        userId: user.id,
+        fileUrl: uploadedFile.url,
+        paymentMethod: paymentDetails.paymentMethod,
+        paymentAmount: paymentDetails.paymentAmount,
+      }
+      
+      console.log('Sending to API:', requestBody)
+
       const response = await fetch("/api/payment-proofs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId,
-          userId: user.id,
-          fileUrl: uploadedFile.url,
-          paymentMethod: paymentDetails.paymentMethod,
-          paymentAmount: paymentDetails.paymentAmount,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (response.ok) {
@@ -185,8 +198,10 @@ export function PaymentProofProvider({ children }: { children: React.ReactNode }
       }
       
       const errorData = await response.json()
+      console.error('API error response:', errorData)
       throw new Error(errorData.error || "Failed to upload payment proof")
     } catch (error) {
+      console.error('Upload payment proof error:', error)
       throw new Error(`Failed to upload payment proof: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
   }

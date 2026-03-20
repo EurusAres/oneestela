@@ -28,6 +28,7 @@ export class FileUploadService {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('bookingId', bookingId)
+      formData.append('type', 'payment-proof') // Specify the type for proper directory
 
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -40,16 +41,18 @@ export class FileUploadService {
       }
 
       const data = await response.json()
+      
+      console.log('Upload API response:', data)
 
       // Generate unique file ID
       const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
       const uploadedFile: UploadedFile = {
         id: fileId,
-        name: data.fileName,
-        size: data.fileSize,
-        type: data.fileType,
-        url: data.fileUrl, // This is now a path like /uploads/payment-proofs/filename.jpg
+        name: data.fileName || file.name,
+        size: data.fileSize || file.size,
+        type: data.fileType || file.type,
+        url: data.url || data.fileUrl, // Support both 'url' and 'fileUrl' from API
         uploadedAt: new Date().toISOString(),
       }
 
@@ -70,6 +73,7 @@ export class FileUploadService {
 
       return uploadedFile
     } catch (error) {
+      console.error('File upload service error:', error)
       throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }

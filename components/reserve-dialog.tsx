@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,6 +22,12 @@ interface ReserveDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
+interface Space {
+  id: number
+  name: string
+  type: 'venue' | 'office'
+}
+
 export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
   const { user, login, isLoading } = useAuth()
   const { addBooking, getAllBookings } = useBookings()
@@ -31,6 +37,8 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
   const [loginPassword, setLoginPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const [spaces, setSpaces] = useState<Space[]>([])
+  const [loadingSpaces, setLoadingSpaces] = useState(false)
   const [bookingData, setBookingData] = useState({
     eventName: "",
     eventType: "",
@@ -44,6 +52,55 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [activeTab, setActiveTab] = useState("details")
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Fetch venues and office spaces when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchSpaces()
+    }
+  }, [open])
+
+  const fetchSpaces = async () => {
+    setLoadingSpaces(true)
+    try {
+      const [venuesRes, roomsRes] = await Promise.all([
+        fetch('/api/venues'),
+        fetch('/api/office-rooms?includeAll=true')
+      ])
+
+      const allSpaces: Space[] = []
+
+      if (venuesRes.ok) {
+        const venuesData = await venuesRes.json()
+        const venues = venuesData.venues || []
+        venues.forEach((venue: any) => {
+          allSpaces.push({
+            id: venue.id,
+            name: venue.name,
+            type: 'venue'
+          })
+        })
+      }
+
+      if (roomsRes.ok) {
+        const roomsData = await roomsRes.json()
+        const rooms = roomsData.rooms || []
+        rooms.forEach((room: any) => {
+          allSpaces.push({
+            id: room.id,
+            name: room.name,
+            type: 'office'
+          })
+        })
+      }
+
+      setSpaces(allSpaces)
+    } catch (error) {
+      console.error('Error fetching spaces:', error)
+    } finally {
+      setLoadingSpaces(false)
+    }
+  }
 
   const today = new Date()
   const minDate = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate())
@@ -67,7 +124,7 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
       newErrors.eventName = "Event name is required"
     }
     if (!bookingData.eventType) {
-      newErrors.eventType = "Event type is required"
+      newErrors.eventType = "Event space is required"
     }
     if (!bookingData.guestCount) {
       newErrors.guestCount = "Expected guests is required"
@@ -339,7 +396,7 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="eventType">Event Type</Label>
+                    <Label htmlFor="eventType">Event Space</Label>
                     <Select
                       value={bookingData.eventType}
                       onValueChange={(value) => {
@@ -350,15 +407,14 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
                       }}
                     >
                       <SelectTrigger className={errors.eventType ? "border-red-500" : ""}>
-                        <SelectValue placeholder="Select type" />
+                        <SelectValue placeholder={loadingSpaces ? "Loading spaces..." : "Select space"} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="wedding">Wedding</SelectItem>
-                        <SelectItem value="corporate">Corporate Event</SelectItem>
-                        <SelectItem value="birthday">Birthday Party</SelectItem>
-                        <SelectItem value="anniversary">Anniversary</SelectItem>
-                        <SelectItem value="graduation">Graduation</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        {spaces.map((space) => (
+                          <SelectItem key={`${space.type}-${space.id}`} value={`${space.type}-${space.id}`}>
+                            {space.name} ({space.type === 'venue' ? 'Venue' : 'Office Space'})
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {errors.eventType && <p className="text-sm text-red-500">{errors.eventType}</p>}

@@ -64,9 +64,25 @@ export async function POST(request: NextRequest) {
       paymentAmount,
     } = await request.json();
 
-    if (!bookingId || !userId || !fileUrl || !paymentMethod || !paymentAmount) {
+    console.log('Payment proof POST received:', {
+      bookingId,
+      userId,
+      fileUrl,
+      paymentMethod,
+      paymentAmount
+    });
+
+    const missingFields = [];
+    if (!bookingId) missingFields.push('bookingId');
+    if (!userId) missingFields.push('userId');
+    if (!fileUrl) missingFields.push('fileUrl');
+    if (!paymentMethod) missingFields.push('paymentMethod');
+    if (!paymentAmount) missingFields.push('paymentAmount');
+
+    if (missingFields.length > 0) {
+      console.error('Missing fields:', missingFields);
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: `Missing required fields: ${missingFields.join(', ')}` },
         { status: 400 }
       );
     }

@@ -20,16 +20,67 @@ export default function ReportsPage() {
   const { toast } = useToast()
 
   const handleExport = (type: string) => {
-    const blob = new Blob([JSON.stringify(stats, null, 2)], { type: "application/json" })
+    // Format data as readable text
+    let textContent = `ONE ESTELA PLACE - ${type.toUpperCase()} REPORT\n`
+    textContent += `Generated: ${new Date().toLocaleString()}\n`
+    textContent += `${"=".repeat(60)}\n\n`
+
+    if (stats) {
+      textContent += `SUMMARY STATISTICS\n`
+      textContent += `${"-".repeat(60)}\n`
+      textContent += `Total Bookings: ${stats.summary?.totalBookings ?? 0}\n`
+      textContent += `  - Confirmed: ${stats.summary?.confirmed ?? 0}\n`
+      textContent += `  - Pending: ${stats.summary?.pending ?? 0}\n`
+      textContent += `  - Cancelled: ${stats.summary?.cancelled ?? 0}\n`
+      textContent += `  - Completed: ${stats.summary?.completed ?? 0}\n\n`
+      
+      textContent += `Total Revenue: ₱${(stats.summary?.totalRevenue ?? 0).toLocaleString()}\n`
+      textContent += `Total Customers: ${stats.summary?.totalUsers ?? 0}\n`
+      textContent += `Average Rating: ${stats.summary?.avgRating ?? "N/A"} ★\n`
+      textContent += `Total Reviews: ${stats.summary?.totalReviews ?? 0}\n\n`
+
+      textContent += `THIS MONTH\n`
+      textContent += `${"-".repeat(60)}\n`
+      textContent += `Bookings: ${stats.thisMonth?.bookings ?? 0}\n`
+      textContent += `Revenue: ₱${(stats.thisMonth?.revenue ?? 0).toLocaleString()}\n\n`
+
+      textContent += `LAST MONTH\n`
+      textContent += `${"-".repeat(60)}\n`
+      textContent += `Bookings: ${stats.lastMonth?.bookings ?? 0}\n`
+      textContent += `Revenue: ₱${(stats.lastMonth?.revenue ?? 0).toLocaleString()}\n\n`
+
+      if (stats.monthlyBookings && stats.monthlyBookings.length > 0) {
+        textContent += `MONTHLY BOOKINGS\n`
+        textContent += `${"-".repeat(60)}\n`
+        stats.monthlyBookings.forEach((mb: any) => {
+          textContent += `${mb.month}: ${mb.count} bookings\n`
+        })
+        textContent += `\n`
+      }
+
+      if (stats.monthlyRevenue && stats.monthlyRevenue.length > 0) {
+        textContent += `MONTHLY REVENUE\n`
+        textContent += `${"-".repeat(60)}\n`
+        stats.monthlyRevenue.forEach((mr: any) => {
+          textContent += `${mr.month}: ₱${Number(mr.amount).toLocaleString()}\n`
+        })
+        textContent += `\n`
+      }
+    }
+
+    textContent += `\nEnd of Report\n`
+    textContent += `${"=".repeat(60)}\n`
+
+    const blob = new Blob([textContent], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `${type}-report-${new Date().toISOString().split("T")[0]}.json`
+    a.download = `${type}-report-${new Date().toISOString().split("T")[0]}.txt`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    toast({ title: "Report Exported", description: `${type} report downloaded.` })
+    toast({ title: "Report Exported", description: `${type} report downloaded as TXT file.` })
   }
 
   const s = stats?.summary
