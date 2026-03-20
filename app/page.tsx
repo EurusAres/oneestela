@@ -5,7 +5,6 @@ import { Calendar, MapPin, Users, Star } from "lucide-react"
 import { ReserveButton } from "@/components/reserve-button"
 import { TourButton } from "@/components/tour-button"
 import { FeaturedReviewsSection } from "@/components/featured-reviews-section"
-import { AvailableSpacesSection } from "@/components/available-spaces-section"
 
 async function getHomepageContent() {
   try {
@@ -138,9 +137,6 @@ export default async function HomePage() {
 
       {/* Testimonials Section */}
       <FeaturedReviewsSection />
-
-      {/* Available Spaces Section */}
-      <AvailableSpacesSection />
 
       {/* CTA Section with Chandelier Background */}
       <section className="relative py-16 bg-gray-900 text-white">

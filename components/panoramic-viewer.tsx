@@ -22,8 +22,8 @@ export function PanoramicViewer({ imageUrl, className = '' }: PanoramicViewerPro
         const container = containerRef.current
         const maxScroll = container.scrollWidth - container.clientWidth
         
-        // Auto-rotate by incrementing scroll position
-        container.scrollLeft += 0.5
+        // Auto-rotate by incrementing scroll position (increased speed)
+        container.scrollLeft += 1.5
         
         // Loop back to start when reaching the end
         if (container.scrollLeft >= maxScroll) {
