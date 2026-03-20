@@ -98,9 +98,7 @@ export function AvailableSpacesSection() {
               <Card key={`venue-${venue.id}`} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="h-48 overflow-hidden">
                   <img
-                    src={venue.image_url && venue.image_url.trim() !== '' 
-                      ? (venue.image_url.startsWith('http') ? venue.image_url : `${venue.image_url}`)
-                      : 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&h=600&fit=crop'}
+                    src={venue.image_url || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&h=600&fit=crop'}
                     alt={venue.name}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
@@ -168,9 +166,7 @@ export function AvailableSpacesSection() {
               <Card key={`room-${room.id}`} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="h-48 overflow-hidden">
                   <img
-                    src={room.image_url && room.image_url.trim() !== '' 
-                      ? (room.image_url.startsWith('http') ? room.image_url : `${room.image_url}`)
-                      : 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop'}
+                    src={room.image_url || 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop'}
                     alt={room.name}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     onError={(e) => {

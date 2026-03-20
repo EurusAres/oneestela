@@ -289,13 +289,6 @@ export function CMSOfficeRoomEditor() {
               </div>
             </CardHeader>
             <CardContent>
-              {room.image_url && (
-                <img
-                  src={room.image_url}
-                  alt={room.name}
-                  className="w-full h-32 object-cover rounded-md mb-3"
-                />
-              )}
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
