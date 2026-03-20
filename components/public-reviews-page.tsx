@@ -154,7 +154,7 @@ export function PublicReviewsPage() {
                 </p>
                 
                 <div className="mt-4 text-xs text-muted-foreground">
-                  Event at {review.room_name}
+                  Event at {review.venue_name || review.room_name}
                 </div>
               </CardContent>
             </Card>

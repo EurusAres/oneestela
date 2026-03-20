@@ -149,7 +149,7 @@ export default function ReviewsPage() {
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
-                <span>{review.room_name}</span>
+                <span>{review.venue_name || review.room_name}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />

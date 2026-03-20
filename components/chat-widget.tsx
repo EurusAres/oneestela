@@ -189,7 +189,7 @@ export function ChatWidget() {
                 {unreadCount > 9 ? "9+" : unreadCount}
               </Badge>
             )}
-            <div className="absolute -top-12 right-0 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            <div className="absolute -top-12 right-0 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
               {chatMode === "bot" ? "Chat with One Estela Place" : "Chat with Support"}
             </div>
           </Button>

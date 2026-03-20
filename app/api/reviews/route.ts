@@ -5,13 +5,18 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const officeRoomId = searchParams.get('officeRoomId');
+    const venueId = searchParams.get('venueId');
     const approved = searchParams.get('approved');
 
     let query = `
-      SELECT r.*, u.full_name, o.name as room_name
+      SELECT r.*, 
+             u.full_name, 
+             o.name as room_name,
+             v.name as venue_name
       FROM reviews r
       JOIN users u ON r.user_id = u.id
-      JOIN office_rooms o ON r.office_room_id = o.id
+      LEFT JOIN office_rooms o ON r.office_room_id = o.id
+      LEFT JOIN venues v ON r.venue_id = v.id
       WHERE 1=1
     `;
     const params: any[] = [];
@@ -19,6 +24,11 @@ export async function GET(request: NextRequest) {
     if (officeRoomId) {
       query += ' AND r.office_room_id = ?';
       params.push(officeRoomId);
+    }
+
+    if (venueId) {
+      query += ' AND r.venue_id = ?';
+      params.push(venueId);
     }
 
     if (approved === 'true') {
@@ -43,11 +53,26 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, officeRoomId, bookingId, rating, title, reviewText } = await request.json();
+    const { userId, officeRoomId, venueId, bookingId, rating, title, reviewText } = await request.json();
 
-    if (!userId || !officeRoomId || !rating || !reviewText) {
+    if (!userId || !rating || !reviewText) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: userId, rating, and reviewText are required' },
+        { status: 400 }
+      );
+    }
+
+    // Must have either officeRoomId or venueId, but not both
+    if (!officeRoomId && !venueId) {
+      return NextResponse.json(
+        { error: 'Either officeRoomId or venueId must be provided' },
+        { status: 400 }
+      );
+    }
+
+    if (officeRoomId && venueId) {
+      return NextResponse.json(
+        { error: 'Cannot specify both officeRoomId and venueId' },
         { status: 400 }
       );
     }
@@ -61,9 +86,9 @@ export async function POST(request: NextRequest) {
 
     const result = await executeQuery(
       `INSERT INTO reviews 
-       (user_id, office_room_id, booking_id, rating, title, review_text, is_approved, is_featured)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, officeRoomId, bookingId || null, rating, title || '', reviewText, false, false]
+       (user_id, office_room_id, venue_id, booking_id, rating, title, review_text, is_approved, is_featured)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, officeRoomId || null, venueId || null, bookingId || null, rating, title || '', reviewText, false, false]
     );
 
     return NextResponse.json(

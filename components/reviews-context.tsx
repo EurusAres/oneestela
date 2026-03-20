@@ -5,7 +5,8 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 export interface Review {
   id: string
   user_id: string
-  office_room_id: string
+  office_room_id?: string
+  venue_id?: string
   booking_id?: string
   rating: number
   title: string
@@ -15,7 +16,8 @@ export interface Review {
   created_at: string
   updated_at: string
   full_name: string
-  room_name: string
+  room_name?: string
+  venue_name?: string
 }
 
 export interface ReviewStats {
@@ -89,7 +91,8 @@ export function ReviewsProvider({ children }: { children: React.ReactNode }) {
 
   const submitReview = useCallback(async (reviewData: {
     userId: string
-    officeRoomId: string
+    officeRoomId?: string
+    venueId?: string
     bookingId?: string
     rating: number
     title: string
