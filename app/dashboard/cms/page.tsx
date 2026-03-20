@@ -9,7 +9,7 @@ import { useCMS } from '@/components/cms-context'
 import { CMSHomepageEditor } from '@/components/cms-homepage-editor'
 import { CMSVenueEditor } from '@/components/cms-venue-editor'
 import { CMSOfficeRoomEditor } from '@/components/cms-office-room-editor'
-import { ImageIcon, Home, Building2, Save } from 'lucide-react'
+import { ImageIcon, Home, Building2 } from 'lucide-react'
 
 export default function CMSPage() {
   const { cmsData } = useCMS()
@@ -18,15 +18,9 @@ export default function CMSPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Content Management System</h1>
-            <p className="text-muted-foreground">Manage all website content, images, and descriptions</p>
-          </div>
-          <Button className="gap-2" size="lg">
-            <Save className="h-4 w-4" />
-            Save Changes
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Content Management System</h1>
+          <p className="text-muted-foreground">Manage all website content, images, and descriptions</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

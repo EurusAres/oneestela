@@ -122,6 +122,13 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
       return
     }
 
+    console.log('Submitting payment proof:', {
+      bookingId,
+      paymentDetails,
+      fileName: selectedFile.name,
+      fileSize: selectedFile.size
+    })
+
     setIsUploading(true)
 
     try {
@@ -137,16 +144,17 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
       setPaymentDetails({
         paymentMethod: "",
         paymentAmount: "",
-        paymentDate: "",
+        paymentDate: new Date().toISOString().split('T')[0], // Reset to today's date
         paymentReference: "",
       })
       setShowUploadForm(false)
 
       onOpenChange(false)
     } catch (error) {
+      console.error('Payment proof upload error:', error)
       toast({
         title: "Upload failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error occurred",
         variant: "destructive",
       })
     } finally {
