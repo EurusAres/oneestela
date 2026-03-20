@@ -94,7 +94,9 @@ export function MainLayout({ children }: MainLayoutProps) {
       title: "Logged out",
       description: "You have been successfully logged out",
     })
-    router.push("/")
+    
+    // Force full page reload to clear auth state
+    window.location.href = "/"
   }
 
   return (
