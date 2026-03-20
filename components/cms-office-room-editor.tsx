@@ -121,6 +121,7 @@ export function CMSOfficeRoomEditor() {
   }
 
   const uploadFile = async (file: File, type: 'regular' | '360') => {
+    console.log('Uploading file:', file.name, 'type:', type);
     const formData = new FormData()
     formData.append('file', file)
     formData.append('type', `office-${type}`)
@@ -135,6 +136,7 @@ export function CMSOfficeRoomEditor() {
     }
 
     const data = await response.json()
+    console.log('Upload response:', data);
     return data.url
   }
 
@@ -174,6 +176,10 @@ export function CMSOfficeRoomEditor() {
         type: formData.type,
         amenities: formData.amenities.split(',').map(a => a.trim()).filter(Boolean)
       }
+
+      console.log('Saving office room with payload:', payload);
+      console.log('regularImageFile:', regularImageFile);
+      console.log('image360File:', image360File);
 
       const url = '/api/office-rooms'
       const method = editingRoom ? 'PATCH' : 'POST'

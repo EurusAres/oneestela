@@ -166,6 +166,8 @@ export function CMSVenueEditor() {
         amenities: formData.amenities.split(',').map(a => a.trim()).filter(Boolean)
       }
 
+      console.log('Saving venue with payload:', payload);
+
       const method = editingVenue ? 'PATCH' : 'POST'
       
       const response = await fetch('/api/venues', {

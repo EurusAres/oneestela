@@ -104,6 +104,9 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const body = await request.json();
+    console.log('PATCH request received:', body);
+    
     const { 
       id,
       name, 
@@ -114,7 +117,7 @@ export async function PATCH(request: NextRequest) {
       imageUrl, 
       image360Url,
       amenities 
-    } = await request.json();
+    } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -149,6 +152,7 @@ export async function PATCH(request: NextRequest) {
     if (imageUrl !== undefined) {
       updates.push('image_url = ?');
       params.push(imageUrl);
+      console.log('Updating image_url to:', imageUrl);
     }
     if (image360Url !== undefined) {
       updates.push('image_360_url = ?');
@@ -168,10 +172,11 @@ export async function PATCH(request: NextRequest) {
 
     params.push(id);
 
-    await executeQuery(
-      `UPDATE venues SET ${updates.join(', ')} WHERE id = ?`,
-      params
-    );
+    const query = `UPDATE venues SET ${updates.join(', ')} WHERE id = ?`;
+    console.log('Executing query:', query);
+    console.log('With params:', params);
+
+    await executeQuery(query, params);
 
     return NextResponse.json({ message: 'Venue updated successfully' });
   } catch (error) {
