@@ -153,13 +153,8 @@ export function CMSOfficeRoomEditor() {
     try {
       setUploading(true)
       
-      let imageUrl = formData.imageUrl
+      let imageUrl = ''
       let image360Url = formData.image360Url
-
-      // Upload regular image if file is selected
-      if (regularImageFile) {
-        imageUrl = await uploadFile(regularImageFile, 'regular')
-      }
 
       // Upload 360° image if file is selected
       if (image360File) {
@@ -395,33 +390,6 @@ export function CMSOfficeRoomEditor() {
                   placeholder="e.g., 500"
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="imageFile">
-                <Image className="h-4 w-4 inline mr-2" />
-                Regular Image
-              </Label>
-              <Input
-                id="imageFile"
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    setRegularImageFile(file)
-                  }
-                }}
-              />
-              {formData.imageUrl && !regularImageFile && (
-                <p className="text-xs text-green-600">Current: {formData.imageUrl.split('/').pop()}</p>
-              )}
-              {regularImageFile && (
-                <p className="text-xs text-blue-600">Selected: {regularImageFile.name}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Upload an image file for this space
-              </p>
             </div>
 
             <div className="space-y-2">

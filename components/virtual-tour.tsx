@@ -393,30 +393,6 @@ export function VirtualTour({ open, onOpenChange }: VirtualTourProps) {
                 </div>
               )}
 
-              {/* Angle Navigation */}
-              <div className="absolute bottom-24 left-4 z-20 flex space-x-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={prevAngle}
-                  className="bg-white/90 hover:bg-white"
-                  disabled={currentArea.angles.length <= 1}
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Previous View
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={nextAngle}
-                  className="bg-white/90 hover:bg-white"
-                  disabled={currentArea.angles.length <= 1}
-                >
-                  Next View
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-
               {/* Tour Areas Toggle Button */}
               <div className="absolute top-20 right-4 z-20">
                 <Button

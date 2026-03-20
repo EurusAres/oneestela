@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '@/lib/db';
 
 export async function GET() {
@@ -42,5 +42,32 @@ export async function GET() {
   } catch (error) {
     console.error('Conversations error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { userId } = await request.json();
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Missing userId' },
+        { status: 400 }
+      );
+    }
+
+    // Delete all messages where this user is either sender or receiver
+    await executeQuery(
+      'DELETE FROM chat_messages WHERE sender_id = ? OR receiver_id = ?',
+      [userId, userId]
+    );
+
+    return NextResponse.json({ message: 'Conversation deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

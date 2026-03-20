@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send, MessageCircle, Search, RefreshCw } from "lucide-react"
+import { Send, MessageCircle, Search, RefreshCw, Trash2, X } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -52,6 +52,8 @@ export default function AdminChatPage() {
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [deletingConversation, setDeletingConversation] = useState<number | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // Debug: log user state
@@ -168,6 +170,74 @@ export default function AdminChatPage() {
     }
   }
 
+  const handleDeleteMessage = async (messageId: number) => {
+    if (!confirm("Are you sure you want to delete this message?")) {
+      return
+    }
+    
+    setDeletingId(messageId)
+    try {
+      const res = await fetch("/api/chat", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId }),
+      })
+      
+      if (res.ok) {
+        toast({ title: "Message deleted", description: "The message has been removed." })
+        if (selectedUserId) {
+          await loadMessages(selectedUserId)
+          await loadConversations()
+        }
+      } else {
+        const err = await res.json().catch(() => ({}))
+        toast({ title: "Failed to delete", description: err.error || "Unknown error", variant: "destructive" })
+      }
+    } catch (err) {
+      console.error('[Admin Chat] Delete error:', err)
+      toast({ title: "Network error", description: "Could not delete message", variant: "destructive" })
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const handleDeleteConversation = async (userId: number, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent selecting the conversation
+    
+    if (!confirm("Are you sure you want to delete all messages with this customer? This cannot be undone.")) {
+      return
+    }
+    
+    setDeletingConversation(userId)
+    try {
+      const res = await fetch("/api/chat/conversations", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      })
+      
+      if (res.ok) {
+        toast({ title: "Conversation deleted", description: "All messages with this customer have been removed." })
+        
+        // If this was the selected conversation, clear selection
+        if (selectedUserId === userId) {
+          setSelectedUserId(null)
+          setMessages([])
+        }
+        
+        await loadConversations()
+      } else {
+        const err = await res.json().catch(() => ({}))
+        toast({ title: "Failed to delete", description: err.error || "Unknown error", variant: "destructive" })
+      }
+    } catch (err) {
+      console.error('[Admin Chat] Delete conversation error:', err)
+      toast({ title: "Network error", description: "Could not delete conversation", variant: "destructive" })
+    } finally {
+      setDeletingConversation(null)
+    }
+  }
+
   useEffect(() => { loadConversations() }, [])
 
   // Auto-refresh every 10 seconds
@@ -230,38 +300,47 @@ export default function AdminChatPage() {
                 ) : (
                   <div className="p-2 space-y-1">
                     {filtered.map(conv => (
-                      <button
-                        key={conv.userId}
-                        onClick={() => handleSelectConversation(conv.userId)}
-                        className={cn(
-                          "w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors",
-                          selectedUserId === conv.userId
-                            ? "bg-blue-50 border border-blue-200"
-                            : "hover:bg-gray-50"
-                        )}
-                      >
-                        <Avatar className="h-9 w-9 flex-shrink-0">
-                          <AvatarFallback className="bg-indigo-100 text-indigo-700 text-sm font-semibold">
-                            {conv.userName.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <span className={cn("text-sm truncate", conv.unread > 0 ? "font-bold" : "font-medium")}>
-                              {conv.userName}
-                            </span>
-                            <span className="text-xs text-gray-400 flex-shrink-0 ml-1">{formatTime(conv.lastTime)}</span>
+                      <div key={conv.userId} className="relative group">
+                        <button
+                          onClick={() => handleSelectConversation(conv.userId)}
+                          className={cn(
+                            "w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors",
+                            selectedUserId === conv.userId
+                              ? "bg-blue-50 border border-blue-200"
+                              : "hover:bg-gray-50"
+                          )}
+                        >
+                          <Avatar className="h-9 w-9 flex-shrink-0">
+                            <AvatarFallback className="bg-indigo-100 text-indigo-700 text-sm font-semibold">
+                              {conv.userName.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className={cn("text-sm truncate", conv.unread > 0 ? "font-bold" : "font-medium")}>
+                                {conv.userName}
+                              </span>
+                              <span className="text-xs text-gray-400 flex-shrink-0 ml-1">{formatTime(conv.lastTime)}</span>
+                            </div>
+                            <p className={cn("text-xs truncate", conv.unread > 0 ? "text-gray-900 font-medium" : "text-gray-500")}>
+                              {conv.lastMessage}
+                            </p>
                           </div>
-                          <p className={cn("text-xs truncate", conv.unread > 0 ? "text-gray-900 font-medium" : "text-gray-500")}>
-                            {conv.lastMessage}
-                          </p>
-                        </div>
-                        {conv.unread > 0 && (
-                          <Badge className="bg-red-500 text-white text-xs h-5 w-5 flex items-center justify-center p-0 rounded-full flex-shrink-0">
-                            {conv.unread}
-                          </Badge>
-                        )}
-                      </button>
+                          {conv.unread > 0 && (
+                            <Badge className="bg-red-500 text-white text-xs h-5 w-5 flex items-center justify-center p-0 rounded-full flex-shrink-0">
+                              {conv.unread}
+                            </Badge>
+                          )}
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteConversation(conv.userId, e)}
+                          disabled={deletingConversation === conv.userId}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-100 rounded-md z-10"
+                          title="Delete conversation"
+                        >
+                          <Trash2 className={cn("h-4 w-4 text-red-600", deletingConversation === conv.userId && "animate-pulse")} />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -14,6 +14,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { useReviews } from '@/components/reviews-context'
 import { Star, MessageSquare } from 'lucide-react'
@@ -41,6 +48,10 @@ export function ReviewSubmissionDialog({
   const [title, setTitle] = useState('')
   const [reviewText, setReviewText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedRoomId, setSelectedRoomId] = useState(officeRoomId || '')
+  const [selectedType, setSelectedType] = useState<'venue' | 'office'>('office')
+  const [spaces, setSpaces] = useState<Array<{ id: string; name: string; type: 'venue' | 'office' }>>([])
+  const [isLoadingRooms, setIsLoadingRooms] = useState(true)
   
   const { submitReview } = useReviews()
   const { toast } = useToast()
@@ -48,6 +59,78 @@ export function ReviewSubmissionDialog({
   // Use controlled or internal state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen
   const setOpen = controlledOnOpenChange || setInternalOpen
+
+  // Fetch office rooms when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchOfficeRooms()
+    }
+  }, [open])
+
+  // Update selected room when officeRoomId prop changes
+  useEffect(() => {
+    if (officeRoomId) {
+      setSelectedRoomId(officeRoomId)
+    }
+  }, [officeRoomId])
+
+  const fetchOfficeRooms = async () => {
+    try {
+      setIsLoadingRooms(true)
+      
+      // Fetch both venues and office rooms
+      const [venuesResponse, roomsResponse] = await Promise.all([
+        fetch('/api/venues'),
+        fetch('/api/office-rooms?includeAll=true')
+      ])
+      
+      const allSpaces: Array<{ id: string; name: string; type: 'venue' | 'office' }> = []
+      
+      if (venuesResponse.ok) {
+        const venuesData = await venuesResponse.json()
+        const venues = venuesData.venues || []
+        venues.forEach((venue: any) => {
+          allSpaces.push({
+            id: `venue_${venue.id}`,
+            name: venue.name,
+            type: 'venue'
+          })
+        })
+      }
+      
+      if (roomsResponse.ok) {
+        const roomsData = await roomsResponse.json()
+        const rooms = roomsData.rooms || []
+        rooms.forEach((room: any) => {
+          allSpaces.push({
+            id: `office_${room.id}`,
+            name: room.name,
+            type: 'office'
+          })
+        })
+      }
+      
+      console.log('Fetched all spaces:', allSpaces)
+      setSpaces(allSpaces)
+      
+      // If no room is selected and we have spaces, select the first one
+      if (!selectedRoomId && allSpaces.length > 0) {
+        const firstSpace = allSpaces[0]
+        console.log('Auto-selecting first space:', firstSpace)
+        setSelectedRoomId(firstSpace.id)
+        setSelectedType(firstSpace.type)
+      }
+    } catch (error) {
+      console.error('Error fetching spaces:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load spaces. Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoadingRooms(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,17 +157,42 @@ export function ReviewSubmissionDialog({
       return
     }
 
+    if (!selectedRoomId) {
+      console.log('No room selected, current value:', selectedRoomId)
+      toast({
+        title: 'Space Required',
+        description: 'Please select a space to review.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    console.log('Submitting review for space:', selectedRoomId, 'type:', selectedType)
+
     setIsSubmitting(true)
     
     try {
-      const success = await submitReview({
+      // Parse the ID to get the actual numeric ID
+      const actualId = selectedRoomId.replace(/^(venue_|office_)/, '')
+      
+      const reviewData: any = {
         userId: user.id,
-        officeRoomId: officeRoomId || '1', // Default to first room if not specified
         bookingId,
         rating,
         title: title.trim(),
         reviewText: reviewText.trim(),
-      })
+      }
+      
+      // Set either venueId or officeRoomId based on type
+      if (selectedType === 'venue') {
+        reviewData.venueId = actualId
+      } else {
+        reviewData.officeRoomId = actualId
+      }
+      
+      console.log('Review data:', reviewData)
+      
+      const success = await submitReview(reviewData)
 
       if (success) {
         toast({
@@ -167,6 +275,37 @@ export function ReviewSubmissionDialog({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="space">Space/Venue *</Label>
+            <Select
+              value={selectedRoomId}
+              onValueChange={(value) => {
+                setSelectedRoomId(value)
+                const space = spaces.find(s => s.id === value)
+                if (space) {
+                  setSelectedType(space.type)
+                }
+              }}
+              disabled={isLoadingRooms || !!officeRoomId}
+            >
+              <SelectTrigger id="space">
+                <SelectValue placeholder={isLoadingRooms ? "Loading spaces..." : "Select a space"} />
+              </SelectTrigger>
+              <SelectContent>
+                {spaces.map((space) => (
+                  <SelectItem key={space.id} value={space.id.toString()}>
+                    {space.name} {space.type === 'venue' ? '(Venue)' : '(Office Space)'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {officeRoomId && (
+              <p className="text-xs text-muted-foreground">
+                This review is for a specific booking
+              </p>
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label>Rating</Label>
             {renderStars(true)}
