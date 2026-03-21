@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Users, Upload, CheckCircle, AlertCircle, Star } from "lucide-react"
+import { Calendar, Clock, Users, Upload, CheckCircle, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth-context"
 import { useBookings } from "@/components/booking-context"
@@ -12,7 +12,6 @@ import { usePaymentProof } from "@/components/payment-proof-context"
 import { CancellationDialog } from "@/components/cancellation-dialog"
 import { ModifyBookingDialog } from "@/components/modify-booking-dialog"
 import { PaymentProofUpload } from "@/components/payment-proof-upload"
-import { ReviewSubmissionDialog } from "@/components/review-submission-dialog"
 
 interface TransactionsDialogProps {
   open: boolean
@@ -206,26 +205,6 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
                           ? "View Payment Proof"
                           : "Upload Payment Proof"}
                     </Button>
-                  )}
-
-                  {/* Review Button - Show for completed bookings */}
-                  {booking.status === "completed" && (
-                    <ReviewSubmissionDialog
-                      bookingId={booking.id}
-                      officeRoomId="1" // You may want to get this from booking data
-                      trigger={
-                        <Button variant="outline" size="sm" className="bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200">
-                          <Star className="mr-2 h-4 w-4" />
-                          Write Review
-                        </Button>
-                      }
-                      onSuccess={() => {
-                        toast({
-                          title: "Review Submitted",
-                          description: "Thank you for your feedback!",
-                        })
-                      }}
-                    />
                   )}
 
                   {booking.status === "pending" && (

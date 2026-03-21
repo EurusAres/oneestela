@@ -97,8 +97,10 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Error creating review:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error details:', errorMessage);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: errorMessage },
       { status: 500 }
     );
   }

@@ -7,8 +7,14 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId');
 
     let query = `
-      SELECT b.*, o.name as room_name, o.image_url,
-             u.full_name as user_name, u.email as user_email, u.phone as user_phone
+      SELECT b.*, 
+             b.event_name, 
+             b.event_type,
+             o.name as room_name, 
+             o.image_url,
+             u.full_name as user_name, 
+             u.email as user_email, 
+             u.phone as user_phone
       FROM bookings b
       LEFT JOIN office_rooms o ON b.office_room_id = o.id
       LEFT JOIN users u ON b.user_id = u.id
@@ -75,8 +81,10 @@ export async function POST(request: NextRequest) {
     const numberOfGuests = body.numberOfGuests || body.guestCount || 1;
     const specialRequests = body.specialRequests || '';
     const totalPrice = body.totalPrice || 0;
+    const eventName = body.eventName || 'Event Booking';
+    const eventType = body.eventType || 'general';
 
-    console.log('Processed values:', { userId, officeRoomId, checkInDate, checkOutDate, numberOfGuests });
+    console.log('Processed values:', { userId, officeRoomId, checkInDate, checkOutDate, numberOfGuests, eventName, eventType });
 
     if (!userId || !checkInDate || !checkOutDate) {
       console.error('Validation failed:', { userId, checkInDate, checkOutDate });
@@ -88,9 +96,9 @@ export async function POST(request: NextRequest) {
 
     const result = await executeQuery(
       `INSERT INTO bookings 
-       (user_id, office_room_id, check_in_date, check_out_date, number_of_guests, special_requests, total_price, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, officeRoomId, checkInDate, checkOutDate, numberOfGuests, specialRequests, totalPrice, 'pending']
+       (user_id, event_name, event_type, office_room_id, check_in_date, check_out_date, number_of_guests, special_requests, total_price, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, eventName, eventType, officeRoomId, checkInDate, checkOutDate, numberOfGuests, specialRequests, totalPrice, 'pending']
     );
 
     const insertId = (result as any).insertId;

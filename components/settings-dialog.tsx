@@ -59,7 +59,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     setIsLoading(true)
     try {
       const response = await fetch('/api/auth/change-password', {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user?.id,

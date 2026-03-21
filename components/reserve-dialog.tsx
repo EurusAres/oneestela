@@ -263,6 +263,7 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
   }
 
   const availableTimes = [
+    "8:00 AM",
     "9:00 AM",
     "10:00 AM",
     "11:00 AM",
@@ -275,6 +276,8 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
     "6:00 PM",
     "7:00 PM",
     "8:00 PM",
+    "9:00 PM",
+    "10:00 PM",
   ]
 
   return (

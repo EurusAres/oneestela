@@ -31,20 +31,34 @@ export function ForgotPasswordDialog({ open, onOpenChange, onBackToLogin }: Forg
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Demo: Accept any email that contains "oneestela.com"
-    if (email.includes("oneestela.com")) {
-      toast({
-        title: "Reset code sent",
-        description: "Please check your email for the reset code. (Demo code: 123456)",
+    try {
+      const response = await fetch('/api/auth/send-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, isPasswordReset: true }),
       })
-      setStep("verify")
-    } else {
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: "Reset code sent",
+          description: "Please check your email for the reset code.",
+        })
+        setStep("verify")
+      } else {
+        toast({
+          title: "Email not found",
+          description: data.error || "No account found with this email address.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
       toast({
-        title: "Email not found",
-        description: "No account found with this email address.",
+        title: "Error",
+        description: "Failed to send reset code. Please try again.",
         variant: "destructive",
       })
     }
@@ -56,16 +70,30 @@ export function ForgotPasswordDialog({ open, onOpenChange, onBackToLogin }: Forg
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    try {
+      const response = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, code: resetCode, isPasswordReset: true }),
+      })
 
-    // Demo: Accept code "123456"
-    if (resetCode === "123456") {
-      setStep("reset")
-    } else {
+      const data = await response.json()
+
+      if (response.ok) {
+        setStep("reset")
+      } else {
+        toast({
+          title: "Invalid code",
+          description: data.error || "The reset code you entered is incorrect.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
       toast({
-        title: "Invalid code",
-        description: "The reset code you entered is incorrect. Try: 123456",
+        title: "Error",
+        description: "Failed to verify code. Please try again.",
         variant: "destructive",
       })
     }
@@ -96,10 +124,38 @@ export function ForgotPasswordDialog({ open, onOpenChange, onBackToLogin }: Forg
 
     setIsLoading(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          code: resetCode,
+          newPassword,
+        }),
+      })
 
-    setStep("success")
+      const data = await response.json()
+
+      if (response.ok) {
+        setStep("success")
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to reset password. Please try again.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reset password. Please try again.",
+        variant: "destructive",
+      })
+    }
+
     setIsLoading(false)
   }
 
@@ -213,9 +269,7 @@ export function ForgotPasswordDialog({ open, onOpenChange, onBackToLogin }: Forg
               </Button>
             </div>
 
-            <div className="mt-4 p-3 bg-gray-50 rounded-md">
-              <p className="text-xs text-gray-600">Demo: Use any @oneestela.com email</p>
-            </div>
+
           </form>
         )}
 
@@ -251,9 +305,7 @@ export function ForgotPasswordDialog({ open, onOpenChange, onBackToLogin }: Forg
               </Button>
             </div>
 
-            <div className="mt-4 p-3 bg-gray-50 rounded-md">
-              <p className="text-xs text-gray-600">Demo code: 123456</p>
-            </div>
+
           </form>
         )}
 

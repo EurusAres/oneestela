@@ -4,12 +4,13 @@ import bcrypt from 'bcrypt';
 
 export async function PUT(request: NextRequest) {
   try {
-    const { userId, currentPassword, newPassword } = await request.json();
+    const body = await request.json();
+    const { userId, currentPassword, newPassword, email, code } = body;
 
-    // Validate input
-    if (!userId || !currentPassword || !newPassword) {
+    // Validate new password
+    if (!newPassword) {
       return NextResponse.json(
-        { error: 'User ID, current password, and new password are required' },
+        { error: 'New password is required' },
         { status: 400 }
       );
     }
@@ -21,42 +22,101 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Get user's current password hash
-    const users = await executeQuery(
-      'SELECT id, password_hash FROM users WHERE id = ?',
-      [userId]
-    ) as any[];
+    // Case 1: Password reset via email and verification code (forgot password flow)
+    if (email && code) {
+      // Verify the code
+      const verifications = await executeQuery(
+        'SELECT * FROM verification_codes WHERE email = ? AND code = ? AND expires_at > NOW() AND used = FALSE',
+        [email, code]
+      ) as any[];
 
-    if (users.length === 0) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
+      if (verifications.length === 0) {
+        return NextResponse.json(
+          { error: 'Invalid or expired verification code' },
+          { status: 400 }
+        );
+      }
+
+      // Get user by email
+      const users = await executeQuery(
+        'SELECT id FROM users WHERE email = ?',
+        [email]
+      ) as any[];
+
+      if (users.length === 0) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
+
+      const user = users[0];
+
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password
+      await executeQuery(
+        'UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?',
+        [hashedNewPassword, user.id]
       );
+
+      // Mark verification code as used
+      await executeQuery(
+        'UPDATE verification_codes SET used = TRUE WHERE email = ? AND code = ?',
+        [email, code]
+      );
+
+      return NextResponse.json({
+        message: 'Password reset successfully'
+      });
     }
 
-    const user = users[0];
+    // Case 2: Password change via userId and current password (logged-in user flow)
+    if (userId && currentPassword) {
+      // Get user's current password hash
+      const users = await executeQuery(
+        'SELECT id, password_hash FROM users WHERE id = ?',
+        [userId]
+      ) as any[];
 
-    // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
-    if (!isCurrentPasswordValid) {
-      return NextResponse.json(
-        { error: 'Current password is incorrect' },
-        { status: 401 }
+      if (users.length === 0) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
+
+      const user = users[0];
+
+      // Verify current password
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!isCurrentPasswordValid) {
+        return NextResponse.json(
+          { error: 'Current password is incorrect' },
+          { status: 401 }
+        );
+      }
+
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password
+      await executeQuery(
+        'UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?',
+        [hashedNewPassword, userId]
       );
+
+      return NextResponse.json({
+        message: 'Password updated successfully'
+      });
     }
 
-    // Hash new password
-    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password
-    await executeQuery(
-      'UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?',
-      [hashedNewPassword, userId]
+    // If neither case is satisfied
+    return NextResponse.json(
+      { error: 'Invalid request. Provide either (userId + currentPassword) or (email + code)' },
+      { status: 400 }
     );
-
-    return NextResponse.json({
-      message: 'Password updated successfully'
-    });
 
   } catch (error) {
     console.error('Change password error:', error);
