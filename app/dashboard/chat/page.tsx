@@ -274,7 +274,7 @@ export default function AdminChatPage() {
           </Button>
         </div>
 
-        <Card className="h-[calc(100vh-220px)] flex flex-col overflow-hidden">
+        <Card className="h-[calc(100vh-150px)] flex flex-col overflow-hidden">
           <CardContent className="flex-1 flex p-0 overflow-hidden">
 
             {/* Sidebar */}
@@ -300,11 +300,11 @@ export default function AdminChatPage() {
                 ) : (
                   <div className="p-2 space-y-1">
                     {filtered.map(conv => (
-                      <div key={conv.userId} className="relative group">
+                      <div key={conv.userId} className="relative flex items-center gap-1">
                         <button
                           onClick={() => handleSelectConversation(conv.userId)}
                           className={cn(
-                            "w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors",
+                            "flex-1 flex items-center gap-3 p-3 rounded-lg text-left transition-colors",
                             selectedUserId === conv.userId
                               ? "bg-blue-50 border border-blue-200"
                               : "hover:bg-gray-50"
@@ -332,14 +332,16 @@ export default function AdminChatPage() {
                             </Badge>
                           )}
                         </button>
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={(e) => handleDeleteConversation(conv.userId, e)}
                           disabled={deletingConversation === conv.userId}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-100 rounded-md z-10"
+                          className="flex-shrink-0 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                           title="Delete conversation"
                         >
-                          <Trash2 className={cn("h-4 w-4 text-red-600", deletingConversation === conv.userId && "animate-pulse")} />
-                        </button>
+                          <Trash2 className={cn("h-4 w-4", deletingConversation === conv.userId && "animate-pulse")} />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -359,16 +361,28 @@ export default function AdminChatPage() {
               ) : (
                 <>
                   {/* Header */}
-                  <div className="px-4 py-3 border-b bg-gray-50 flex items-center gap-3 flex-shrink-0">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-indigo-100 text-indigo-700 text-sm font-semibold">
-                        {selectedConv?.userName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold text-sm">{selectedConv?.userName}</p>
-                      <p className="text-xs text-gray-500">{selectedConv?.userEmail}</p>
+                  <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between flex-shrink-0">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-indigo-100 text-indigo-700 text-sm font-semibold">
+                          {selectedConv?.userName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold text-sm">{selectedConv?.userName}</p>
+                        <p className="text-xs text-gray-500">{selectedConv?.userEmail}</p>
+                      </div>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => handleDeleteConversation(selectedUserId, e)}
+                      disabled={deletingConversation === selectedUserId}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                    >
+                      <Trash2 className={cn("h-4 w-4 mr-2", deletingConversation === selectedUserId && "animate-pulse")} />
+                      Delete Chat
+                    </Button>
                   </div>
 
                   {/* Messages */}

@@ -77,6 +77,7 @@ export function ReviewSubmissionDialog({
   const fetchOfficeRooms = async () => {
     try {
       setIsLoadingRooms(true)
+      console.log('Starting to fetch spaces...')
       
       // Fetch both venues and office rooms
       const [venuesResponse, roomsResponse] = await Promise.all([
@@ -84,34 +85,52 @@ export function ReviewSubmissionDialog({
         fetch('/api/office-rooms?includeAll=true')
       ])
       
+      console.log('Venues response status:', venuesResponse.status)
+      console.log('Rooms response status:', roomsResponse.status)
+      
       const allSpaces: Array<{ id: string; name: string; type: 'venue' | 'office' }> = []
       
       if (venuesResponse.ok) {
         const venuesData = await venuesResponse.json()
-        const venues = venuesData.venues || []
-        venues.forEach((venue: any) => {
-          allSpaces.push({
-            id: `venue_${venue.id}`,
-            name: venue.name,
-            type: 'venue'
-          })
-        })
+        console.log('Raw venues data:', JSON.stringify(venuesData))
+        const venuesArray = venuesData.venues
+        console.log('Venues array type:', typeof venuesArray, 'isArray:', Array.isArray(venuesArray))
+        
+        if (venuesArray && Array.isArray(venuesArray)) {
+          for (let i = 0; i < venuesArray.length; i++) {
+            const venue = venuesArray[i]
+            console.log('Processing venue', i, ':', venue)
+            allSpaces.push({
+              id: `venue_${venue.id}`,
+              name: venue.name,
+              type: 'venue'
+            })
+          }
+        }
       }
       
       if (roomsResponse.ok) {
         const roomsData = await roomsResponse.json()
-        const rooms = roomsData.rooms || []
-        rooms.forEach((room: any) => {
-          allSpaces.push({
-            id: `office_${room.id}`,
-            name: room.name,
-            type: 'office'
-          })
-        })
+        console.log('Raw rooms data:', JSON.stringify(roomsData))
+        const roomsArray = roomsData.rooms
+        console.log('Rooms array type:', typeof roomsArray, 'isArray:', Array.isArray(roomsArray))
+        
+        if (roomsArray && Array.isArray(roomsArray)) {
+          for (let i = 0; i < roomsArray.length; i++) {
+            const room = roomsArray[i]
+            console.log('Processing room', i, ':', room)
+            allSpaces.push({
+              id: `office_${room.id}`,
+              name: room.name,
+              type: 'office'
+            })
+          }
+        }
       }
       
-      console.log('Fetched all spaces:', allSpaces)
-      setSpaces(allSpaces)
+      console.log('Final allSpaces:', JSON.stringify(allSpaces))
+      console.log('Setting spaces state with', allSpaces.length, 'items')
+      setSpaces([...allSpaces]) // Create a new array reference
       
       // If no room is selected and we have spaces, select the first one
       if (!selectedRoomId && allSpaces.length > 0) {
@@ -129,6 +148,7 @@ export function ReviewSubmissionDialog({
       })
     } finally {
       setIsLoadingRooms(false)
+      console.log('Finished loading spaces')
     }
   }
 
@@ -277,33 +297,47 @@ export function ReviewSubmissionDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="space">Space/Venue *</Label>
-            <Select
+            {(() => {
+              console.log('Rendering select, spaces:', spaces, 'length:', spaces.length, 'isArray:', Array.isArray(spaces))
+              return null
+            })()}
+            <select
+              key={`space-select-${spaces.length}`}
+              id="space"
               value={selectedRoomId}
-              onValueChange={(value) => {
-                setSelectedRoomId(value)
-                const space = spaces.find(s => s.id === value)
+              onChange={(e) => {
+                console.log('Selected value:', e.target.value)
+                setSelectedRoomId(e.target.value)
+                const space = spaces.find(s => s.id === e.target.value)
+                console.log('Found space:', space)
                 if (space) {
                   setSelectedType(space.type)
                 }
               }}
-              disabled={isLoadingRooms || !!officeRoomId}
+              disabled={!!officeRoomId || isLoadingRooms}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              required
             >
-              <SelectTrigger id="space">
-                <SelectValue placeholder={isLoadingRooms ? "Loading spaces..." : "Select a space"} />
-              </SelectTrigger>
-              <SelectContent>
-                {spaces.map((space) => (
-                  <SelectItem key={space.id} value={space.id.toString()}>
-                    {space.name} {space.type === 'venue' ? '(Venue)' : '(Office Space)'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="">
+                {isLoadingRooms ? 'Loading spaces...' : spaces.length === 0 ? 'No spaces available' : 'Select a space'}
+              </option>
+              {!isLoadingRooms && spaces.length > 0 && spaces.map((space) => (
+                <option key={space.id} value={space.id}>
+                  {space.name} ({space.type === 'venue' ? 'Venue' : 'Office Space'})
+                </option>
+              ))}
+            </select>
+            {!isLoadingRooms && spaces.length === 0 && (
+              <p className="text-xs text-red-500">No spaces found. Please add venues or office spaces first.</p>
+            )}
             {officeRoomId && (
               <p className="text-xs text-muted-foreground">
                 This review is for a specific booking
               </p>
             )}
+            <p className="text-xs text-gray-500">
+              Debug: {isLoadingRooms ? 'Loading...' : `${spaces.length} spaces loaded`} | Array.isArray: {Array.isArray(spaces).toString()}
+            </p>
           </div>
 
           <div className="space-y-2">

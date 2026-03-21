@@ -28,7 +28,59 @@ function getStatusColor(status: string) {
 }
 
 function BookingDetailDialog({ booking, open, onClose }: { booking: Booking | null; open: boolean; onClose: () => void }) {
+  const [spaceName, setSpaceName] = useState<string>('')
+  const [loadingSpace, setLoadingSpace] = useState(false)
+
+  useEffect(() => {
+    if (!booking || !open) return
+    
+    const fetchSpaceName = async () => {
+      setLoadingSpace(true)
+      try {
+        // Parse eventType to get type and ID (e.g., "venue-12" or "office-14")
+        if (booking.eventType.includes('-')) {
+          const [type, id] = booking.eventType.split('-')
+          
+          if (type === 'venue') {
+            const res = await fetch('/api/venues')
+            if (res.ok) {
+              const data = await res.json()
+              const venue = data.venues?.find((v: any) => v.id === parseInt(id))
+              if (venue) {
+                setSpaceName(`${venue.name} (Venue)`)
+              } else {
+                setSpaceName('Venue')
+              }
+            }
+          } else if (type === 'office') {
+            const res = await fetch('/api/office-rooms?includeAll=true')
+            if (res.ok) {
+              const data = await res.json()
+              const room = data.rooms?.find((r: any) => r.id === parseInt(id))
+              if (room) {
+                setSpaceName(`${room.name} (Office Space)`)
+              } else {
+                setSpaceName('Office Space')
+              }
+            }
+          }
+        } else {
+          // Fallback for old format
+          setSpaceName(booking.eventType.charAt(0).toUpperCase() + booking.eventType.slice(1))
+        }
+      } catch (error) {
+        console.error('Error fetching space name:', error)
+        setSpaceName(booking.eventType)
+      } finally {
+        setLoadingSpace(false)
+      }
+    }
+    
+    fetchSpaceName()
+  }, [booking, open])
+
   if (!booking) return null
+  
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
@@ -58,7 +110,16 @@ function BookingDetailDialog({ booking, open, onClose }: { booking: Booking | nu
             </div>
             <div className="flex items-center gap-2 text-gray-600">
               <FileText className="h-4 w-4" />
-              <span className="capitalize">{booking.eventType}</span>
+              <span>{loadingSpace ? 'Loading...' : spaceName || 'N/A'}</span>
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+            <p className="font-medium mb-2">Event Details</p>
+            <div className="space-y-1 text-gray-700">
+              <p><span className="font-medium">Event Name:</span> {booking.eventName}</p>
+              <p><span className="font-medium">Event Space:</span> {loadingSpace ? 'Loading...' : spaceName || 'N/A'}</p>
+              <p><span className="font-medium">Expected Guests:</span> {booking.guestCount}</p>
             </div>
           </div>
 
@@ -83,8 +144,11 @@ function BookingDetailDialog({ booking, open, onClose }: { booking: Booking | nu
 
           {booking.specialRequests && (
             <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-4">
-              <p className="font-medium mb-1">Special Requests</p>
-              <p className="text-gray-700">{booking.specialRequests}</p>
+              <p className="font-medium mb-1 flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Special Requests
+              </p>
+              <p className="text-gray-700 whitespace-pre-wrap">{booking.specialRequests}</p>
             </div>
           )}
 
