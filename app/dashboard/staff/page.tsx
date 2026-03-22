@@ -210,22 +210,22 @@ export default function StaffManagementPage() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Staff Management</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-2xl md:text-3xl font-bold">Staff Management</h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-1">
               Add, edit, and manage staff accounts. All staff are automatically assigned the Staff role.
             </p>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 w-full sm:w-auto">
                 <Plus className="h-4 w-4" />
                 Add Staff
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-full max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Add New Staff Member</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-base md:text-lg">Add New Staff Member</DialogTitle>
+                <DialogDescription className="text-xs md:text-sm">
                   Create a new staff account. The Staff role is automatically assigned.
                 </DialogDescription>
               </DialogHeader>
@@ -320,11 +320,11 @@ export default function StaffManagementPage() {
                   </p>
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="w-full sm:w-auto">
                   Cancel
                 </Button>
-                <Button onClick={handleAddStaff}>Add Staff</Button>
+                <Button onClick={handleAddStaff} className="w-full sm:w-auto">Add Staff</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -334,43 +334,43 @@ export default function StaffManagementPage() {
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Total Staff</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{staff.length}</div>
+              <div className="text-xl md:text-2xl font-bold">{staff.length}</div>
               <p className="text-xs text-muted-foreground mt-1">Registered staff members</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Active</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Active</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{activeStaffCount}</div>
+              <div className="text-xl md:text-2xl font-bold text-green-600">{activeStaffCount}</div>
               <p className="text-xs text-muted-foreground mt-1">Currently active</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Inactive</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Inactive</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-600">{inactiveStaffCount}</div>
+              <div className="text-xl md:text-2xl font-bold text-amber-600">{inactiveStaffCount}</div>
               <p className="text-xs text-muted-foreground mt-1">Deactivated accounts</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Search Bar */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Input
             placeholder="Search by name, email, or position..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-md"
+            className="flex-1 sm:max-w-md"
           />
           {searchTerm && (
-            <Button variant="ghost" size="sm" onClick={() => setSearchTerm('')}>
+            <Button variant="ghost" size="sm" onClick={() => setSearchTerm('')} className="w-full sm:w-auto">
               Clear
             </Button>
           )}
@@ -394,82 +394,81 @@ export default function StaffManagementPage() {
                 {filteredStaff.map((staffMember) => (
                   <div
                     key={staffMember.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex flex-col gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold">
-                        {staffMember.firstName} {staffMember.lastName}
-                      </h3>
-                      <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-semibold text-base md:text-lg">
+                          {staffMember.firstName} {staffMember.lastName}
+                        </h3>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 md:px-3 py-1 text-xs font-medium whitespace-nowrap ${
+                            staffMember.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {staffMember.status.charAt(0).toUpperCase() + staffMember.status.slice(1)}
+                        </span>
+                      </div>
+                      <div className="mt-2 space-y-1 text-xs md:text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 flex-shrink-0" />
-                          <span>{staffMember.email}</span>
+                          <Mail className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                          <span className="truncate">{staffMember.email}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 flex-shrink-0" />
+                          <Phone className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                           <span>{staffMember.phone || 'Not provided'}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Briefcase className="h-4 w-4 flex-shrink-0" />
+                          <Briefcase className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                           <span>{staffMember.position}</span>
                           {staffMember.department && <span className="text-xs">• {staffMember.department}</span>}
                         </div>
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 flex-shrink-0" />
+                          <Calendar className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                           <span>Hired: {new Date(staffMember.hireDate).toLocaleDateString()}</span>
                         </div>
                         {staffMember.salary && parseFloat(staffMember.salary) > 0 && (
                           <div className="flex items-center gap-2">
-                            <DollarSign className="h-4 w-4 flex-shrink-0" />
+                            <DollarSign className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                             <span>₱{parseFloat(staffMember.salary).toLocaleString()}</span>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 sm:flex-row">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="gap-2"
+                        className="gap-2 w-full sm:w-auto text-xs md:text-sm"
                         onClick={() => handleOpenEditDialog(staffMember)}
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit2 className="h-3 w-3 md:h-4 md:w-4" />
                         Edit
                       </Button>
                       {staffMember.status === 'active' ? (
                         <Button
                           size="sm"
-                          className="gap-2"
+                          className="gap-2 w-full sm:w-auto text-xs md:text-sm"
                           variant="destructive"
                           onClick={() => handleOpenRemoveDialog(staffMember)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
                           Remove
                         </Button>
                       ) : (
                         <Button
                           size="sm"
-                          className="gap-2"
+                          className="gap-2 w-full sm:w-auto text-xs md:text-sm"
                           variant="default"
                           onClick={() => handleToggleStatus(staffMember)}
                         >
-                          <RotateCcw className="h-4 w-4" />
+                          <RotateCcw className="h-3 w-3 md:h-4 md:w-4" />
                           Activate
                         </Button>
                       )}
-                    </div>
-
-                    <div className="flex items-center justify-end">
-                      <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                          staffMember.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-amber-100 text-amber-800'
-                        }`}
-                      >
-                        {staffMember.status.charAt(0).toUpperCase() + staffMember.status.slice(1)}
-                      </span>
                     </div>
                   </div>
                 ))}
@@ -484,10 +483,10 @@ export default function StaffManagementPage() {
 
         {/* Edit Staff Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-full max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Staff Member</DialogTitle>
-              <DialogDescription>Update staff information. Role cannot be changed (Staff role is permanent).</DialogDescription>
+              <DialogTitle className="text-base md:text-lg">Edit Staff Member</DialogTitle>
+              <DialogDescription className="text-xs md:text-sm">Update staff information. Role cannot be changed (Staff role is permanent).</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -580,41 +579,41 @@ export default function StaffManagementPage() {
                 </p>
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button onClick={handleEditStaff}>Update Staff</Button>
+              <Button onClick={handleEditStaff} className="w-full sm:w-auto">Update Staff</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         {/* Remove Confirmation Dialog */}
         <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-full max-w-[95vw] sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Remove Staff Member</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-base md:text-lg">Remove Staff Member</DialogTitle>
+              <DialogDescription className="text-xs md:text-sm">
                 Are you sure you want to permanently remove this staff member? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             {staffToRemove && (
-              <div className="p-4 rounded-lg bg-red-50 border border-red-200">
-                <p className="font-semibold text-red-900">
+              <div className="p-3 md:p-4 rounded-lg bg-red-50 border border-red-200">
+                <p className="font-semibold text-red-900 text-sm md:text-base">
                   {staffToRemove.firstName} {staffToRemove.lastName}
                 </p>
-                <p className="text-sm text-red-700 mt-1">{staffToRemove.email}</p>
-                <p className="text-sm text-red-700">{staffToRemove.position}</p>
+                <p className="text-xs md:text-sm text-red-700 mt-1 truncate">{staffToRemove.email}</p>
+                <p className="text-xs md:text-sm text-red-700">{staffToRemove.position}</p>
                 <p className="text-xs text-red-600 mt-3">
                   This will permanently delete the staff record and associated user account.
                 </p>
               </div>
             )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsRemoveDialogOpen(false)}>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={() => setIsRemoveDialogOpen(false)} className="w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={handleRemoveStaff}>
+              <Button variant="destructive" onClick={handleRemoveStaff} className="w-full sm:w-auto">
                 Remove Permanently
               </Button>
             </DialogFooter>

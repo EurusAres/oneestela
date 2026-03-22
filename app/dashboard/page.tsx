@@ -83,17 +83,17 @@ export default function DashboardPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">Real-time overview of One Estela Place</p>
+            <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+            <p className="text-sm md:text-base text-muted-foreground">Real-time overview of One Estela Place</p>
             {stats && (
               <p className="text-xs text-muted-foreground mt-1">
                 Last updated: {new Date().toLocaleTimeString()}
               </p>
             )}
           </div>
-          <Button onClick={generateReports} disabled={isLoading} variant="outline">
+          <Button onClick={generateReports} disabled={isLoading} variant="outline" className="w-full sm:w-auto">
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
@@ -220,39 +220,43 @@ export default function DashboardPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                 <Calendar className="h-4 w-4" /> Monthly Bookings
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <AreaChart data={stats?.monthlyBookings ?? []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="count" stroke="#8884d8" fill="#8884d8" fillOpacity={0.4} />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="w-full overflow-x-auto">
+                <ResponsiveContainer width="100%" height={250} minWidth={300}>
+                  <AreaChart data={stats?.monthlyBookings ?? []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="count" stroke="#8884d8" fill="#8884d8" fillOpacity={0.4} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                 <TrendingUp className="h-4 w-4" /> Monthly Revenue (₱)
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <AreaChart data={stats?.monthlyRevenue ?? []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(v) => [`₱${Number(v).toLocaleString()}`, "Revenue"]} />
-                  <Area type="monotone" dataKey="amount" stroke="#22c55e" fill="#22c55e" fillOpacity={0.4} />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="w-full overflow-x-auto">
+                <ResponsiveContainer width="100%" height={250} minWidth={300}>
+                  <AreaChart data={stats?.monthlyRevenue ?? []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(v) => [`₱${Number(v).toLocaleString()}`, "Revenue"]} />
+                    <Area type="monotone" dataKey="amount" stroke="#22c55e" fill="#22c55e" fillOpacity={0.4} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -261,18 +265,20 @@ export default function DashboardPage() {
         {(stats?.bookingsByRoom?.length ?? 0) > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Bookings by Room</CardTitle>
+              <CardTitle className="text-base md:text-lg">Bookings by Room</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={stats?.bookingsByRoom ?? []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="area" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="w-full overflow-x-auto">
+                <ResponsiveContainer width="100%" height={200} minWidth={300}>
+                  <BarChart data={stats?.bookingsByRoom ?? []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="area" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -280,26 +286,26 @@ export default function DashboardPage() {
         {/* Recent Bookings */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                   <FileText className="h-5 w-5" /> Recent Customer Bookings
                 </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">
                   Showing {stats?.recentBookings?.length ?? 0} most recent bookings from customers
                 </p>
               </div>
               {stats?.recentBookings && stats.recentBookings.length > 0 && (
                 <div className="text-right">
-                  <div className="text-2xl font-bold">{stats.recentBookings.length}</div>
+                  <div className="text-xl md:text-2xl font-bold">{stats.recentBookings.length}</div>
                   <div className="text-xs text-muted-foreground">Total shown</div>
                 </div>
               )}
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="w-full overflow-x-auto rounded-md border">
+              <table className="w-full text-sm min-w-[800px]">
                 <thead>
                   <tr className="border-b bg-gray-50">
                     <th className="px-4 py-3 text-left font-medium">ID</th>

@@ -94,17 +94,17 @@ export default function ReportsPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Business Reports & Analytics</h1>
-            <p className="text-muted-foreground">Live data from your venue database</p>
+            <h1 className="text-2xl md:text-3xl font-bold">Business Reports & Analytics</h1>
+            <p className="text-sm md:text-base text-muted-foreground">Live data from your venue database</p>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={generateReports} disabled={isLoading}>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={generateReports} disabled={isLoading} className="w-full sm:w-auto">
               <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
-            <Button variant="outline" onClick={() => handleExport("comprehensive")}>
+            <Button variant="outline" onClick={() => handleExport("comprehensive")} className="w-full sm:w-auto">
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
@@ -112,14 +112,14 @@ export default function ReportsPage() {
         </div>
 
         {/* KPI Overview */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Total Bookings</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{s?.totalBookings ?? 0}</div>
+              <div className="text-xl md:text-2xl font-bold">{s?.totalBookings ?? 0}</div>
               <p className="text-xs text-muted-foreground">
                 <span className="text-green-600">{s?.confirmed ?? 0} confirmed</span>
               </p>
@@ -127,21 +127,21 @@ export default function ReportsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Total Revenue</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₱{(s?.totalRevenue ?? 0).toLocaleString()}</div>
+              <div className="text-xl md:text-2xl font-bold">₱{(s?.totalRevenue ?? 0).toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">All time</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="sm:col-span-2 lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Customers</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Customers</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{s?.totalUsers ?? 0}</div>
+              <div className="text-xl md:text-2xl font-bold">{s?.totalUsers ?? 0}</div>
               <p className="text-xs text-muted-foreground">
                 Avg rating: <span className="text-yellow-600">{s?.avgRating ?? "—"} ★</span>
               </p>
@@ -150,40 +150,44 @@ export default function ReportsPage() {
         </div>
 
         <Tabs defaultValue="monthly" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="monthly">Monthly Summary</TabsTrigger>
-            <TabsTrigger value="bookings">Booking Report</TabsTrigger>
-            <TabsTrigger value="revenue">Financial Report</TabsTrigger>
-            <TabsTrigger value="customers">Customer Report</TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto">
+            <TabsList className="inline-flex w-full sm:w-auto grid-cols-2 sm:grid-cols-4">
+              <TabsTrigger value="monthly" className="text-xs sm:text-sm">Monthly Summary</TabsTrigger>
+              <TabsTrigger value="bookings" className="text-xs sm:text-sm">Booking Report</TabsTrigger>
+              <TabsTrigger value="revenue" className="text-xs sm:text-sm">Financial Report</TabsTrigger>
+              <TabsTrigger value="customers" className="text-xs sm:text-sm">Customer Report</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Monthly Summary */}
           <TabsContent value="monthly" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-indigo-600" />
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                  <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-indigo-600" />
                   Monthly Bookings & Revenue
                 </CardTitle>
-                <CardDescription>Combined view of bookings and revenue per month</CardDescription>
+                <CardDescription className="text-xs md:text-sm">Combined view of bookings and revenue per month</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={monthlySummary}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                    <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(v, name) => name === "revenue" ? [`₱${Number(v).toLocaleString()}`, "Revenue"] : [v, "Bookings"]} />
-                    <Bar yAxisId="left" dataKey="bookings" fill="#6366f1" radius={[4,4,0,0]} name="bookings" />
-                    <Bar yAxisId="right" dataKey="revenue" fill="#22c55e" radius={[4,4,0,0]} name="revenue" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="w-full overflow-x-auto">
+                  <ResponsiveContainer width="100%" height={320} minWidth={300}>
+                    <BarChart data={monthlySummary}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                      <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
+                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
+                      <Tooltip formatter={(v, name) => name === "revenue" ? [`₱${Number(v).toLocaleString()}`, "Revenue"] : [v, "Bookings"]} />
+                      <Bar yAxisId="left" dataKey="bookings" fill="#6366f1" radius={[4,4,0,0]} name="bookings" />
+                      <Bar yAxisId="right" dataKey="revenue" fill="#22c55e" radius={[4,4,0,0]} name="revenue" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
 
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="w-full overflow-x-auto rounded-md border">
+              <table className="w-full text-sm min-w-[500px]">
                 <thead>
                   <tr className="border-b bg-gray-50">
                     <th className="px-4 py-3 text-left font-medium">Month</th>
@@ -209,23 +213,23 @@ export default function ReportsPage() {
               </table>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               <Card className="bg-indigo-50 border-indigo-200">
                 <CardContent className="pt-4">
-                  <div className="text-sm text-indigo-600 font-medium">This Month Bookings</div>
-                  <div className="text-3xl font-bold text-indigo-700">{stats?.thisMonth.bookings ?? 0}</div>
+                  <div className="text-xs md:text-sm text-indigo-600 font-medium">This Month Bookings</div>
+                  <div className="text-2xl md:text-3xl font-bold text-indigo-700">{stats?.thisMonth.bookings ?? 0}</div>
                 </CardContent>
               </Card>
               <Card className="bg-green-50 border-green-200">
                 <CardContent className="pt-4">
-                  <div className="text-sm text-green-600 font-medium">This Month Revenue</div>
-                  <div className="text-3xl font-bold text-green-700">₱{(stats?.thisMonth.revenue ?? 0).toLocaleString()}</div>
+                  <div className="text-xs md:text-sm text-green-600 font-medium">This Month Revenue</div>
+                  <div className="text-2xl md:text-3xl font-bold text-green-700">₱{(stats?.thisMonth.revenue ?? 0).toLocaleString()}</div>
                 </CardContent>
               </Card>
-              <Card className="bg-yellow-50 border-yellow-200">
+              <Card className="bg-yellow-50 border-yellow-200 sm:col-span-2 lg:col-span-1">
                 <CardContent className="pt-4">
-                  <div className="text-sm text-yellow-600 font-medium">Pending Bookings</div>
-                  <div className="text-3xl font-bold text-yellow-700">{s?.pending ?? 0}</div>
+                  <div className="text-xs md:text-sm text-yellow-600 font-medium">Pending Bookings</div>
+                  <div className="text-2xl md:text-3xl font-bold text-yellow-700">{s?.pending ?? 0}</div>
                 </CardContent>
               </Card>
             </div>

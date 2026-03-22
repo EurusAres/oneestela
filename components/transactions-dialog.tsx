@@ -100,7 +100,7 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto rounded-lg">
         <DialogHeader>
           <DialogTitle>My Transactions</DialogTitle>
           <DialogDescription>View all your past and upcoming reservations</DialogDescription>
@@ -127,18 +127,18 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
                         )}
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 text-sm text-gray-600 mb-4">
                       <div className="flex items-center">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {new Date(booking.date).toLocaleDateString()}
+                        <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{new Date(booking.date).toLocaleDateString()}</span>
                       </div>
                       <div className="flex items-center">
-                        <Clock className="mr-2 h-4 w-4" />
-                        {booking.startTime} - {booking.endTime}
+                        <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{booking.startTime} - {booking.endTime}</span>
                       </div>
                       <div className="flex items-center">
-                        <Users className="mr-2 h-4 w-4" />
-                        {booking.guestCount} guests
+                        <Users className="mr-2 h-4 w-4 flex-shrink-0" />
+                        <span>{booking.guestCount} guests</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
@@ -192,11 +192,11 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
                       variant="outline"
                       size="sm"
                       onClick={() => handleUploadPaymentProof(booking)}
-                      className={
+                      className={`w-full sm:w-auto ${
                         paymentStatus?.status === "rejected"
                           ? "bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
                           : "bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-                      }
+                      }`}
                     >
                       <Upload className="mr-2 h-4 w-4" />
                       {paymentStatus?.status === "rejected"
@@ -208,13 +208,13 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
                   )}
 
                   {booking.status === "pending" && (
-                    <Button variant="outline" size="sm" onClick={() => handleModifyBooking(booking)}>
+                    <Button variant="outline" size="sm" onClick={() => handleModifyBooking(booking)} className="w-full sm:w-auto">
                       Modify Booking
                     </Button>
                   )}
                   {(booking.status === "confirmed" || booking.status === "pending") &&
                     new Date(booking.date) > new Date() && (
-                      <Button variant="destructive" size="sm" onClick={() => handleCancelBooking(booking)}>
+                      <Button variant="destructive" size="sm" onClick={() => handleCancelBooking(booking)} className="w-full sm:w-auto">
                         Cancel Booking
                       </Button>
                     )}

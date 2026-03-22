@@ -243,60 +243,60 @@ export function CMSOfficeRoomEditor() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-muted-foreground">
+    <div className="space-y-3 md:space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <p className="text-xs md:text-sm text-muted-foreground">
           Manage office spaces and meeting rooms. Add 360° images for virtual tours.
         </p>
-        <Button onClick={handleAdd}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button onClick={handleAdd} className="w-full sm:w-auto text-xs md:text-sm">
+          <Plus className="h-3 w-3 md:h-4 md:w-4 mr-2" />
           Add Space
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 md:gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {rooms.map((room) => (
           <Card key={room.id}>
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{room.name}</CardTitle>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="text-sm md:text-base lg:text-lg truncate">{room.name}</CardTitle>
                   <CardDescription className="mt-1">
-                    <Badge variant="outline">{room.type}</Badge>
+                    <Badge variant="outline" className="text-xs">{room.type}</Badge>
                   </CardDescription>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleEdit(room)}
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-3 w-3 md:h-4 md:w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDelete(room.id)}
                   >
-                    <Trash2 className="h-4 w-4 text-red-600" />
+                    <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
                   </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 text-sm">
+              <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
                 <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <Users className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
                   <span>Up to {room.capacity} people</span>
                 </div>
                 {room.price_per_hour > 0 && (
                   <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
                     <span>₱{room.price_per_hour}/hour</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <Camera className="h-4 w-4 text-muted-foreground" />
+                  <Camera className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
                   <span className={room.image_360_url ? 'text-green-600' : 'text-gray-400'}>
                     {room.image_360_url ? '360° Available' : 'No 360° image'}
                   </span>
@@ -308,93 +308,97 @@ export function CMSOfficeRoomEditor() {
       </div>
 
       {rooms.length === 0 && (
-        <div className="text-center py-12 border-2 border-dashed rounded-lg">
-          <p className="text-muted-foreground mb-4">No office spaces added yet</p>
-          <Button onClick={handleAdd}>
-            <Plus className="h-4 w-4 mr-2" />
+        <div className="text-center py-8 md:py-12 border-2 border-dashed rounded-lg">
+          <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">No office spaces added yet</p>
+          <Button onClick={handleAdd} className="text-xs md:text-sm">
+            <Plus className="h-3 w-3 md:h-4 md:w-4 mr-2" />
             Add Your First Space
           </Button>
         </div>
       )}
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-base md:text-lg">
               {editingRoom ? 'Edit Space' : 'Add New Space'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs md:text-sm">
               Add office spaces or meeting rooms with 360° panoramic images for virtual tours
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-3 md:space-y-4">
+            <div className="grid gap-3 md:gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
+                <Label htmlFor="name" className="text-xs md:text-sm">Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g., Conference Room A"
+                  className="text-xs md:text-sm"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="type">Type</Label>
+                <Label htmlFor="type" className="text-xs md:text-sm">Type</Label>
                 <Select
                   value={formData.type}
                   onValueChange={(value) => setFormData({ ...formData, type: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="meeting">Meeting Room</SelectItem>
-                    <SelectItem value="conference">Conference Room</SelectItem>
+                    <SelectItem value="meeting" className="text-xs md:text-sm">Meeting Room</SelectItem>
+                    <SelectItem value="conference" className="text-xs md:text-sm">Conference Room</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-xs md:text-sm">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Describe the space..."
                 rows={3}
+                className="text-xs md:text-sm"
               />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 md:gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="capacity">Capacity *</Label>
+                <Label htmlFor="capacity" className="text-xs md:text-sm">Capacity *</Label>
                 <Input
                   id="capacity"
                   type="number"
                   value={formData.capacity}
                   onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                   placeholder="e.g., 50"
+                  className="text-xs md:text-sm"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price">Price per Hour (₱)</Label>
+                <Label htmlFor="price" className="text-xs md:text-sm">Price per Hour (₱)</Label>
                 <Input
                   id="price"
                   type="number"
                   value={formData.pricePerHour}
                   onChange={(e) => setFormData({ ...formData, pricePerHour: e.target.value })}
                   placeholder="e.g., 500"
+                  className="text-xs md:text-sm"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image360File">
-                <Camera className="h-4 w-4 inline mr-2" />
+              <Label htmlFor="image360File" className="text-xs md:text-sm">
+                <Camera className="h-3 w-3 md:h-4 md:w-4 inline mr-2" />
                 360° Panoramic Image
               </Label>
               <Input
@@ -407,6 +411,7 @@ export function CMSOfficeRoomEditor() {
                     setImage360File(file)
                   }
                 }}
+                className="text-xs md:text-sm"
               />
               {formData.image360Url && !image360File && (
                 <p className="text-xs text-green-600">Current: {formData.image360Url.split('/').pop()}</p>
@@ -420,24 +425,25 @@ export function CMSOfficeRoomEditor() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amenities">Amenities (comma-separated)</Label>
+              <Label htmlFor="amenities" className="text-xs md:text-sm">Amenities (comma-separated)</Label>
               <Input
                 id="amenities"
                 value={formData.amenities}
                 onChange={(e) => setFormData({ ...formData, amenities: e.target.value })}
                 placeholder="WiFi, Projector, Whiteboard, AC"
+                className="text-xs md:text-sm"
               />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDialog(false)} disabled={uploading}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowDialog(false)} disabled={uploading} className="w-full sm:w-auto text-xs md:text-sm">
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={uploading}>
+            <Button onClick={handleSubmit} disabled={uploading} className="w-full sm:w-auto text-xs md:text-sm">
               {uploading ? (
                 <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  <RefreshCw className="w-3 h-3 md:w-4 md:h-4 mr-2 animate-spin" />
                   Uploading...
                 </>
               ) : (

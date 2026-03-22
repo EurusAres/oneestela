@@ -282,7 +282,7 @@ export function ReserveDialog({ open, onOpenChange }: ReserveDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg">
         <DialogHeader>
           <DialogTitle>Reserve Your Event</DialogTitle>
           <DialogDescription>

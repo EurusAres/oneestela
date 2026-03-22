@@ -202,32 +202,32 @@ export default function PaymentsPage() {
     return (
       <Card className={`mb-4 ${isCancelled ? 'border-red-300 bg-red-50' : ''}`}>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center space-x-3">
               {getStatusIcon(proof.status)}
               <div>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-base md:text-lg flex flex-wrap items-center gap-2">
                   {proof.eventName || "Booking"}
                   {isCancelled && (
-                    <Badge className="bg-red-100 text-red-800">
+                    <Badge className="bg-red-100 text-red-800 text-xs">
                       Booking Cancelled
                     </Badge>
                   )}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs md:text-sm">
                   Booking ID: {proof.bookingId} • Uploaded {new Date(proof.uploadedAt).toLocaleDateString()}
                 </CardDescription>
               </div>
             </div>
-            <Badge className={getStatusColor(proof.status)}>
+            <Badge className={`${getStatusColor(proof.status)} text-xs whitespace-nowrap`}>
               {proof.status.charAt(0).toUpperCase() + proof.status.slice(1)}
             </Badge>
           </div>
         </CardHeader>
         <CardContent>
           {isCancelled && (
-            <div className="bg-red-100 border border-red-300 p-4 rounded-lg mb-4">
-              <p className="text-sm text-red-800 font-medium">
+            <div className="bg-red-100 border border-red-300 p-3 md:p-4 rounded-lg mb-4">
+              <p className="text-xs md:text-sm text-red-800 font-medium">
                 ⚠️ This booking has been cancelled by the customer. Payment proof is no longer valid.
               </p>
               <p className="text-xs text-red-700 mt-1">
@@ -236,35 +236,35 @@ export default function PaymentsPage() {
             </div>
           )}
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
             <div className="flex items-center space-x-2">
-              <CreditCard className="h-4 w-4 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium">Payment Method</p>
-                <p className="text-sm text-gray-600">{proof.paymentMethod}</p>
+              <CreditCard className="h-4 w-4 text-gray-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm font-medium">Payment Method</p>
+                <p className="text-xs md:text-sm text-gray-600 truncate">{proof.paymentMethod}</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <DollarSign className="h-4 w-4 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium">Amount</p>
-                <p className="text-sm text-gray-600">₱{Number(proof.paymentAmount).toLocaleString()}</p>
+              <DollarSign className="h-4 w-4 text-gray-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm font-medium">Amount</p>
+                <p className="text-xs md:text-sm text-gray-600">₱{Number(proof.paymentAmount).toLocaleString()}</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium">Payment Date</p>
-                <p className="text-sm text-gray-600">{new Date(proof.paymentDate).toLocaleDateString()}</p>
+              <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm font-medium">Payment Date</p>
+                <p className="text-xs md:text-sm text-gray-600">{new Date(proof.paymentDate).toLocaleDateString()}</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <User className="h-4 w-4 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium">Customer</p>
-                <p className="text-sm text-gray-600">{proof.customerName || "Unknown"}</p>
+              <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm font-medium">Customer</p>
+                <p className="text-xs md:text-sm text-gray-600 truncate">{proof.customerName || "Unknown"}</p>
                 {proof.customerEmail && (
-                  <p className="text-xs text-gray-500">{proof.customerEmail}</p>
+                  <p className="text-xs text-gray-500 truncate">{proof.customerEmail}</p>
                 )}
               </div>
             </div>
@@ -272,23 +272,23 @@ export default function PaymentsPage() {
 
           {proof.paymentReference && (
             <div className="mb-4">
-              <p className="text-sm font-medium">Reference Number</p>
-              <p className="text-sm text-gray-600">{proof.paymentReference}</p>
+              <p className="text-xs md:text-sm font-medium">Reference Number</p>
+              <p className="text-xs md:text-sm text-gray-600 break-all">{proof.paymentReference}</p>
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
-              <FileImage className="h-4 w-4" />
-              <span className="text-sm">{proof.fileName}</span>
-              <span className="text-xs text-gray-500">({formatFileSize(proof.fileSize)})</span>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div className="flex items-center space-x-2 min-w-0">
+              <FileImage className="h-4 w-4 flex-shrink-0" />
+              <span className="text-xs md:text-sm truncate">{proof.fileName}</span>
+              <span className="text-xs text-gray-500 whitespace-nowrap">({formatFileSize(proof.fileSize)})</span>
             </div>
           </div>
 
           {proof.adminNote && (
             <div className="bg-gray-50 p-3 rounded-lg mb-4">
-              <p className="text-sm font-medium">Admin Note:</p>
-              <p className="text-sm text-gray-600 mt-1">{proof.adminNote}</p>
+              <p className="text-xs md:text-sm font-medium">Admin Note:</p>
+              <p className="text-xs md:text-sm text-gray-600 mt-1">{proof.adminNote}</p>
               {proof.verifiedBy && (
                 <p className="text-xs text-gray-500 mt-2">
                   By {proof.verifiedBy} on {new Date(proof.verifiedAt).toLocaleDateString()}
@@ -297,13 +297,13 @@ export default function PaymentsPage() {
             </div>
           )}
 
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" onClick={() => handleViewImage(proof)}>
-              <Eye className="h-4 w-4 mr-2" />
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleViewImage(proof)} className="text-xs md:text-sm">
+              <Eye className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
               View File
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleDownloadFile(proof)}>
-              <Download className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" onClick={() => handleDownloadFile(proof)} className="text-xs md:text-sm">
+              <Download className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
               Download
             </Button>
             {proof.status === "pending" && !isCancelled && (
@@ -311,13 +311,13 @@ export default function PaymentsPage() {
                 <Button
                   size="sm"
                   onClick={() => handleReviewProof(proof, "verify")}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 text-xs md:text-sm"
                 >
-                  <CheckCircle className="h-4 w-4 mr-2" />
+                  <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
                   Verify
                 </Button>
-                <Button variant="destructive" size="sm" onClick={() => handleReviewProof(proof, "reject")}>
-                  <XCircle className="h-4 w-4 mr-2" />
+                <Button variant="destructive" size="sm" onClick={() => handleReviewProof(proof, "reject")} className="text-xs md:text-sm">
+                  <XCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
                   Reject
                 </Button>
               </>
@@ -327,8 +327,9 @@ export default function PaymentsPage() {
                 variant="destructive" 
                 size="sm" 
                 onClick={() => handleReviewProof(proof, "reject")}
+                className="text-xs md:text-sm"
               >
-                <XCircle className="h-4 w-4 mr-2" />
+                <XCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
                 Mark as Cancelled
               </Button>
             )}
@@ -342,59 +343,59 @@ export default function PaymentsPage() {
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Payment Verification</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Payment Verification</h1>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-6 md:grid-cols-5">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Total Submissions</CardTitle>
               <FileImage className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{allProofs.length}</div>
+              <div className="text-xl md:text-2xl font-bold">{allProofs.length}</div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Pending Review</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{pendingProofs.length}</div>
+              <div className="text-xl md:text-2xl font-bold">{pendingProofs.length}</div>
               {pendingProofs.length > 0 && (
-                <Badge className="bg-yellow-100 text-yellow-800 mt-2">Needs Attention</Badge>
+                <Badge className="bg-yellow-100 text-yellow-800 mt-2 text-xs">Needs Attention</Badge>
               )}
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Verified</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Verified</CardTitle>
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{verifiedProofs.length}</div>
+              <div className="text-xl md:text-2xl font-bold">{verifiedProofs.length}</div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Rejected</CardTitle>
               <XCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{rejectedProofs.length}</div>
+              <div className="text-xl md:text-2xl font-bold">{rejectedProofs.length}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="col-span-2 md:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Cancelled</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Cancelled</CardTitle>
               <XCircle className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{cancelledProofs.length}</div>
+              <div className="text-xl md:text-2xl font-bold">{cancelledProofs.length}</div>
               {cancelledProofs.length > 0 && (
-                <Badge className="bg-red-100 text-red-800 mt-2">Refund Required</Badge>
+                <Badge className="bg-red-100 text-red-800 mt-2 text-xs">Refund Required</Badge>
               )}
             </CardContent>
           </Card>
@@ -402,25 +403,34 @@ export default function PaymentsPage() {
 
         {/* Payment Proofs Tabs */}
         <Tabs defaultValue="pending" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="pending" className="flex items-center space-x-2">
-              <Clock className="h-4 w-4" />
-              <span>Pending ({pendingProofs.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="verified">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Verified ({verifiedProofs.length})
-            </TabsTrigger>
-            <TabsTrigger value="rejected">
-              <XCircle className="h-4 w-4 mr-2" />
-              Rejected ({rejectedProofs.length})
-            </TabsTrigger>
-            <TabsTrigger value="cancelled" className="text-red-600">
-              <XCircle className="h-4 w-4 mr-2" />
-              Cancelled ({cancelledProofs.length})
-            </TabsTrigger>
-            <TabsTrigger value="all">All ({allProofs.length})</TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto">
+            <TabsList className="inline-flex w-full sm:w-auto">
+              <TabsTrigger value="pending" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Pending ({pendingProofs.length})</span>
+                <span className="sm:hidden">({pendingProofs.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="verified" className="text-xs sm:text-sm">
+                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Verified ({verifiedProofs.length})</span>
+                <span className="sm:hidden">({verifiedProofs.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="rejected" className="text-xs sm:text-sm">
+                <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Rejected ({rejectedProofs.length})</span>
+                <span className="sm:hidden">({rejectedProofs.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="cancelled" className="text-red-600 text-xs sm:text-sm">
+                <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Cancelled ({cancelledProofs.length})</span>
+                <span className="sm:hidden">({cancelledProofs.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="all" className="text-xs sm:text-sm">
+                <span className="hidden sm:inline">All ({allProofs.length})</span>
+                <span className="sm:hidden">({allProofs.length})</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="pending">
             <div className="space-y-4">
@@ -516,10 +526,10 @@ export default function PaymentsPage() {
 
       {/* Review Dialog */}
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{reviewAction === "verify" ? "Verify Payment" : "Reject Payment"}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base md:text-lg">{reviewAction === "verify" ? "Verify Payment" : "Reject Payment"}</DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">
               {reviewAction === "verify"
                 ? "Confirm that this payment proof is valid and complete."
                 : "Provide feedback on why this payment proof is being rejected."}
@@ -527,7 +537,7 @@ export default function PaymentsPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="adminNote">{reviewAction === "verify" ? "Note (Optional)" : "Rejection Reason *"}</Label>
+              <Label htmlFor="adminNote" className="text-xs md:text-sm">{reviewAction === "verify" ? "Note (Optional)" : "Rejection Reason *"}</Label>
               <Textarea
                 id="adminNote"
                 placeholder={
@@ -538,16 +548,17 @@ export default function PaymentsPage() {
                 value={adminNote}
                 onChange={(e) => setAdminNote(e.target.value)}
                 required={reviewAction === "reject"}
+                className="text-xs md:text-sm"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowReviewDialog(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowReviewDialog(false)} className="w-full sm:w-auto text-xs md:text-sm">
               Cancel
             </Button>
             <Button
               onClick={handleSubmitReview}
-              className={reviewAction === "verify" ? "bg-green-600 hover:bg-green-700" : ""}
+              className={`w-full sm:w-auto text-xs md:text-sm ${reviewAction === "verify" ? "bg-green-600 hover:bg-green-700" : ""}`}
               variant={reviewAction === "reject" ? "destructive" : "default"}
             >
               {reviewAction === "verify" ? "Verify Payment" : "Reject Payment"}
@@ -558,11 +569,11 @@ export default function PaymentsPage() {
 
       {/* Image Viewer Dialog */}
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-4xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Payment Proof</DialogTitle>
+            <DialogTitle className="text-base md:text-lg">Payment Proof</DialogTitle>
           </DialogHeader>
-          <div className="flex justify-center">
+          <div className="flex justify-center overflow-auto">
             {selectedImage ? (
               <img
                 src={selectedImage}
@@ -578,7 +589,7 @@ export default function PaymentsPage() {
               />
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-500">No image to display</p>
+                <p className="text-gray-500 text-xs md:text-sm">No image to display</p>
               </div>
             )}
           </div>

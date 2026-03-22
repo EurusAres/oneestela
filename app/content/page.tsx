@@ -38,80 +38,83 @@ export default function ContentPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Content Management</h1>
-        <p className="text-muted-foreground">Edit website content and images for the public site.</p>
+      <div className="space-y-4 md:space-y-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Content Management</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">Edit website content and images for the public site.</p>
+        </div>
 
         <Tabs defaultValue="content">
           <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="content">Text Content</TabsTrigger>
-            <TabsTrigger value="images">Images</TabsTrigger>
+            <TabsTrigger value="content" className="text-xs md:text-sm">Text Content</TabsTrigger>
+            <TabsTrigger value="images" className="text-xs md:text-sm">Images</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="content" className="mt-6">
+          <TabsContent value="content" className="mt-4 md:mt-6">
             <Card>
               <form onSubmit={handleSaveContent}>
                 <CardHeader>
-                  <CardTitle>Edit Website Text</CardTitle>
-                  <CardDescription>Make changes to your website content here.</CardDescription>
+                  <CardTitle className="text-base md:text-lg">Edit Website Text</CardTitle>
+                  <CardDescription className="text-xs md:text-sm">Make changes to your website content here.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 md:space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="hero-title">Hero Title</Label>
-                    <Input id="hero-title" value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} />
+                    <Label htmlFor="hero-title" className="text-xs md:text-sm">Hero Title</Label>
+                    <Input id="hero-title" value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} className="text-xs md:text-sm" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="hero-subtitle">Hero Subtitle</Label>
-                    <Input id="hero-subtitle" value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} />
+                    <Label htmlFor="hero-subtitle" className="text-xs md:text-sm">Hero Subtitle</Label>
+                    <Input id="hero-subtitle" value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} className="text-xs md:text-sm" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="about-text">About Us Text</Label>
+                    <Label htmlFor="about-text" className="text-xs md:text-sm">About Us Text</Label>
                     <Textarea
                       id="about-text"
                       rows={5}
                       value={aboutText}
                       onChange={(e) => setAboutText(e.target.value)}
+                      className="text-xs md:text-sm"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="contact-info">Contact Information</Label>
-                    <Textarea id="contact-info" rows={3} placeholder="Enter your contact information" />
+                    <Label htmlFor="contact-info" className="text-xs md:text-sm">Contact Information</Label>
+                    <Textarea id="contact-info" rows={3} placeholder="Enter your contact information" className="text-xs md:text-sm" />
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit">Save Changes</Button>
+                  <Button type="submit" className="w-full sm:w-auto text-xs md:text-sm">Save Changes</Button>
                 </CardFooter>
               </form>
             </Card>
           </TabsContent>
 
-          <TabsContent value="images" className="mt-6">
+          <TabsContent value="images" className="mt-4 md:mt-6">
             <Card>
               <form onSubmit={handleSaveImages}>
                 <CardHeader>
-                  <CardTitle>Manage Website Images</CardTitle>
-                  <CardDescription>Upload and manage images for your website.</CardDescription>
+                  <CardTitle className="text-base md:text-lg">Manage Website Images</CardTitle>
+                  <CardDescription className="text-xs md:text-sm">Upload and manage images for your website.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-4 md:space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="hero-image">Hero Image</Label>
-                    <div className="grid gap-4">
-                      <div className="h-40 rounded-md border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center">
+                    <Label htmlFor="hero-image" className="text-xs md:text-sm">Hero Image</Label>
+                    <div className="grid gap-3 md:gap-4">
+                      <div className="h-32 md:h-40 rounded-md border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center">
                         <div className="text-center">
-                          <p className="text-sm text-gray-500">Current hero image</p>
+                          <p className="text-xs md:text-sm text-gray-500">Current hero image</p>
                         </div>
                       </div>
-                      <Input id="hero-image" type="file" />
+                      <Input id="hero-image" type="file" className="text-xs md:text-sm" />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Gallery Images</Label>
-                    <div className="grid grid-cols-3 gap-4">
+                    <Label className="text-xs md:text-sm">Gallery Images</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
                       {[1, 2, 3].map((i) => (
                         <div
                           key={i}
-                          className="relative h-24 rounded-md border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center"
+                          className="relative h-20 md:h-24 rounded-md border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center"
                         >
                           <div className="text-center">
                             <p className="text-xs text-gray-500">Image {i}</p>
@@ -119,11 +122,11 @@ export default function ContentPage() {
                         </div>
                       ))}
                     </div>
-                    <Input id="gallery-images" type="file" multiple />
+                    <Input id="gallery-images" type="file" multiple className="text-xs md:text-sm" />
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit">Save Images</Button>
+                  <Button type="submit" className="w-full sm:w-auto text-xs md:text-sm">Save Images</Button>
                 </CardFooter>
               </form>
             </Card>

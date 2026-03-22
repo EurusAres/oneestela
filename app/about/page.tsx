@@ -58,11 +58,11 @@ export default function AboutPage() {
 
   return (
     <PublicLayout>
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-8 md:py-12">
         {/* Hero Section */}
-        <div className="mb-16 text-center">
-          <h1 className="mb-6 text-4xl font-bold text-gray-900">About One Estela Place</h1>
-          <p className="mx-auto max-w-3xl text-lg text-gray-600">
+        <div className="mb-12 md:mb-16 text-center">
+          <h1 className="mb-4 md:mb-6 text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">About One Estela Place</h1>
+          <p className="mx-auto max-w-3xl text-sm md:text-base lg:text-lg text-gray-600">
             For over a decade, One Estela Place has been the premier destination for unforgettable events. Our
             commitment to excellence and attention to detail has made us the trusted choice for celebrations that matter
             most.
@@ -70,9 +70,9 @@ export default function AboutPage() {
         </div>
 
         {/* Story Section */}
-        <div className="mb-16 mx-auto max-w-4xl">
-          <h2 className="mb-6 text-3xl font-bold text-gray-900 text-center">Our Story</h2>
-          <div className="space-y-4 text-gray-600">
+        <div className="mb-12 md:mb-16 mx-auto max-w-4xl">
+          <h2 className="mb-4 md:mb-6 text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 text-center">Our Story</h2>
+          <div className="space-y-3 md:space-y-4 text-sm md:text-base text-gray-600">
             <p>
               Founded in 2014, One Estela Place began as a vision to create a space where life's most precious moments
               could be celebrated in style. Named after the founder's grandmother, Estela, our venue embodies the
@@ -91,16 +91,16 @@ export default function AboutPage() {
         </div>
 
         {/* Values Section */}
-        <div className="mb-16">
-          <h2 className="mb-12 text-center text-3xl font-bold text-gray-900">Our Values</h2>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-12 md:mb-16">
+          <h2 className="mb-8 md:mb-12 text-center text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Our Values</h2>
+          <div className="grid gap-4 md:gap-6 lg:gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <Card className="text-center border-gray-200 hover:shadow-lg transition-shadow">
               <CardHeader>
-                <Heart className="mx-auto h-12 w-12 text-orange-500" />
-                <CardTitle className="text-gray-900">Passion</CardTitle>
+                <Heart className="mx-auto h-10 w-10 md:h-12 md:w-12 text-orange-500" />
+                <CardTitle className="text-base md:text-lg text-gray-900">Passion</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-600">
+                <CardDescription className="text-xs md:text-sm text-gray-600">
                   We're passionate about creating magical moments that you'll treasure forever
                 </CardDescription>
               </CardContent>
@@ -108,11 +108,11 @@ export default function AboutPage() {
 
             <Card className="text-center border-gray-200 hover:shadow-lg transition-shadow">
               <CardHeader>
-                <Award className="mx-auto h-12 w-12 text-orange-500" />
-                <CardTitle className="text-gray-900">Excellence</CardTitle>
+                <Award className="mx-auto h-10 w-10 md:h-12 md:w-12 text-orange-500" />
+                <CardTitle className="text-base md:text-lg text-gray-900">Excellence</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-600">
+                <CardDescription className="text-xs md:text-sm text-gray-600">
                   We strive for perfection in every detail, from planning to execution
                 </CardDescription>
               </CardContent>
@@ -120,11 +120,11 @@ export default function AboutPage() {
 
             <Card className="text-center border-gray-200 hover:shadow-lg transition-shadow">
               <CardHeader>
-                <Users className="mx-auto h-12 w-12 text-orange-500" />
-                <CardTitle className="text-gray-900">Service</CardTitle>
+                <Users className="mx-auto h-10 w-10 md:h-12 md:w-12 text-orange-500" />
+                <CardTitle className="text-base md:text-lg text-gray-900">Service</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-600">
+                <CardDescription className="text-xs md:text-sm text-gray-600">
                   Our dedicated team goes above and beyond to exceed your expectations
                 </CardDescription>
               </CardContent>
@@ -132,11 +132,11 @@ export default function AboutPage() {
 
             <Card className="text-center border-gray-200 hover:shadow-lg transition-shadow">
               <CardHeader>
-                <Calendar className="mx-auto h-12 w-12 text-orange-500" />
-                <CardTitle className="text-gray-900">Reliability</CardTitle>
+                <Calendar className="mx-auto h-10 w-10 md:h-12 md:w-12 text-orange-500" />
+                <CardTitle className="text-base md:text-lg text-gray-900">Reliability</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-600">
+                <CardDescription className="text-xs md:text-sm text-gray-600">
                   You can count on us to deliver exactly what we promise, every time
                 </CardDescription>
               </CardContent>
@@ -145,24 +145,24 @@ export default function AboutPage() {
         </div>
 
         {/* Stats Section */}
-        <div className="rounded-lg bg-gradient-to-r from-orange-500 to-amber-600 p-12 text-white shadow-xl">
-          <h2 className="mb-8 text-center text-3xl font-bold">Our Achievements</h2>
-          <div className="grid gap-8 md:grid-cols-4">
+        <div className="rounded-lg bg-gradient-to-r from-orange-500 to-amber-600 p-6 md:p-8 lg:p-12 text-white shadow-xl">
+          <h2 className="mb-6 md:mb-8 text-center text-xl md:text-2xl lg:text-3xl font-bold">Our Achievements</h2>
+          <div className="grid gap-4 md:gap-6 lg:gap-8 grid-cols-2 md:grid-cols-4">
             <div className="text-center">
-              <div className="mb-2 text-4xl font-bold">{stats.eventsHosted}+</div>
-              <div className="text-orange-100">Events Hosted</div>
+              <div className="mb-1 md:mb-2 text-2xl md:text-3xl lg:text-4xl font-bold">{stats.eventsHosted}+</div>
+              <div className="text-xs md:text-sm text-orange-100">Events Hosted</div>
             </div>
             <div className="text-center">
-              <div className="mb-2 text-4xl font-bold">{stats.yearsOfExperience}+</div>
-              <div className="text-orange-100">Years of Experience</div>
+              <div className="mb-1 md:mb-2 text-2xl md:text-3xl lg:text-4xl font-bold">{stats.yearsOfExperience}+</div>
+              <div className="text-xs md:text-sm text-orange-100">Years of Experience</div>
             </div>
             <div className="text-center">
-              <div className="mb-2 text-4xl font-bold">{stats.averageRating}</div>
-              <div className="text-orange-100">Average Rating</div>
+              <div className="mb-1 md:mb-2 text-2xl md:text-3xl lg:text-4xl font-bold">{stats.averageRating}</div>
+              <div className="text-xs md:text-sm text-orange-100">Average Rating</div>
             </div>
             <div className="text-center">
-              <div className="mb-2 text-4xl font-bold">{stats.maxCapacity}</div>
-              <div className="text-orange-100">Max Capacity</div>
+              <div className="mb-1 md:mb-2 text-2xl md:text-3xl lg:text-4xl font-bold">{stats.maxCapacity}</div>
+              <div className="text-xs md:text-sm text-orange-100">Max Capacity</div>
             </div>
           </div>
         </div>
