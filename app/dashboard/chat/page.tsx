@@ -263,12 +263,12 @@ export default function AdminChatPage() {
   return (
     <MainLayout>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Customer Chat</h1>
-            <p className="text-muted-foreground">All customer conversations in one place</p>
+            <h1 className="text-2xl md:text-3xl font-bold">Customer Chat</h1>
+            <p className="text-sm md:text-base text-muted-foreground">All customer conversations in one place</p>
           </div>
-          <Button variant="outline" onClick={loadConversations} disabled={loading}>
+          <Button variant="outline" onClick={loadConversations} disabled={loading} className="w-full sm:w-auto">
             <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
             Refresh
           </Button>
@@ -278,7 +278,11 @@ export default function AdminChatPage() {
           <CardContent className="flex-1 flex p-0 overflow-hidden">
 
             {/* Sidebar */}
-            <div className="w-72 border-r flex flex-col flex-shrink-0">
+            <div className={cn(
+              "border-r flex flex-col flex-shrink-0 transition-all",
+              "w-full sm:w-80 md:w-72",
+              selectedUserId && "hidden sm:flex"
+            )}>
               <div className="p-3 border-b">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -350,27 +354,38 @@ export default function AdminChatPage() {
             </div>
 
             {/* Chat area */}
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className={cn(
+              "flex-1 flex flex-col overflow-hidden",
+              !selectedUserId && "hidden sm:flex"
+            )}>
               {!selectedUserId ? (
                 <div className="flex-1 flex items-center justify-center text-gray-400">
-                  <div className="text-center">
+                  <div className="text-center px-4">
                     <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                    <p className="text-sm">Select a conversation to start chatting</p>
+                    <p className="text-xs md:text-sm">Select a conversation to start chatting</p>
                   </div>
                 </div>
               ) : (
                 <>
                   {/* Header */}
-                  <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between flex-shrink-0">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-indigo-100 text-indigo-700 text-sm font-semibold">
+                  <div className="px-3 md:px-4 py-3 border-b bg-gray-50 flex items-center justify-between flex-shrink-0">
+                    <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSelectedUserId(null)}
+                        className="sm:hidden flex-shrink-0 h-8 w-8"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      <Avatar className="h-7 w-7 md:h-8 md:w-8 flex-shrink-0">
+                        <AvatarFallback className="bg-indigo-100 text-indigo-700 text-xs md:text-sm font-semibold">
                           {selectedConv?.userName.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="font-semibold text-sm">{selectedConv?.userName}</p>
-                        <p className="text-xs text-gray-500">{selectedConv?.userEmail}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-xs md:text-sm truncate">{selectedConv?.userName}</p>
+                        <p className="text-xs text-gray-500 truncate">{selectedConv?.userEmail}</p>
                       </div>
                     </div>
                     <Button
@@ -378,24 +393,24 @@ export default function AdminChatPage() {
                       size="sm"
                       onClick={(e) => handleDeleteConversation(selectedUserId, e)}
                       disabled={deletingConversation === selectedUserId}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 flex-shrink-0 text-xs md:text-sm"
                     >
-                      <Trash2 className={cn("h-4 w-4 mr-2", deletingConversation === selectedUserId && "animate-pulse")} />
-                      Delete Chat
+                      <Trash2 className={cn("h-3 w-3 md:h-4 md:w-4 md:mr-2", deletingConversation === selectedUserId && "animate-pulse")} />
+                      <span className="hidden md:inline">Delete Chat</span>
                     </Button>
                   </div>
 
                   {/* Messages */}
-                  <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-3">
+                  <ScrollArea className="flex-1 p-3 md:p-4">
+                    <div className="space-y-2 md:space-y-3">
                       {messages.length === 0 ? (
-                        <div className="text-center py-8 text-gray-400 text-sm">No messages yet</div>
+                        <div className="text-center py-8 text-gray-400 text-xs md:text-sm">No messages yet</div>
                       ) : messages.map(msg => {
                         const isAdmin = String(msg.sender_id) === String(user?.id)
                         return (
                           <div key={msg.id} className={cn("flex", isAdmin ? "justify-end" : "justify-start")}>
                             <div className={cn(
-                              "max-w-[70%] rounded-2xl px-4 py-2 text-sm",
+                              "max-w-[85%] sm:max-w-[70%] rounded-2xl px-3 md:px-4 py-2 text-xs md:text-sm",
                               isAdmin
                                 ? "bg-blue-600 text-white rounded-br-sm"
                                 : "bg-gray-100 text-gray-900 rounded-bl-sm"
@@ -416,12 +431,12 @@ export default function AdminChatPage() {
                   </ScrollArea>
 
                   {/* Input */}
-                  <form onSubmit={handleSend} className="p-3 border-t flex gap-2 flex-shrink-0">
+                  <form onSubmit={handleSend} className="p-2 md:p-3 border-t flex gap-2 flex-shrink-0">
                     <Input
                       value={input}
                       onChange={e => setInput(e.target.value)}
                       placeholder="Type a message..."
-                      className="flex-1"
+                      className="flex-1 text-xs md:text-sm"
                       disabled={sending}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -434,11 +449,12 @@ export default function AdminChatPage() {
                       type="submit" 
                       disabled={!input.trim() || sending} 
                       size="icon"
+                      className="h-9 w-9 md:h-10 md:w-10 flex-shrink-0"
                       onClick={(e) => {
                         console.log('[Admin Chat] Send button clicked')
                       }}
                     >
-                      <Send className="h-4 w-4" />
+                      <Send className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
                   </form>
                 </>

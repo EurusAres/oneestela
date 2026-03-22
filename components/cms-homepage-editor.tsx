@@ -105,8 +105,8 @@ export function CMSHomepageEditor() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center justify-between">
-            <span>{title}</span>
+          <CardTitle className="text-sm md:text-base flex items-center justify-between gap-2">
+            <span className="truncate">{title}</span>
             <Button 
               size="sm" 
               variant="outline" 
@@ -117,8 +117,9 @@ export function CMSHomepageEditor() {
                   startEditing(String(field))
                 }
               }}
+              className="flex-shrink-0"
             >
-              <Edit2 className="h-4 w-4" />
+              <Edit2 className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </CardTitle>
         </CardHeader>
@@ -126,22 +127,22 @@ export function CMSHomepageEditor() {
           {image !== undefined && (
             <div className="space-y-2">
               {image ? (
-                <div className="relative w-full h-40 bg-gray-100 rounded-lg overflow-hidden">
+                <div className="relative w-full h-32 md:h-40 bg-gray-100 rounded-lg overflow-hidden">
                   <img src={image} alt="Section image" className="w-full h-full object-cover" />
                 </div>
               ) : (
-                <div className="relative w-full h-40 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                <div className="relative w-full h-32 md:h-40 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
                   <div className="text-center text-gray-400">
-                    <ImageIcon className="w-12 h-12 mx-auto mb-2" />
-                    <p className="text-sm">No image uploaded</p>
+                    <ImageIcon className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-2" />
+                    <p className="text-xs md:text-sm">No image uploaded</p>
                   </div>
                 </div>
               )}
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <label className="flex-1">
-                  <Button variant="outline" size="sm" className="w-full gap-2 bg-transparent" asChild>
+                  <Button variant="outline" size="sm" className="w-full gap-2 bg-transparent text-xs md:text-sm" asChild>
                     <span>
-                      <Upload className="h-4 w-4" />
+                      <Upload className="h-3 w-3 md:h-4 md:w-4" />
                       {image ? 'Replace Image' : 'Upload Image'}
                     </span>
                   </Button>
@@ -161,8 +162,9 @@ export function CMSHomepageEditor() {
                       else if (field === 'aboutImage') updateHomepage({ aboutImage: '' })
                       else if (field === 'ctaImage') updateHomepage({ ctaImage: '' })
                     }}
+                    className="w-full sm:w-auto text-xs md:text-sm"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3 w-3 md:h-4 md:w-4" />
                   </Button>
                 )}
               </div>
@@ -176,19 +178,21 @@ export function CMSHomepageEditor() {
                   ref={inputRef}
                   placeholder="Enter title"
                   defaultValue={getCurrentValue()}
+                  className="text-xs md:text-sm"
                 />
               ) : (
                 <Textarea
                   ref={textareaRef}
                   placeholder="Enter description"
                   defaultValue={getCurrentValue()}
+                  className="text-xs md:text-sm"
                 />
               )}
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => saveEdit(field)}>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button size="sm" onClick={() => saveEdit(field)} className="w-full sm:w-auto text-xs md:text-sm">
                   Save Changes
                 </Button>
-                <Button size="sm" variant="outline" onClick={cancelEdit}>
+                <Button size="sm" variant="outline" onClick={cancelEdit} className="w-full sm:w-auto text-xs md:text-sm">
                   Cancel
                 </Button>
               </div>
@@ -201,12 +205,14 @@ export function CMSHomepageEditor() {
 
   return (
     <Tabs defaultValue="hero" className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="hero">Hero Section</TabsTrigger>
-        <TabsTrigger value="about">About Section</TabsTrigger>
-        <TabsTrigger value="cta">CTA Section</TabsTrigger>
-        <TabsTrigger value="contact">Contact Info</TabsTrigger>
-      </TabsList>
+      <div className="w-full overflow-x-auto">
+        <TabsList className="inline-flex w-full sm:w-auto grid-cols-2 sm:grid-cols-4">
+          <TabsTrigger value="hero" className="text-xs sm:text-sm">Hero Section</TabsTrigger>
+          <TabsTrigger value="about" className="text-xs sm:text-sm">About Section</TabsTrigger>
+          <TabsTrigger value="cta" className="text-xs sm:text-sm">CTA Section</TabsTrigger>
+          <TabsTrigger value="contact" className="text-xs sm:text-sm">Contact Info</TabsTrigger>
+        </TabsList>
+      </div>
 
       <div className="space-y-4 mt-6">
         <TabsContent value="hero">
@@ -244,21 +250,21 @@ export function CMSHomepageEditor() {
 
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle className="text-base">Features</CardTitle>
+          <CardTitle className="text-sm md:text-base">Features</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h4 className="font-medium mb-2">Features ({(homepage?.features || []).length})</h4>
+            <h4 className="font-medium mb-2 text-xs md:text-sm">Features ({(homepage?.features || []).length})</h4>
             <div className="space-y-2">
               {(homepage?.features || []).map((feature) => (
                 <div key={feature.id} className="p-3 bg-gray-50 rounded-lg">
-                  <p className="font-medium text-sm">{feature.title}</p>
+                  <p className="font-medium text-xs md:text-sm">{feature.title}</p>
                   <p className="text-xs text-muted-foreground">{feature.description}</p>
                 </div>
               ))}
             </div>
             {(!homepage?.features || homepage.features.length === 0) && (
-              <p className="text-sm text-muted-foreground">No features added yet</p>
+              <p className="text-xs md:text-sm text-muted-foreground">No features added yet</p>
             )}
           </div>
         </CardContent>

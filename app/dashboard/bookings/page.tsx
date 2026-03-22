@@ -227,40 +227,40 @@ export default function BookingsPage() {
   const renderBookingList = (bookings: Booking[]) => (
     <div className="space-y-4">
       {bookings.map((booking) => (
-        <div key={booking.id} className="rounded-lg border p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold">{booking.eventName}</h3>
+        <div key={booking.id} className="rounded-lg border p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 md:mb-2 gap-2">
+            <h3 className="text-base md:text-lg font-semibold">{booking.eventName}</h3>
             <Badge className={getStatusColor(booking.status)}>
               {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
             </Badge>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 text-sm text-gray-600 mb-4">
             <div className="flex items-center">
-              <Calendar className="mr-2 h-4 w-4" />
-              {new Date(booking.date).toLocaleDateString()}
+              <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{new Date(booking.date).toLocaleDateString()}</span>
             </div>
             <div className="flex items-center">
-              <Clock className="mr-2 h-4 w-4" />
-              {booking.startTime} - {booking.endTime}
+              <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{booking.startTime} - {booking.endTime}</span>
             </div>
             <div className="flex items-center">
-              <Users className="mr-2 h-4 w-4" />
-              {booking.guestCount} guests
+              <Users className="mr-2 h-4 w-4 flex-shrink-0" />
+              <span>{booking.guestCount} guests</span>
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-4 mb-4">
-            <h4 className="font-medium mb-2">Customer Information</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <p className="font-medium">{booking.userInfo?.name}</p>
+          <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-4">
+            <h4 className="font-medium mb-2 text-sm md:text-base">Customer Information</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 text-sm">
+              <p className="font-medium truncate">{booking.userInfo?.name}</p>
               <div className="flex items-center">
-                <Mail className="mr-2 h-4 w-4" />
-                {booking.userInfo?.email}
+                <Mail className="mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{booking.userInfo?.email}</span>
               </div>
               <div className="flex items-center">
-                <Phone className="mr-2 h-4 w-4" />
-                {booking.userInfo?.phone}
+                <Phone className="mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{booking.userInfo?.phone}</span>
               </div>
             </div>
           </div>
@@ -270,35 +270,35 @@ export default function BookingsPage() {
             <p><span className="font-medium">Booking ID:</span> {booking.id}</p>
             <p><span className="font-medium">Submitted:</span> {new Date(booking.submittedAt).toLocaleDateString()}</p>
             {booking.specialRequests && (
-              <p><span className="font-medium">Special Requests:</span> {booking.specialRequests}</p>
+              <p className="break-words"><span className="font-medium">Special Requests:</span> {booking.specialRequests}</p>
             )}
           </div>
 
           <div className="flex flex-wrap gap-2">
             {booking.status === "pending" && (
               <>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700"
+                <Button size="sm" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                   onClick={() => handleStatusUpdate(booking.id, "confirmed")}>
                   Confirm Booking
                 </Button>
-                <Button size="sm" variant="destructive"
+                <Button size="sm" variant="destructive" className="w-full sm:w-auto"
                   onClick={() => handleStatusUpdate(booking.id, "declined")}>
                   Decline Booking
                 </Button>
               </>
             )}
             {booking.status === "confirmed" && (
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700"
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                 onClick={() => handleStatusUpdate(booking.id, "completed")}>
                 Mark as Completed
               </Button>
             )}
-            <Button size="sm" variant="outline"
+            <Button size="sm" variant="outline" className="w-full sm:w-auto"
               onClick={() => handleContactCustomer(booking)}>
               <MessageSquare className="mr-2 h-4 w-4" />
               Contact Customer
             </Button>
-            <Button size="sm" variant="outline"
+            <Button size="sm" variant="outline" className="w-full sm:w-auto"
               onClick={() => handleViewDetails(booking)}>
               <FileText className="mr-2 h-4 w-4" />
               View Details
@@ -315,10 +315,10 @@ export default function BookingsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Booking Management</h1>
+      <div className="space-y-4 md:space-y-6">
+        <h1 className="text-2xl md:text-3xl font-bold">Booking Management</h1>
 
-        <div className="grid gap-6 md:grid-cols-4">
+        <div className="grid gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Total Bookings",   value: allBookings.length },
             { label: "Pending Requests", value: pendingBookings.length },
@@ -338,17 +338,17 @@ export default function BookingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Booking Management</CardTitle>
-            <CardDescription>Manage and update booking statuses by category</CardDescription>
+            <CardTitle className="text-lg md:text-xl">Booking Management</CardTitle>
+            <CardDescription className="text-sm">Manage and update booking statuses by category</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="all">All ({allBookings.length})</TabsTrigger>
-                <TabsTrigger value="pending">Pending ({pendingBookings.length})</TabsTrigger>
-                <TabsTrigger value="confirmed">Confirmed ({confirmedBookings.length})</TabsTrigger>
-                <TabsTrigger value="completed">Completed ({completedBookings.length})</TabsTrigger>
-                <TabsTrigger value="cancelled">Cancelled ({cancelledBookings.length})</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 gap-1">
+                <TabsTrigger value="all" className="text-xs sm:text-sm">All ({allBookings.length})</TabsTrigger>
+                <TabsTrigger value="pending" className="text-xs sm:text-sm">Pending ({pendingBookings.length})</TabsTrigger>
+                <TabsTrigger value="confirmed" className="text-xs sm:text-sm">Confirmed ({confirmedBookings.length})</TabsTrigger>
+                <TabsTrigger value="completed" className="text-xs sm:text-sm col-span-3 sm:col-span-1">Completed ({completedBookings.length})</TabsTrigger>
+                <TabsTrigger value="cancelled" className="text-xs sm:text-sm col-span-3 sm:col-span-1">Cancelled ({cancelledBookings.length})</TabsTrigger>
               </TabsList>
               
               <TabsContent value="all" className="mt-6">

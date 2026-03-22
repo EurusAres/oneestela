@@ -19,31 +19,35 @@ export default function CMSPage() {
     <MainLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Content Management System</h1>
-          <p className="text-muted-foreground">Manage all website content, images, and descriptions</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Content Management System</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Manage all website content, images, and descriptions</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="homepage" className="gap-2">
-              <Home className="h-4 w-4" />
-              Homepage
-            </TabsTrigger>
-            <TabsTrigger value="venues" className="gap-2">
-              <Building2 className="h-4 w-4" />
-              Venues
-            </TabsTrigger>
-            <TabsTrigger value="offices" className="gap-2">
-              <ImageIcon className="h-4 w-4" />
-              Office Spaces
-            </TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto">
+            <TabsList className="inline-flex w-full sm:w-auto grid-cols-3">
+              <TabsTrigger value="homepage" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+                <Home className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Homepage</span>
+                <span className="sm:hidden">Home</span>
+              </TabsTrigger>
+              <TabsTrigger value="venues" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+                <Building2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                Venues
+              </TabsTrigger>
+              <TabsTrigger value="offices" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+                <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Office Spaces</span>
+                <span className="sm:hidden">Offices</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="homepage" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Homepage Content</CardTitle>
-                <CardDescription>Edit all homepage sections including hero, about, and CTA sections</CardDescription>
+                <CardTitle className="text-base md:text-lg">Homepage Content</CardTitle>
+                <CardDescription className="text-xs md:text-sm">Edit all homepage sections including hero, about, and CTA sections</CardDescription>
               </CardHeader>
               <CardContent>
                 <CMSHomepageEditor />
@@ -54,8 +58,8 @@ export default function CMSPage() {
           <TabsContent value="venues" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Event Venues</CardTitle>
-                <CardDescription>Manage venue information, descriptions, images, and capacity details</CardDescription>
+                <CardTitle className="text-base md:text-lg">Event Venues</CardTitle>
+                <CardDescription className="text-xs md:text-sm">Manage venue information, descriptions, images, and capacity details</CardDescription>
               </CardHeader>
               <CardContent>
                 <CMSVenueEditor />
@@ -66,8 +70,8 @@ export default function CMSPage() {
           <TabsContent value="offices" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Office Spaces</CardTitle>
-                <CardDescription>Manage ground floor and second floor office room content and images</CardDescription>
+                <CardTitle className="text-base md:text-lg">Office Spaces</CardTitle>
+                <CardDescription className="text-xs md:text-sm">Manage ground floor and second floor office room content and images</CardDescription>
               </CardHeader>
               <CardContent>
                 <CMSOfficeRoomEditor />
@@ -78,9 +82,9 @@ export default function CMSPage() {
 
         <Card className="bg-blue-50 border-blue-200">
           <CardHeader>
-            <CardTitle className="text-blue-900">💡 Real-Time Updates</CardTitle>
+            <CardTitle className="text-blue-900 text-base md:text-lg">💡 Real-Time Updates</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-blue-900">
+          <CardContent className="text-xs md:text-sm text-blue-900">
             All changes made in this CMS are automatically reflected on the public website and within the 360-degree virtual tour. No coding or server restarts required.
           </CardContent>
         </Card>

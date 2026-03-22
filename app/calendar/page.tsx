@@ -59,60 +59,60 @@ export default function CalendarPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold">Booking Calendar</h1>
-            <p className="text-muted-foreground">View all customer reservations and bookings</p>
+            <h1 className="text-2xl md:text-3xl font-bold">Booking Calendar</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">View all customer reservations and bookings</p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="gap-1">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+            <Badge variant="outline" className="gap-1 text-xs md:text-sm">
+              <div className="w-2 h-2 md:w-3 md:h-3 bg-red-500 rounded-full"></div>
               Reserved Dates
             </Badge>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs md:text-sm font-medium">Total Bookings</CardTitle>
+              <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{allBookings.length}</div>
+              <div className="text-xl md:text-2xl font-bold">{allBookings.length}</div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Confirmed</CardTitle>
-              <CalendarIcon className="h-4 w-4 text-green-500" />
+              <CardTitle className="text-xs md:text-sm font-medium">Confirmed</CardTitle>
+              <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl md:text-2xl font-bold">
                 {allBookings.filter((b) => b.status === "confirmed").length}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Pending</CardTitle>
-              <CalendarIcon className="h-4 w-4 text-yellow-500" />
+              <CardTitle className="text-xs md:text-sm font-medium">Pending</CardTitle>
+              <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl md:text-2xl font-bold">
                 {allBookings.filter((b) => b.status === "pending").length}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">This Month</CardTitle>
-              <CalendarIcon className="h-4 w-4 text-blue-500" />
+              <CardTitle className="text-xs md:text-sm font-medium">This Month</CardTitle>
+              <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl md:text-2xl font-bold">
                 {allBookings.filter((b) => {
                   const bookingDate = new Date(b.date)
                   const now = new Date()
@@ -126,16 +126,16 @@ export default function CalendarPage() {
           </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
+        <div className="grid gap-4 md:gap-6 lg:grid-cols-[1.15fr_1fr]">
           <Card>
             <CardHeader>
-              <CardTitle>Event Calendar</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-base md:text-lg">Event Calendar</CardTitle>
+              <CardDescription className="text-xs md:text-sm">
                 Dates highlighted in red are reserved by customers
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex justify-center p-6">
-              <div style={{ transform: 'scaleX(1.15)' }}>
+            <CardContent className="flex justify-center p-3 md:p-6">
+              <div className="scale-90 sm:scale-100 md:scale-110 lg:scale-125" style={{ transform: 'scaleX(1.15)' }}>
                 <Calendar
                   mode="single"
                   selected={date}
@@ -171,7 +171,7 @@ export default function CalendarPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>
+              <CardTitle className="text-base md:text-lg">
                 {date?.toLocaleDateString("en-US", {
                   weekday: "long",
                   month: "long",
@@ -179,53 +179,53 @@ export default function CalendarPage() {
                   year: "numeric",
                 })}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs md:text-sm">
                 {bookingsForSelectedDate.length === 0
                   ? "No bookings scheduled for this date"
                   : `${bookingsForSelectedDate.length} booking(s) scheduled`}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {bookingsForSelectedDate.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <CalendarIcon className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                    <p>No events on this date</p>
+                  <div className="text-center py-6 md:py-8 text-gray-500">
+                    <CalendarIcon className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-2 text-gray-300" />
+                    <p className="text-xs md:text-sm">No events on this date</p>
                   </div>
                 ) : (
                   bookingsForSelectedDate.map((booking) => (
-                    <div key={booking.id} className="rounded-lg border p-4 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-semibold text-lg">{booking.eventName}</h4>
-                          <p className="text-sm text-muted-foreground capitalize">{booking.eventType}</p>
+                    <div key={booking.id} className="rounded-lg border p-3 md:p-4 space-y-2 md:space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-sm md:text-base lg:text-lg truncate">{booking.eventName}</h4>
+                          <p className="text-xs md:text-sm text-muted-foreground capitalize">{booking.eventType}</p>
                         </div>
-                        <Badge className={getStatusColor(booking.status)}>
+                        <Badge className={`${getStatusColor(booking.status)} text-xs flex-shrink-0`}>
                           {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                         </Badge>
                       </div>
 
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
                         <div className="flex items-center gap-2 text-gray-600">
-                          <Users className="h-4 w-4" />
+                          <Users className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                           <span>{booking.guestCount} guests</span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-600">
-                          <Clock className="h-4 w-4" />
+                          <Clock className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                           <span>
                             {booking.startTime} - {booking.endTime}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-600">
-                          <Users className="h-4 w-4" />
-                          <span>{booking.userInfo?.name || "Unknown"}</span>
+                          <Users className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                          <span className="truncate">{booking.userInfo?.name || "Unknown"}</span>
                         </div>
                       </div>
 
                       {booking.specialRequests && (
                         <div className="pt-2 border-t">
                           <p className="text-xs font-medium text-gray-700">Special Requests:</p>
-                          <p className="text-xs text-gray-600 mt-1">{booking.specialRequests}</p>
+                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">{booking.specialRequests}</p>
                         </div>
                       )}
 
@@ -233,7 +233,7 @@ export default function CalendarPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1"
+                          className="flex-1 text-xs md:text-sm"
                           onClick={() => {
                             toast({
                               title: "Booking Details",

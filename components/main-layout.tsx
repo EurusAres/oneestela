@@ -18,9 +18,12 @@ import {
   BarChart3,
   Settings,
   UserCheck,
+  Menu,
+  X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
 import { usePaymentProof } from "@/components/payment-proof-context"
 import { ChangePasswordDialog } from "@/components/change-password-dialog"
@@ -101,9 +104,62 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar - Always visible */}
-      <aside className="w-64 border-r bg-gray-50 flex-shrink-0">
-        <div className="flex h-full flex-col">
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b">
+        <div className="flex items-center justify-between p-4">
+          <h1 className="text-lg font-bold">One Estela Place</h1>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64 p-0">
+              <div className="flex h-full flex-col">
+                <div className="flex items-center justify-center border-b p-4 bg-white">
+                  <h1 className="text-xl font-bold">One Estela Place</h1>
+                </div>
+                <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
+                  {menuItems.map((item) => {
+                    const isActive = pathname === item.href
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium ${
+                          isActive ? "bg-gray-200 text-gray-900" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <item.icon className="mr-3 h-5 w-5" />
+                          {item.name}
+                        </div>
+                        {item.badge && <Badge className="bg-red-100 text-red-800 text-xs animate-pulse">{item.badge}</Badge>}
+                      </Link>
+                    )
+                  })}
+                </nav>
+                <div className="border-t p-4 space-y-2 bg-white">
+                  {userRole === 'admin' && userId && (
+                    <AdminSettingsDialog userId={userId} />
+                  )}
+                  {userRole === 'staff' && userId && (
+                    <ChangePasswordDialog userId={userId} userRole={userRole} />
+                  )}
+                  <Button variant="outline" className="flex w-full items-center justify-start" onClick={handleLogout}>
+                    <LogOut className="mr-3 h-5 w-5" />
+                    Logout
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+
+      {/* Desktop Sidebar - Hidden on mobile */}
+      <aside className="hidden lg:flex w-64 border-r bg-gray-50 flex-shrink-0">
+        <div className="flex h-full flex-col w-full">
           <div className="flex items-center justify-center border-b p-4 bg-white">
             <h1 className="text-xl font-bold">One Estela Place</h1>
           </div>
@@ -143,8 +199,8 @@ export function MainLayout({ children }: MainLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto bg-white">
-        <main className="p-6">{children}</main>
+      <div className="flex-1 min-w-0 overflow-auto bg-white pt-16 lg:pt-0">
+        <main className="p-4 md:p-6">{children}</main>
       </div>
     </div>
   )

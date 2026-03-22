@@ -287,16 +287,16 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
       {/* Footer */}
       <footer className="border-t bg-gray-50">
-        <div className="container mx-auto px-4 py-12">
-          <div className="grid gap-8 md:grid-cols-4">
+        <div className="container mx-auto px-4 py-8 md:py-12">
+          <div className="grid gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <h3 className="mb-4 text-lg font-semibold">One Estela Place</h3>
+              <h3 className="mb-3 md:mb-4 text-base md:text-lg font-semibold">One Estela Place</h3>
               <p className="text-sm text-gray-600">
                 The premier event venue for your special occasions and celebrations.
               </p>
             </div>
             <div>
-              <h4 className="mb-4 font-semibold">Quick Links</h4>
+              <h4 className="mb-3 md:mb-4 text-sm md:text-base font-semibold">Quick Links</h4>
               <ul className="space-y-2 text-sm">
                 <li>
                   <Link href="/about" className="text-gray-600 hover:text-blue-600">
@@ -316,7 +316,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
               </ul>
             </div>
             <div>
-              <h4 className="mb-4 font-semibold">Services</h4>
+              <h4 className="mb-3 md:mb-4 text-sm md:text-base font-semibold">Services</h4>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li>Wedding Receptions</li>
                 <li>Corporate Events</li>
@@ -325,7 +325,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
               </ul>
             </div>
             <div>
-              <h4 className="mb-4 font-semibold">Contact Info</h4>
+              <h4 className="mb-3 md:mb-4 text-sm md:text-base font-semibold">Contact Info</h4>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li>{contactInfo.location}</li>
                 <li>{contactInfo.city}</li>
@@ -334,7 +334,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
               </ul>
             </div>
           </div>
-          <div className="mt-8 border-t pt-8 text-center text-sm text-gray-600">
+          <div className="mt-6 md:mt-8 border-t pt-6 md:pt-8 text-center text-xs md:text-sm text-gray-600">
             <p>&copy; 2025 One Estela Place. All rights reserved.</p>
           </div>
         </div>
@@ -345,15 +345,15 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
       {/* Floating Review Button - Only show for logged-in users */}
       {user && (
-        <div className="fixed bottom-24 right-6 z-40">
+        <div className="fixed bottom-20 md:bottom-24 right-4 md:right-6 z-40">
           <ReviewSubmissionDialog
             trigger={
               <Button
                 size="lg"
-                className="h-14 w-14 rounded-full shadow-lg bg-amber-600 hover:bg-amber-700 transition-all hover:scale-110"
+                className="h-12 w-12 md:h-14 md:w-14 rounded-full shadow-lg bg-amber-600 hover:bg-amber-700 transition-all hover:scale-110"
                 title="Write a Review"
               >
-                <Star className="h-6 w-6" />
+                <Star className="h-5 w-5 md:h-6 md:w-6" />
               </Button>
             }
             onSuccess={() => {
