@@ -335,9 +335,6 @@ export function ReviewSubmissionDialog({
                 This review is for a specific booking
               </p>
             )}
-            <p className="text-xs text-gray-500">
-              Debug: {isLoadingRooms ? 'Loading...' : `${spaces.length} spaces loaded`} | Array.isArray: {Array.isArray(spaces).toString()}
-            </p>
           </div>
 
           <div className="space-y-2">

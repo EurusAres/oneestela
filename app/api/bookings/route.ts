@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
       SELECT b.*, 
              b.event_name, 
              b.event_type,
+             b.decline_reason,
              o.name as room_name, 
              o.image_url,
              u.full_name as user_name, 
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
       params.push(userId);
     }
 
-    query += ' ORDER BY b.created_at DESC';
+    query += ' ORDER BY b.created_at ASC';
 
     const bookings = await executeQuery(query, params);
 
@@ -170,6 +171,10 @@ export async function PUT(request: NextRequest) {
     if (body.totalPrice !== undefined) {
       updates.push('total_price = ?');
       values.push(body.totalPrice);
+    }
+    if (body.declineReason !== undefined) {
+      updates.push('decline_reason = ?');
+      values.push(body.declineReason);
     }
 
     if (updates.length === 0) {

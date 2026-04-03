@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog"
 import { useBookings } from "@/components/booking-context"
 import { useToast } from "@/hooks/use-toast"
@@ -83,8 +85,8 @@ function BookingDetailDialog({ booking, open, onClose }: { booking: Booking | nu
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center justify-between">
             <span>{booking.eventName}</span>
             <Badge className={getStatusColor(booking.status)}>
@@ -94,7 +96,7 @@ function BookingDetailDialog({ booking, open, onClose }: { booking: Booking | nu
           <DialogDescription>Booking ID: #{booking.id}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 text-sm">
+        <div className="space-y-4 text-sm overflow-y-auto flex-1 pr-2">
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center gap-2 text-gray-600">
               <Calendar className="h-4 w-4" />
@@ -170,7 +172,14 @@ export default function BookingsPage() {
 
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState("all")
+  const [declineDialogOpen, setDeclineDialogOpen] = useState(false)
+  const [declineReason, setDeclineReason] = useState("")
+  const [activeTab, setActiveTab] = useState("pending")
+  const [pendingPage, setPendingPage] = useState(1)
+  const [confirmedPage, setConfirmedPage] = useState(1)
+  const [completedPage, setCompletedPage] = useState(1)
+  const [cancelledPage, setCancelledPage] = useState(1)
+  const itemsPerPage = 5
 
   // Get status from URL parameter
   const statusFilter = searchParams.get('status')
@@ -197,9 +206,38 @@ export default function BookingsPage() {
   }, [allBookings, toast])
 
   const handleStatusUpdate = (id: string, status: "confirmed" | "declined" | "completed") => {
-    updateBookingStatus(id, status)
-    toast({ title: "Booking updated", description: `Booking has been ${status}.` })
+    if (status === "declined") {
+      // Open decline dialog instead of immediately declining
+      const booking = allBookings.find(b => b.id === id)
+      if (booking) {
+        setSelectedBooking(booking)
+        setDeclineDialogOpen(true)
+      }
+    } else {
+      updateBookingStatus(id, status)
+      toast({ title: "Booking updated", description: `Booking has been ${status}.` })
+    }
   }
+
+  const confirmDecline = () => {
+    if (selectedBooking && declineReason.trim()) {
+      updateBookingStatus(selectedBooking.id, "declined", declineReason)
+      toast({ 
+        title: "Booking declined", 
+        description: `Booking has been declined. Customer will be notified.` 
+      })
+      setDeclineDialogOpen(false)
+      setDeclineReason("")
+      setSelectedBooking(null)
+    } else if (!declineReason.trim()) {
+      toast({
+        title: "Reason required",
+        description: "Please provide a reason for declining this booking.",
+        variant: "destructive"
+      })
+    }
+  }
+    
 
   const handleViewDetails = (booking: Booking) => {
     setSelectedBooking(booking)
@@ -219,98 +257,122 @@ export default function BookingsPage() {
     window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_blank")
   }
 
-  const pendingBookings   = allBookings.filter((b) => b.status === "pending")
-  const confirmedBookings = allBookings.filter((b) => b.status === "confirmed")
-  const completedBookings = allBookings.filter((b) => b.status === "completed")
-  const cancelledBookings = allBookings.filter((b) => b.status === "cancelled")
+  const pendingBookings   = allBookings.filter((b) => b.status === "pending").sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime())
+  const confirmedBookings = allBookings.filter((b) => b.status === "confirmed").sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime())
+  const completedBookings = allBookings.filter((b) => b.status === "completed").sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime())
+  const cancelledBookings = allBookings.filter((b) => b.status === "cancelled").sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime())
 
-  const renderBookingList = (bookings: Booking[]) => (
-    <div className="space-y-4">
-      {bookings.map((booking) => (
-        <div key={booking.id} className="rounded-lg border p-4 md:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 md:mb-2 gap-2">
-            <h3 className="text-base md:text-lg font-semibold">{booking.eventName}</h3>
-            <Badge className={getStatusColor(booking.status)}>
-              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-            </Badge>
-          </div>
+  // Pagination for all tabs
+  const totalPendingPages = Math.ceil(pendingBookings.length / itemsPerPage)
+  const totalConfirmedPages = Math.ceil(confirmedBookings.length / itemsPerPage)
+  const totalCompletedPages = Math.ceil(completedBookings.length / itemsPerPage)
+  const totalCancelledPages = Math.ceil(cancelledBookings.length / itemsPerPage)
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 text-sm text-gray-600 mb-4">
-            <div className="flex items-center">
-              <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
-              <span className="truncate">{new Date(booking.date).toLocaleDateString()}</span>
-            </div>
-            <div className="flex items-center">
-              <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
-              <span className="truncate">{booking.startTime} - {booking.endTime}</span>
-            </div>
-            <div className="flex items-center">
-              <Users className="mr-2 h-4 w-4 flex-shrink-0" />
-              <span>{booking.guestCount} guests</span>
-            </div>
-          </div>
+  const paginatedPendingBookings = pendingBookings.slice(
+    (pendingPage - 1) * itemsPerPage,
+    pendingPage * itemsPerPage
+  )
+  const paginatedConfirmedBookings = confirmedBookings.slice(
+    (confirmedPage - 1) * itemsPerPage,
+    confirmedPage * itemsPerPage
+  )
+  const paginatedCompletedBookings = completedBookings.slice(
+    (completedPage - 1) * itemsPerPage,
+    completedPage * itemsPerPage
+  )
+  const paginatedCancelledBookings = cancelledBookings.slice(
+    (cancelledPage - 1) * itemsPerPage,
+    cancelledPage * itemsPerPage
+  )
 
-          <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-4">
-            <h4 className="font-medium mb-2 text-sm md:text-base">Customer Information</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 text-sm">
-              <p className="font-medium truncate">{booking.userInfo?.name}</p>
-              <div className="flex items-center">
-                <Mail className="mr-2 h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{booking.userInfo?.email}</span>
+  const handlePreviousPage = (tab: string) => {
+    if (tab === 'pending' && pendingPage > 1) setPendingPage(pendingPage - 1)
+    if (tab === 'confirmed' && confirmedPage > 1) setConfirmedPage(confirmedPage - 1)
+    if (tab === 'completed' && completedPage > 1) setCompletedPage(completedPage - 1)
+    if (tab === 'cancelled' && cancelledPage > 1) setCancelledPage(cancelledPage - 1)
+  }
+
+  const handleNextPage = (tab: string) => {
+    if (tab === 'pending' && pendingPage < totalPendingPages) setPendingPage(pendingPage + 1)
+    if (tab === 'confirmed' && confirmedPage < totalConfirmedPages) setConfirmedPage(confirmedPage + 1)
+    if (tab === 'completed' && completedPage < totalCompletedPages) setCompletedPage(completedPage + 1)
+    if (tab === 'cancelled' && cancelledPage < totalCancelledPages) setCancelledPage(cancelledPage + 1)
+  }
+
+  const renderBookingList = (bookings: Booking[], tab: string, currentPage: number, totalPages: number, totalCount: number) => (
+    <>
+      <div className="space-y-4">
+        {bookings.map((booking) => (
+          <div key={booking.id} className="rounded-lg border p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base md:text-lg font-semibold truncate">{booking.eventName}</h3>
+                <p className="text-sm text-gray-600 truncate">{booking.userInfo?.name || "Unknown Customer"}</p>
               </div>
-              <div className="flex items-center">
-                <Phone className="mr-2 h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{booking.userInfo?.phone}</span>
-              </div>
+              <Badge className={getStatusColor(booking.status)}>
+                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+              </Badge>
             </div>
-          </div>
 
-          <div className="mb-4 text-sm text-gray-600 space-y-1">
-            <p><span className="font-medium">Event Type:</span> {booking.eventType}</p>
-            <p><span className="font-medium">Booking ID:</span> {booking.id}</p>
-            <p><span className="font-medium">Submitted:</span> {new Date(booking.submittedAt).toLocaleDateString()}</p>
-            {booking.specialRequests && (
-              <p className="break-words"><span className="font-medium">Special Requests:</span> {booking.specialRequests}</p>
-            )}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {booking.status === "pending" && (
-              <>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
-                  onClick={() => handleStatusUpdate(booking.id, "confirmed")}>
-                  Confirm Booking
+            <div className="flex flex-wrap gap-2">
+              {booking.status === "pending" && (
+                <>
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                    onClick={() => handleStatusUpdate(booking.id, "confirmed")}>
+                    Confirm Booking
+                  </Button>
+                  <Button size="sm" variant="destructive" className="w-full sm:w-auto"
+                    onClick={() => handleStatusUpdate(booking.id, "declined")}>
+                    Decline Booking
+                  </Button>
+                </>
+              )}
+              {booking.status === "confirmed" && (
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                  onClick={() => handleStatusUpdate(booking.id, "completed")}>
+                  Mark as Completed
                 </Button>
-                <Button size="sm" variant="destructive" className="w-full sm:w-auto"
-                  onClick={() => handleStatusUpdate(booking.id, "declined")}>
-                  Decline Booking
-                </Button>
-              </>
-            )}
-            {booking.status === "confirmed" && (
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-                onClick={() => handleStatusUpdate(booking.id, "completed")}>
-                Mark as Completed
+              )}
+              <Button size="sm" variant="outline" className="w-full sm:w-auto"
+                onClick={() => handleViewDetails(booking)}>
+                <FileText className="mr-2 h-4 w-4" />
+                View Details
               </Button>
-            )}
-            <Button size="sm" variant="outline" className="w-full sm:w-auto"
-              onClick={() => handleContactCustomer(booking)}>
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Contact Customer
+            </div>
+          </div>
+        ))}
+
+        {bookings.length === 0 && (
+          <div className="text-center py-8 text-gray-500">No bookings found</div>
+        )}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6 pt-4 border-t">
+          <div className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages} ({totalCount} total bookings)
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePreviousPage(tab)}
+              disabled={currentPage === 1}
+            >
+              Previous
             </Button>
-            <Button size="sm" variant="outline" className="w-full sm:w-auto"
-              onClick={() => handleViewDetails(booking)}>
-              <FileText className="mr-2 h-4 w-4" />
-              View Details
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleNextPage(tab)}
+              disabled={currentPage === totalPages}
+            >
+              Next
             </Button>
           </div>
         </div>
-      ))}
-
-      {bookings.length === 0 && (
-        <div className="text-center py-8 text-gray-500">No bookings found</div>
       )}
-    </div>
+    </>
   )
 
   return (
@@ -343,32 +405,27 @@ export default function BookingsPage() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 gap-1">
-                <TabsTrigger value="all" className="text-xs sm:text-sm">All ({allBookings.length})</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
                 <TabsTrigger value="pending" className="text-xs sm:text-sm">Pending ({pendingBookings.length})</TabsTrigger>
                 <TabsTrigger value="confirmed" className="text-xs sm:text-sm">Confirmed ({confirmedBookings.length})</TabsTrigger>
-                <TabsTrigger value="completed" className="text-xs sm:text-sm col-span-3 sm:col-span-1">Completed ({completedBookings.length})</TabsTrigger>
-                <TabsTrigger value="cancelled" className="text-xs sm:text-sm col-span-3 sm:col-span-1">Cancelled ({cancelledBookings.length})</TabsTrigger>
+                <TabsTrigger value="completed" className="text-xs sm:text-sm">Completed ({completedBookings.length})</TabsTrigger>
+                <TabsTrigger value="cancelled" className="text-xs sm:text-sm">Cancelled ({cancelledBookings.length})</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="all" className="mt-6">
-                {renderBookingList(allBookings)}
-              </TabsContent>
-              
               <TabsContent value="pending" className="mt-6">
-                {renderBookingList(pendingBookings)}
+                {renderBookingList(paginatedPendingBookings, 'pending', pendingPage, totalPendingPages, pendingBookings.length)}
               </TabsContent>
               
               <TabsContent value="confirmed" className="mt-6">
-                {renderBookingList(confirmedBookings)}
+                {renderBookingList(paginatedConfirmedBookings, 'confirmed', confirmedPage, totalConfirmedPages, confirmedBookings.length)}
               </TabsContent>
               
               <TabsContent value="completed" className="mt-6">
-                {renderBookingList(completedBookings)}
+                {renderBookingList(paginatedCompletedBookings, 'completed', completedPage, totalCompletedPages, completedBookings.length)}
               </TabsContent>
               
               <TabsContent value="cancelled" className="mt-6">
-                {renderBookingList(cancelledBookings)}
+                {renderBookingList(paginatedCancelledBookings, 'cancelled', cancelledPage, totalCancelledPages, cancelledBookings.length)}
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -380,6 +437,62 @@ export default function BookingsPage() {
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
       />
+
+      {/* Decline Booking Dialog */}
+      <Dialog open={declineDialogOpen} onOpenChange={setDeclineDialogOpen}>
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Decline Booking</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for declining this booking. The customer will be notified.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {selectedBooking && (
+              <div className="rounded-lg bg-gray-50 p-3 text-sm">
+                <p className="font-medium">{selectedBooking.eventName}</p>
+                <p className="text-gray-600">{selectedBooking.userInfo?.name}</p>
+                <p className="text-gray-600">{new Date(selectedBooking.date).toLocaleDateString()}</p>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="decline-reason">Reason for Declining *</Label>
+              <Textarea
+                id="decline-reason"
+                placeholder="e.g., Date unavailable, venue already booked, does not meet requirements..."
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDeclineDialogOpen(false)
+                setDeclineReason("")
+                setSelectedBooking(null)
+              }}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDecline}
+              disabled={!declineReason.trim()}
+              className="w-full sm:w-auto"
+            >
+              Decline Booking
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   )
 }
