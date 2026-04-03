@@ -47,8 +47,6 @@ export default function PaymentsPage() {
 
   const allProofs = getAllPaymentProofs()
   const pendingProofs = getPendingPaymentProofs()
-  const verifiedProofs = allProofs.filter((proof) => proof.status === "verified")
-  const rejectedProofs = allProofs.filter((proof) => proof.status === "rejected")
   
   // Get bookings to check cancellation status
   const { getAllBookings } = useBookings()
@@ -63,9 +61,18 @@ export default function PaymentsPage() {
     }
   })
   
+  // Separate cancelled proofs from active proofs
   const cancelledProofs = proofsWithBookingStatus.filter(
     proof => proof.bookingStatus === 'cancelled'
   )
+  
+  const activeProofs = proofsWithBookingStatus.filter(
+    proof => proof.bookingStatus !== 'cancelled'
+  )
+  
+  const verifiedProofs = activeProofs.filter((proof) => proof.status === "verified")
+  const rejectedProofs = activeProofs.filter((proof) => proof.status === "rejected")
+  const activePendingProofs = activeProofs.filter((proof) => proof.status === "pending")
 
   const handleReviewProof = (proof: any, action: "verify" | "reject") => {
     setSelectedProof(proof)
@@ -363,8 +370,8 @@ export default function PaymentsPage() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl md:text-2xl font-bold">{pendingProofs.length}</div>
-              {pendingProofs.length > 0 && (
+              <div className="text-xl md:text-2xl font-bold">{activePendingProofs.length}</div>
+              {activePendingProofs.length > 0 && (
                 <Badge className="bg-yellow-100 text-yellow-800 mt-2 text-xs">Needs Attention</Badge>
               )}
             </CardContent>
@@ -407,8 +414,8 @@ export default function PaymentsPage() {
             <TabsList className="inline-flex w-full sm:w-auto">
               <TabsTrigger value="pending" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
                 <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Pending ({pendingProofs.length})</span>
-                <span className="sm:hidden">({pendingProofs.length})</span>
+                <span className="hidden sm:inline">Pending ({activePendingProofs.length})</span>
+                <span className="sm:hidden">({activePendingProofs.length})</span>
               </TabsTrigger>
               <TabsTrigger value="verified" className="text-xs sm:text-sm">
                 <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -425,16 +432,12 @@ export default function PaymentsPage() {
                 <span className="hidden sm:inline">Cancelled ({cancelledProofs.length})</span>
                 <span className="sm:hidden">({cancelledProofs.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="all" className="text-xs sm:text-sm">
-                <span className="hidden sm:inline">All ({allProofs.length})</span>
-                <span className="sm:hidden">({allProofs.length})</span>
-              </TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value="pending">
             <div className="space-y-4">
-              {pendingProofs.length === 0 ? (
+              {activePendingProofs.length === 0 ? (
                 <Card>
                   <CardContent className="text-center py-8">
                     <Clock className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -442,9 +445,7 @@ export default function PaymentsPage() {
                   </CardContent>
                 </Card>
               ) : (
-                proofsWithBookingStatus
-                  .filter(p => p.status === 'pending')
-                  .map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
+                activePendingProofs.map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
               )}
             </div>
           </TabsContent>
@@ -459,9 +460,7 @@ export default function PaymentsPage() {
                   </CardContent>
                 </Card>
               ) : (
-                proofsWithBookingStatus
-                  .filter(p => p.status === 'verified')
-                  .map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
+                verifiedProofs.map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
               )}
             </div>
           </TabsContent>
@@ -476,9 +475,7 @@ export default function PaymentsPage() {
                   </CardContent>
                 </Card>
               ) : (
-                proofsWithBookingStatus
-                  .filter(p => p.status === 'rejected')
-                  .map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
+                rejectedProofs.map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
               )}
             </div>
           </TabsContent>
@@ -503,21 +500,6 @@ export default function PaymentsPage() {
                   </Card>
                   {cancelledProofs.map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)}
                 </>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="all">
-            <div className="space-y-4">
-              {allProofs.length === 0 ? (
-                <Card>
-                  <CardContent className="text-center py-8">
-                    <FileImage className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p className="text-gray-500">No payment proofs submitted yet</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                proofsWithBookingStatus.map((proof) => <PaymentProofCard key={proof.id} proof={proof} />)
               )}
             </div>
           </TabsContent>

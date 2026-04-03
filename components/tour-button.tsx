@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { VirtualTour } from "@/components/virtual-tour"
+import { ReserveDialog } from "@/components/reserve-dialog"
 import { useAuth } from "@/components/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { Camera, X } from "lucide-react"
@@ -20,6 +21,8 @@ export function TourButton({ children, className, size, variant }: TourButtonPro
   const { user } = useAuth()
   const { toast } = useToast()
   const [showTour, setShowTour] = useState(false)
+  const [showReserveDialog, setShowReserveDialog] = useState(false)
+  const [preSelectedSpace, setPreSelectedSpace] = useState<{type: string, id: string, name: string} | null>(null)
   const [showWelcomeNotification, setShowWelcomeNotification] = useState(false)
 
   // Show welcome notification when tour is opened by a logged-in user
@@ -36,6 +39,11 @@ export function TourButton({ children, className, size, variant }: TourButtonPro
     }
   }
 
+  const handleBookSpace = (spaceType: string, spaceId: string, spaceName: string) => {
+    setPreSelectedSpace({ type: spaceType, id: spaceId, name: spaceName })
+    setShowReserveDialog(true)
+  }
+
   const dismissWelcomeNotification = (e: React.MouseEvent) => {
     e.stopPropagation() // Prevent event from bubbling up
     setShowWelcomeNotification(false)
@@ -48,7 +56,17 @@ export function TourButton({ children, className, size, variant }: TourButtonPro
         {children}
       </Button>
 
-      <VirtualTour open={showTour} onOpenChange={setShowTour} />
+      <VirtualTour 
+        open={showTour} 
+        onOpenChange={setShowTour} 
+        onBookSpace={handleBookSpace}
+      />
+
+      <ReserveDialog 
+        open={showReserveDialog} 
+        onOpenChange={setShowReserveDialog}
+        preSelectedSpace={preSelectedSpace}
+      />
 
       {/* Welcome Notification - Only shows for logged-in users when tour is active */}
       {showTour && showWelcomeNotification && user && (

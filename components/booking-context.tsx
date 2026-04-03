@@ -14,6 +14,7 @@ export interface Booking {
   startTime: string
   endTime: string
   specialRequests: string
+  declineReason?: string
   status: "pending" | "confirmed" | "declined" | "completed" | "cancelled"
   submittedAt: string
   total?: string
@@ -27,7 +28,7 @@ export interface Booking {
 interface BookingContextType {
   bookings: Booking[]
   addBooking: (booking: Omit<Booking, "id" | "submittedAt">) => void
-  updateBookingStatus: (id: string, status: Booking["status"]) => void
+  updateBookingStatus: (id: string, status: Booking["status"], declineReason?: string) => void
   getUserBookings: (userId: string) => Booking[]
   getAllBookings: () => Booking[]
   cancelBooking: (id: string) => void
@@ -57,6 +58,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
             date: b.date || (b.check_in_date ? b.check_in_date.split('T')[0] : ''),
             startTime: b.startTime || (b.check_in_date ? new Date(b.check_in_date).toTimeString().slice(0,5) : ''),
             endTime: b.endTime || (b.check_out_date ? new Date(b.check_out_date).toTimeString().slice(0,5) : ''),
+            specialRequests: b.specialRequests || b.special_requests || '',
+            declineReason: b.declineReason || b.decline_reason || '',
             submittedAt: b.submittedAt || b.created_at || new Date().toISOString(),
             total: b.total || b.total_price?.toString(),
             userInfo: b.userInfo || {
@@ -102,15 +105,24 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const updateBookingStatus = async (id: string, status: Booking["status"]) => {
+  const updateBookingStatus = async (id: string, status: Booking["status"], declineReason?: string) => {
     try {
+      const body: any = { status }
+      if (declineReason) {
+        body.declineReason = declineReason
+      }
+      
       const response = await fetch(`/api/bookings?id=${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(body),
       })
       if (response.ok) {
-        const updatedBookings = bookings.map((booking) => (booking.id === id ? { ...booking, status } : booking))
+        const updatedBookings = bookings.map((booking) => 
+          booking.id === id 
+            ? { ...booking, status, ...(declineReason && { declineReason }) } 
+            : booking
+        )
         setBookings(updatedBookings)
       }
     } catch (error) {

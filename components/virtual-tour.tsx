@@ -21,6 +21,7 @@ import {
   Wifi,
   Monitor,
   Loader2,
+  CalendarX,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { PanoramicViewer } from "@/components/panoramic-viewer"
@@ -28,6 +29,7 @@ import { PanoramicViewer } from "@/components/panoramic-viewer"
 interface VirtualTourProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onBookSpace?: (spaceType: string, spaceId: string, spaceName: string) => void
 }
 
 interface TourAngle {
@@ -48,7 +50,7 @@ interface TourArea {
   floor?: "ground" | "second"
 }
 
-export function VirtualTour({ open, onOpenChange }: VirtualTourProps) {
+export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProps) {
   const { toast } = useToast()
   const [currentAreaIndex, setCurrentAreaIndex] = useState(0)
   const [currentAngleIndex, setCurrentAngleIndex] = useState(0)
@@ -60,6 +62,7 @@ export function VirtualTour({ open, onOpenChange }: VirtualTourProps) {
   const [activeTab, setActiveTab] = useState("event-venues")
   const [tourAreas, setTourAreas] = useState<TourArea[]>([])
   const [loading, setLoading] = useState(true)
+  const [allBookings, setAllBookings] = useState<any[]>([])
   const tourRef = useRef<HTMLDivElement>(null)
 
   // Fetch venues and office spaces from CMS
@@ -68,14 +71,23 @@ export function VirtualTour({ open, onOpenChange }: VirtualTourProps) {
       try {
         setLoading(true)
         
-        // Fetch venues and office rooms in parallel
-        const [venuesRes, roomsRes] = await Promise.all([
+        // Fetch venues, office rooms, and bookings in parallel
+        const [venuesRes, roomsRes, bookingsRes] = await Promise.all([
           fetch('/api/venues'),
-          fetch('/api/office-rooms?includeAll=true')
+          fetch('/api/office-rooms?includeAll=true'),
+          fetch('/api/bookings')
         ])
 
         const venuesData = await venuesRes.json()
         const roomsData = await roomsRes.json()
+        const bookingsData = await bookingsRes.json()
+
+        // Store all bookings for processing
+        if (bookingsData.bookings && Array.isArray(bookingsData.bookings)) {
+          setAllBookings(bookingsData.bookings.filter((booking: any) => 
+            booking.status === 'confirmed' || booking.status === 'pending'
+          ))
+        }
 
         const areas: TourArea[] = []
 
@@ -203,6 +215,42 @@ export function VirtualTour({ open, onOpenChange }: VirtualTourProps) {
 
   const currentArea = tourAreas[currentAreaIndex]
   const currentAngle = currentArea?.angles[currentAngleIndex]
+
+  // Get unavailable dates for the current space
+  const getUnavailableDatesForCurrentSpace = () => {
+    if (!currentArea || allBookings.length === 0) return []
+
+    // Extract space type and ID from current area
+    const [spaceType, spaceId] = currentArea.id.split('-')
+    
+    return allBookings
+      .filter((booking: any) => {
+        // Match bookings to the current space
+        if (spaceType === 'venue') {
+          return booking.event_type === `venue-${spaceId}`
+        } else if (spaceType === 'room') {
+          return booking.event_type === `office-${spaceId}`
+        }
+        return false
+      })
+      .map((booking: any) => {
+        const dateStr = booking.date || (booking.check_in_date ? booking.check_in_date.split('T')[0] : '')
+        if (dateStr) {
+          const [year, month, day] = dateStr.split('-').map(Number)
+          return {
+            date: new Date(year, month - 1, day),
+            eventName: booking.event_name || 'Event',
+            spaceName: currentArea.name,
+            spaceType: spaceType === 'venue' ? 'Venue' : 'Office Space'
+          }
+        }
+        return null
+      })
+      .filter(item => item !== null)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+  }
+
+  const unavailableDates = getUnavailableDatesForCurrentSpace()
 
   // Filter areas by category
   const eventVenues = tourAreas.filter((area) => area.category === "event")
@@ -615,6 +663,45 @@ export function VirtualTour({ open, onOpenChange }: VirtualTourProps) {
                 </div>
               )}
 
+              {/* Unavailable Dates Panel - Bottom Left */}
+              {unavailableDates.length > 0 && (
+                <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border max-w-sm">
+                  <div className="p-3">
+                    <h4 className="font-semibold text-sm mb-2 flex items-center text-red-600">
+                      <CalendarX className="w-4 h-4 mr-2" />
+                      Unavailable Dates
+                    </h4>
+                    <div className="text-xs text-gray-600 mb-2">
+                      This space is reserved on:
+                    </div>
+                    <div className="max-h-32 overflow-y-auto space-y-2">
+                      {unavailableDates
+                        .slice(0, 8) // Show only first 8 dates
+                        .map((item, index) => (
+                          <div key={index} className="flex items-center text-xs">
+                            <div className="w-2 h-2 bg-red-500 rounded-full mr-2 flex-shrink-0"></div>
+                            <span className="font-medium text-gray-800">
+                              {item.date.toLocaleDateString("en-US", { 
+                                weekday: "short", 
+                                month: "short", 
+                                day: "numeric"
+                              })}
+                            </span>
+                          </div>
+                        ))}
+                      {unavailableDates.length > 8 && (
+                        <div className="text-xs text-gray-500 italic ml-4">
+                          +{unavailableDates.length - 8} more dates unavailable
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-2 pt-2 border-t text-xs text-gray-500">
+                      Please choose available dates when booking
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Angle Thumbnails - Outside the toggle panel */}
               {currentArea.angles.length > 1 && (
                 <div className="absolute bottom-4 left-0 right-0 z-20 flex justify-center">
@@ -678,14 +765,20 @@ export function VirtualTour({ open, onOpenChange }: VirtualTourProps) {
                 </Button>
                 <Button
                   onClick={() => {
-                    closeTour()
-                    toast({
-                      title: "Ready to book?",
-                      description: `Sign in to reserve ${currentArea.name} for your event!`,
-                    })
+                    if (currentArea && onBookSpace) {
+                      const [spaceType, spaceId] = currentArea.id.split('-')
+                      onBookSpace(spaceType, spaceId, currentArea.name)
+                      closeTour()
+                    } else {
+                      closeTour()
+                      toast({
+                        title: "Ready to book?",
+                        description: `Please sign in to reserve ${currentArea?.name || 'this space'} for your event!`,
+                      })
+                    }
                   }}
                 >
-                  Sign In to Book
+                  Book Now
                 </Button>
               </div>
             </div>

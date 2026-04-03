@@ -28,7 +28,7 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
   const [showPaymentUpload, setShowPaymentUpload] = useState(false)
   const [selectedBooking, setSelectedBooking] = useState<any>(null)
 
-  const userBookings = user ? getUserBookings(user.id) : []
+  const userBookings = user ? getUserBookings(user.id).sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()) : []
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -100,12 +100,12 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto rounded-lg">
-        <DialogHeader>
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-4xl max-h-[90vh] flex flex-col rounded-lg">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>My Transactions</DialogTitle>
           <DialogDescription>View all your past and upcoming reservations</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto flex-1 pr-2">
           {userBookings.map((booking) => {
             const paymentStatus = getPaymentStatus(booking)
 
@@ -150,6 +150,20 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
                         <p className="text-sm text-gray-600">Event Type: {booking.eventType}</p>
                         {booking.specialRequests && (
                           <p className="text-sm text-gray-600">Special Requests: {booking.specialRequests}</p>
+                        )}
+                        
+                        {/* Show decline reason if booking was declined */}
+                        {booking.status === "declined" && booking.declineReason && (
+                          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <div className="flex items-start space-x-2">
+                              <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-red-800">Booking Declined</p>
+                                <p className="text-sm text-red-700 mt-1">{booking.declineReason}</p>
+                                <p className="text-xs text-red-600 mt-2">Please contact us if you have any questions.</p>
+                              </div>
+                            </div>
+                          </div>
                         )}
                         
                         {/* Show rejection reason if payment was rejected */}
