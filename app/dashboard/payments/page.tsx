@@ -40,6 +40,7 @@ export default function PaymentsPage() {
 
   const [selectedProof, setSelectedProof] = useState<any>(null)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false)
   const [reviewAction, setReviewAction] = useState<"verify" | "reject">("verify")
   const [adminNote, setAdminNote] = useState("")
   const [showImageDialog, setShowImageDialog] = useState(false)
@@ -73,6 +74,11 @@ export default function PaymentsPage() {
   const verifiedProofs = activeProofs.filter((proof) => proof.status === "verified")
   const rejectedProofs = activeProofs.filter((proof) => proof.status === "rejected")
   const activePendingProofs = activeProofs.filter((proof) => proof.status === "pending")
+
+  const handleViewDetails = (proof: any) => {
+    setSelectedProof(proof)
+    setShowDetailsDialog(true)
+  }
 
   const handleReviewProof = (proof: any, action: "verify" | "reject") => {
     setSelectedProof(proof)
@@ -201,148 +207,66 @@ export default function PaymentsPage() {
   }
 
   const PaymentProofCard = ({ proof }: { proof: any }) => {
-    console.log('Rendering PaymentProofCard with proof:', proof)
-    console.log('Proof fileUrl:', proof.fileUrl)
-    
     const isCancelled = proof.bookingStatus === 'cancelled'
     
     return (
-      <Card className={`mb-4 ${isCancelled ? 'border-red-300 bg-red-50' : ''}`}>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center space-x-3">
-              {getStatusIcon(proof.status)}
-              <div>
-                <CardTitle className="text-base md:text-lg flex flex-wrap items-center gap-2">
-                  {proof.eventName || "Booking"}
-                  {isCancelled && (
-                    <Badge className="bg-red-100 text-red-800 text-xs">
-                      Booking Cancelled
-                    </Badge>
-                  )}
-                </CardTitle>
-                <CardDescription className="text-xs md:text-sm">
-                  Booking ID: {proof.bookingId} • Uploaded {new Date(proof.uploadedAt).toLocaleDateString()}
-                </CardDescription>
-              </div>
-            </div>
-            <Badge className={`${getStatusColor(proof.status)} text-xs whitespace-nowrap`}>
-              {proof.status.charAt(0).toUpperCase() + proof.status.slice(1)}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isCancelled && (
-            <div className="bg-red-100 border border-red-300 p-3 md:p-4 rounded-lg mb-4">
-              <p className="text-xs md:text-sm text-red-800 font-medium">
-                ⚠️ This booking has been cancelled by the customer. Payment proof is no longer valid.
+      <div className={`flex items-center justify-between p-4 border rounded-lg ${isCancelled ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            {getStatusIcon(proof.status)}
+            <div>
+              <p className="font-medium text-gray-900">{proof.customerName || "Unknown Customer"}</p>
+              <p className="text-sm text-gray-500">
+                Booking ID: {proof.bookingId} • {new Date(proof.uploadedAt).toLocaleDateString()}
               </p>
-              <p className="text-xs text-red-700 mt-1">
-                Refund processing may be required based on cancellation policy.
-              </p>
-            </div>
-          )}
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
-            <div className="flex items-center space-x-2">
-              <CreditCard className="h-4 w-4 text-gray-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs md:text-sm font-medium">Payment Method</p>
-                <p className="text-xs md:text-sm text-gray-600 truncate">{proof.paymentMethod}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <DollarSign className="h-4 w-4 text-gray-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs md:text-sm font-medium">Amount</p>
-                <p className="text-xs md:text-sm text-gray-600">₱{Number(proof.paymentAmount).toLocaleString()}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs md:text-sm font-medium">Payment Date</p>
-                <p className="text-xs md:text-sm text-gray-600">{new Date(proof.paymentDate).toLocaleDateString()}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs md:text-sm font-medium">Customer</p>
-                <p className="text-xs md:text-sm text-gray-600 truncate">{proof.customerName || "Unknown"}</p>
-                {proof.customerEmail && (
-                  <p className="text-xs text-gray-500 truncate">{proof.customerEmail}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {proof.paymentReference && (
-            <div className="mb-4">
-              <p className="text-xs md:text-sm font-medium">Reference Number</p>
-              <p className="text-xs md:text-sm text-gray-600 break-all">{proof.paymentReference}</p>
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <div className="flex items-center space-x-2 min-w-0">
-              <FileImage className="h-4 w-4 flex-shrink-0" />
-              <span className="text-xs md:text-sm truncate">{proof.fileName}</span>
-              <span className="text-xs text-gray-500 whitespace-nowrap">({formatFileSize(proof.fileSize)})</span>
-            </div>
-          </div>
-
-          {proof.adminNote && (
-            <div className="bg-gray-50 p-3 rounded-lg mb-4">
-              <p className="text-xs md:text-sm font-medium">Admin Note:</p>
-              <p className="text-xs md:text-sm text-gray-600 mt-1">{proof.adminNote}</p>
-              {proof.verifiedBy && (
-                <p className="text-xs text-gray-500 mt-2">
-                  By {proof.verifiedBy} on {new Date(proof.verifiedAt).toLocaleDateString()}
-                </p>
+              {isCancelled && (
+                <Badge className="bg-red-100 text-red-800 text-xs mt-1">
+                  Booking Cancelled
+                </Badge>
               )}
             </div>
-          )}
-
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleViewImage(proof)} className="text-xs md:text-sm">
-              <Eye className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-              View File
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => handleDownloadFile(proof)} className="text-xs md:text-sm">
-              <Download className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-              Download
-            </Button>
-            {proof.status === "pending" && !isCancelled && (
-              <>
-                <Button
-                  size="sm"
-                  onClick={() => handleReviewProof(proof, "verify")}
-                  className="bg-green-600 hover:bg-green-700 text-xs md:text-sm"
-                >
-                  <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                  Verify
-                </Button>
-                <Button variant="destructive" size="sm" onClick={() => handleReviewProof(proof, "reject")} className="text-xs md:text-sm">
-                  <XCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                  Reject
-                </Button>
-              </>
-            )}
-            {isCancelled && proof.status === "pending" && (
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleViewDetails(proof)}
+          >
+            View Details
+          </Button>
+          
+          {proof.status === "pending" && !isCancelled && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => handleReviewProof(proof, "verify")}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Verify
+              </Button>
               <Button 
                 variant="destructive" 
                 size="sm" 
                 onClick={() => handleReviewProof(proof, "reject")}
-                className="text-xs md:text-sm"
               >
-                <XCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                Mark as Cancelled
+                Reject
               </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </>
+          )}
+          
+          {isCancelled && proof.status === "pending" && (
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={() => handleReviewProof(proof, "reject")}
+            >
+              Mark as Cancelled
+            </Button>
+          )}
+        </div>
+      </div>
     )
   }
 
@@ -505,6 +429,128 @@ export default function PaymentsPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Payment Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Payment Proof Details</DialogTitle>
+            <DialogDescription>
+              Complete information for this payment submission
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedProof && (
+            <div className="space-y-4">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Booking Information</h4>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="font-medium">Event:</span> {selectedProof.eventName || "N/A"}</p>
+                    <p><span className="font-medium">Booking ID:</span> {selectedProof.bookingId}</p>
+                    <p><span className="font-medium">Uploaded:</span> {new Date(selectedProof.uploadedAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Customer Information</h4>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="font-medium">Name:</span> {selectedProof.customerName || "Unknown"}</p>
+                    {selectedProof.customerEmail && (
+                      <p><span className="font-medium">Email:</span> {selectedProof.customerEmail}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Details */}
+              <div>
+                <h4 className="font-medium text-sm mb-2">Payment Details</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p><span className="font-medium">Method:</span> {selectedProof.paymentMethod}</p>
+                    <p><span className="font-medium">Amount:</span> ₱{Number(selectedProof.paymentAmount).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p><span className="font-medium">Date:</span> {new Date(selectedProof.paymentDate).toLocaleDateString()}</p>
+                    {selectedProof.paymentReference && (
+                      <p><span className="font-medium">Reference:</span> {selectedProof.paymentReference}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* File Information */}
+              <div>
+                <h4 className="font-medium text-sm mb-2">Attached File</h4>
+                <div className="flex items-center space-x-2 text-sm">
+                  <FileImage className="h-4 w-4" />
+                  <span>{selectedProof.fileName}</span>
+                  <span className="text-gray-500">({formatFileSize(selectedProof.fileSize)})</span>
+                </div>
+                <div className="flex space-x-2 mt-2">
+                  <Button variant="outline" size="sm" onClick={() => handleViewImage(selectedProof)}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    View File
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDownloadFile(selectedProof)}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
+              </div>
+
+              {/* Admin Notes */}
+              {selectedProof.adminNote && (
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Admin Note</h4>
+                  <div className="bg-gray-50 p-3 rounded-lg text-sm">
+                    <p>{selectedProof.adminNote}</p>
+                    {selectedProof.verifiedBy && (
+                      <p className="text-gray-500 mt-2">
+                        By {selectedProof.verifiedBy} on {new Date(selectedProof.verifiedAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Status and Actions */}
+              <div className="flex items-center justify-between pt-4 border-t">
+                <Badge className={getStatusColor(selectedProof.status)}>
+                  {selectedProof.status.charAt(0).toUpperCase() + selectedProof.status.slice(1)}
+                </Badge>
+                
+                {selectedProof.status === "pending" && selectedProof.bookingStatus !== 'cancelled' && (
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setShowDetailsDialog(false)
+                        handleReviewProof(selectedProof, "verify")
+                      }}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Verify
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => {
+                        setShowDetailsDialog(false)
+                        handleReviewProof(selectedProof, "reject")
+                      }}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Review Dialog */}
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>

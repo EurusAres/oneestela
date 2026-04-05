@@ -48,6 +48,7 @@ interface TourArea {
   angles: TourAngle[]
   category: "event" | "office"
   floor?: "ground" | "second"
+  price?: number
 }
 
 export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProps) {
@@ -63,6 +64,7 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
   const [tourAreas, setTourAreas] = useState<TourArea[]>([])
   const [loading, setLoading] = useState(true)
   const [allBookings, setAllBookings] = useState<any[]>([])
+  const [unavailableDates, setUnavailableDates] = useState<any[]>([])
   const tourRef = useRef<HTMLDivElement>(null)
 
   // Fetch venues and office spaces from CMS
@@ -71,22 +73,30 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
       try {
         setLoading(true)
         
-        // Fetch venues, office rooms, and bookings in parallel
-        const [venuesRes, roomsRes, bookingsRes] = await Promise.all([
+        // Fetch venues, office rooms, bookings, and unavailable dates in parallel
+        const [venuesRes, roomsRes, bookingsRes, unavailableRes] = await Promise.all([
           fetch('/api/venues'),
           fetch('/api/office-rooms?includeAll=true'),
-          fetch('/api/bookings')
+          fetch('/api/bookings'),
+          fetch('/api/unavailable-dates')
         ])
 
         const venuesData = await venuesRes.json()
         const roomsData = await roomsRes.json()
         const bookingsData = await bookingsRes.json()
+        const unavailableData = await unavailableRes.json()
 
         // Store all bookings for processing
         if (bookingsData.bookings && Array.isArray(bookingsData.bookings)) {
           setAllBookings(bookingsData.bookings.filter((booking: any) => 
             booking.status === 'confirmed' || booking.status === 'pending'
           ))
+        }
+
+        // Store unavailable dates
+        if (unavailableData.unavailableDates && Array.isArray(unavailableData.unavailableDates)) {
+          console.log('Unavailable dates from API:', unavailableData.unavailableDates)
+          setUnavailableDates(unavailableData.unavailableDates)
         }
 
         const areas: TourArea[] = []
@@ -133,6 +143,7 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
               capacity: venue.capacity ? `Up to ${venue.capacity} guests` : undefined,
               amenities: venue.amenities ? JSON.parse(venue.amenities) : [],
               category: 'event',
+              price: venue.price_per_hour || 0,
               angles,
             })
           })
@@ -190,6 +201,7 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
               amenities: room.amenities ? JSON.parse(room.amenities) : [],
               category: 'office',
               floor,
+              price: room.price_per_hour || 0,
               angles,
             })
           })
@@ -218,39 +230,115 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
 
   // Get unavailable dates for the current space
   const getUnavailableDatesForCurrentSpace = () => {
-    if (!currentArea || allBookings.length === 0) return []
+    if (!currentArea) return []
 
     // Extract space type and ID from current area
     const [spaceType, spaceId] = currentArea.id.split('-')
     
-    return allBookings
-      .filter((booking: any) => {
-        // Match bookings to the current space
-        if (spaceType === 'venue') {
-          return booking.event_type === `venue-${spaceId}`
-        } else if (spaceType === 'room') {
-          return booking.event_type === `office-${spaceId}`
-        }
-        return false
-      })
-      .map((booking: any) => {
-        const dateStr = booking.date || (booking.check_in_date ? booking.check_in_date.split('T')[0] : '')
-        if (dateStr) {
-          const [year, month, day] = dateStr.split('-').map(Number)
-          return {
-            date: new Date(year, month - 1, day),
-            eventName: booking.event_name || 'Event',
-            spaceName: currentArea.name,
-            spaceType: spaceType === 'venue' ? 'Venue' : 'Office Space'
+    const dates: any[] = []
+
+    // Add booking-based unavailable dates
+    if (allBookings.length > 0) {
+      const bookingDates = allBookings
+        .filter((booking: any) => {
+          // Match bookings to the current space
+          if (spaceType === 'venue') {
+            return booking.event_type === `venue-${spaceId}`
+          } else if (spaceType === 'room') {
+            return booking.event_type === `office-${spaceId}`
           }
-        }
-        return null
-      })
-      .filter(item => item !== null)
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
+          return false
+        })
+        .map((booking: any) => {
+          const dateStr = booking.date || (booking.check_in_date ? booking.check_in_date.split('T')[0] : '')
+          if (dateStr) {
+            // Handle different date formats
+            let parsedDate: Date
+            if (dateStr.includes('T')) {
+              // ISO format with time - parse as local date to avoid timezone issues
+              const datePart = dateStr.split('T')[0]
+              const [year, month, day] = datePart.split('-').map(Number)
+              parsedDate = new Date(year, month - 1, day)
+            } else if (dateStr.includes('-')) {
+              // YYYY-MM-DD format - parse as local date
+              const [year, month, day] = dateStr.split('-').map(Number)
+              parsedDate = new Date(year, month - 1, day)
+            } else {
+              // Try direct parsing
+              parsedDate = new Date(dateStr)
+            }
+            
+            // Validate the date
+            if (isNaN(parsedDate.getTime())) {
+              console.error('Invalid booking date:', dateStr)
+              return null
+            }
+            
+            return {
+              date: parsedDate,
+              eventName: booking.event_name || 'Event',
+              spaceName: currentArea.name,
+              spaceType: spaceType === 'venue' ? 'Venue' : 'Office Space',
+              type: 'booking'
+            }
+          }
+          return null
+        })
+        .filter(item => item !== null)
+
+      dates.push(...bookingDates)
+    }
+
+    // Add admin-managed unavailable dates (only for venues)
+    if (spaceType === 'venue' && unavailableDates.length > 0) {
+      const adminDates = unavailableDates
+        .filter((unavailable: any) => unavailable.venue_id === parseInt(spaceId))
+        .map((unavailable: any) => {
+          const dateStr = unavailable.date
+          if (dateStr) {
+            // Handle different date formats
+            let parsedDate: Date
+            if (dateStr.includes('T')) {
+              // ISO format with time - parse as local date to avoid timezone issues
+              const datePart = dateStr.split('T')[0]
+              const [year, month, day] = datePart.split('-').map(Number)
+              parsedDate = new Date(year, month - 1, day)
+            } else if (dateStr.includes('-')) {
+              // YYYY-MM-DD format - parse as local date
+              const [year, month, day] = dateStr.split('-').map(Number)
+              parsedDate = new Date(year, month - 1, day)
+            } else {
+              // Try direct parsing
+              parsedDate = new Date(dateStr)
+            }
+            
+            // Validate the date
+            if (isNaN(parsedDate.getTime())) {
+              console.error('Invalid date:', dateStr)
+              return null
+            }
+            
+            return {
+              date: parsedDate,
+              eventName: unavailable.reason,
+              spaceName: currentArea.name,
+              spaceType: 'Venue',
+              type: 'admin',
+              reason: unavailable.reason,
+              notes: unavailable.notes
+            }
+          }
+          return null
+        })
+        .filter(item => item !== null)
+
+      dates.push(...adminDates)
+    }
+
+    return dates.sort((a, b) => a.date.getTime() - b.date.getTime())
   }
 
-  const unavailableDates = getUnavailableDatesForCurrentSpace()
+  const unavailableSpaceDates = getUnavailableDatesForCurrentSpace()
 
   // Filter areas by category
   const eventVenues = tourAreas.filter((area) => area.category === "event")
@@ -388,6 +476,11 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                           {currentArea.capacity}
                         </Badge>
                       )}
+                      {currentArea.price && currentArea.price > 0 && (
+                        <Badge variant="secondary" className="bg-green-600/80 text-white">
+                          ₱{currentArea.price.toLocaleString()}/hour
+                        </Badge>
+                      )}
                     </div>
                   </DialogTitle>
                   <DialogDescription className="text-white/90">{currentArea.description}</DialogDescription>
@@ -494,16 +587,27 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                                   <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                       <div className="font-medium">{area.name}</div>
-                                      {area.capacity && (
-                                        <div
-                                          className={`text-xs mt-1 flex items-center ${
-                                            globalIndex === currentAreaIndex ? "text-blue-100" : "text-gray-500"
-                                          }`}
-                                        >
-                                          <Users className="w-3 h-3 mr-1" />
-                                          {area.capacity}
-                                        </div>
-                                      )}
+                                      <div className="flex items-center gap-2 mt-1">
+                                        {area.capacity && (
+                                          <div
+                                            className={`text-xs flex items-center ${
+                                              globalIndex === currentAreaIndex ? "text-blue-100" : "text-gray-500"
+                                            }`}
+                                          >
+                                            <Users className="w-3 h-3 mr-1" />
+                                            {area.capacity}
+                                          </div>
+                                        )}
+                                        {area.price && area.price > 0 && (
+                                          <div
+                                            className={`text-xs flex items-center ${
+                                              globalIndex === currentAreaIndex ? "text-blue-100" : "text-green-600"
+                                            }`}
+                                          >
+                                            ₱{area.price.toLocaleString()}/hr
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                     {globalIndex === currentAreaIndex && (
                                       <div className="w-2 h-2 bg-white rounded-full animate-pulse ml-2 mt-1" />
@@ -541,16 +645,27 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                                       <div className="flex items-center justify-between">
                                         <div className="flex-1">
                                           <div className="font-medium">{area.name}</div>
-                                          {area.capacity && (
-                                            <div
-                                              className={`text-xs mt-0.5 flex items-center ${
-                                                globalIndex === currentAreaIndex ? "text-blue-100" : "text-gray-500"
-                                              }`}
-                                            >
-                                              <Wifi className="w-2 h-2 mr-1" />
-                                              {area.capacity}
-                                            </div>
-                                          )}
+                                          <div className="flex items-center gap-2 mt-0.5">
+                                            {area.capacity && (
+                                              <div
+                                                className={`text-xs flex items-center ${
+                                                  globalIndex === currentAreaIndex ? "text-blue-100" : "text-gray-500"
+                                                }`}
+                                              >
+                                                <Wifi className="w-2 h-2 mr-1" />
+                                                {area.capacity}
+                                              </div>
+                                            )}
+                                            {area.price && area.price > 0 && (
+                                              <div
+                                                className={`text-xs flex items-center ${
+                                                  globalIndex === currentAreaIndex ? "text-blue-100" : "text-green-600"
+                                                }`}
+                                              >
+                                                ₱{area.price.toLocaleString()}/hr
+                                              </div>
+                                            )}
+                                          </div>
                                         </div>
                                         {globalIndex === currentAreaIndex && (
                                           <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
@@ -586,16 +701,27 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                                       <div className="flex items-center justify-between">
                                         <div className="flex-1">
                                           <div className="font-medium">{area.name}</div>
-                                          {area.capacity && (
-                                            <div
-                                              className={`text-xs mt-0.5 flex items-center ${
-                                                globalIndex === currentAreaIndex ? "text-blue-100" : "text-gray-500"
-                                              }`}
-                                            >
-                                              <Wifi className="w-2 h-2 mr-1" />
-                                              {area.capacity}
-                                            </div>
-                                          )}
+                                          <div className="flex items-center gap-2 mt-0.5">
+                                            {area.capacity && (
+                                              <div
+                                                className={`text-xs flex items-center ${
+                                                  globalIndex === currentAreaIndex ? "text-blue-100" : "text-gray-500"
+                                                }`}
+                                              >
+                                                <Wifi className="w-2 h-2 mr-1" />
+                                                {area.capacity}
+                                              </div>
+                                            )}
+                                            {area.price && area.price > 0 && (
+                                              <div
+                                                className={`text-xs flex items-center ${
+                                                  globalIndex === currentAreaIndex ? "text-blue-100" : "text-green-600"
+                                                }`}
+                                              >
+                                                ₱{area.price.toLocaleString()}/hr
+                                              </div>
+                                            )}
+                                          </div>
                                         </div>
                                         {globalIndex === currentAreaIndex && (
                                           <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
@@ -631,16 +757,27 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                                       <div className="flex items-center justify-between">
                                         <div className="flex-1">
                                           <div className="font-medium">{area.name}</div>
-                                          {area.capacity && (
-                                            <div
-                                              className={`text-xs mt-0.5 flex items-center ${
-                                                globalIndex === currentAreaIndex ? "text-blue-100" : "text-gray-500"
-                                              }`}
-                                            >
-                                              <Wifi className="w-2 h-2 mr-1" />
-                                              {area.capacity}
-                                            </div>
-                                          )}
+                                          <div className="flex items-center gap-2 mt-0.5">
+                                            {area.capacity && (
+                                              <div
+                                                className={`text-xs flex items-center ${
+                                                  globalIndex === currentAreaIndex ? "text-blue-100" : "text-gray-500"
+                                                }`}
+                                              >
+                                                <Wifi className="w-2 h-2 mr-1" />
+                                                {area.capacity}
+                                              </div>
+                                            )}
+                                            {area.price && area.price > 0 && (
+                                              <div
+                                                className={`text-xs flex items-center ${
+                                                  globalIndex === currentAreaIndex ? "text-blue-100" : "text-green-600"
+                                                }`}
+                                              >
+                                                ₱{area.price.toLocaleString()}/hr
+                                              </div>
+                                            )}
+                                          </div>
                                         </div>
                                         {globalIndex === currentAreaIndex && (
                                           <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
@@ -664,7 +801,7 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
               )}
 
               {/* Unavailable Dates Panel - Bottom Left */}
-              {unavailableDates.length > 0 && (
+              {unavailableSpaceDates.length > 0 && (
                 <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border max-w-sm">
                   <div className="p-3">
                     <h4 className="font-semibold text-sm mb-2 flex items-center text-red-600">
@@ -672,31 +809,52 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                       Unavailable Dates
                     </h4>
                     <div className="text-xs text-gray-600 mb-2">
-                      This space is reserved on:
+                      This space is not available on:
                     </div>
                     <div className="max-h-32 overflow-y-auto space-y-2">
-                      {unavailableDates
+                      {unavailableSpaceDates
                         .slice(0, 8) // Show only first 8 dates
                         .map((item, index) => (
-                          <div key={index} className="flex items-center text-xs">
-                            <div className="w-2 h-2 bg-red-500 rounded-full mr-2 flex-shrink-0"></div>
-                            <span className="font-medium text-gray-800">
-                              {item.date.toLocaleDateString("en-US", { 
-                                weekday: "short", 
-                                month: "short", 
-                                day: "numeric"
-                              })}
-                            </span>
+                          <div key={index} className="flex items-start text-xs">
+                            <div className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 mt-1 ${
+                              item.type === 'admin' ? 'bg-orange-500' : 'bg-red-500'
+                            }`}></div>
+                            <div className="flex-1">
+                              <span className="font-medium text-gray-800 block">
+                                {item.date && !isNaN(item.date.getTime()) 
+                                  ? item.date.toLocaleDateString("en-US", { 
+                                      weekday: "short", 
+                                      month: "short", 
+                                      day: "numeric"
+                                    })
+                                  : "Invalid Date"
+                                }
+                              </span>
+                              {item.type === 'admin' && (
+                                <span className="text-gray-600">
+                                  {item.reason}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         ))}
-                      {unavailableDates.length > 8 && (
+                      {unavailableSpaceDates.length > 8 && (
                         <div className="text-xs text-gray-500 italic ml-4">
-                          +{unavailableDates.length - 8} more dates unavailable
+                          +{unavailableSpaceDates.length - 8} more dates unavailable
                         </div>
                       )}
                     </div>
                     <div className="mt-2 pt-2 border-t text-xs text-gray-500">
-                      Please choose available dates when booking
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <span>Booked</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                          <span>Maintenance</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

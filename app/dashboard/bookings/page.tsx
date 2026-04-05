@@ -29,7 +29,17 @@ function getStatusColor(status: string) {
   }
 }
 
-function BookingDetailDialog({ booking, open, onClose }: { booking: Booking | null; open: boolean; onClose: () => void }) {
+function BookingDetailDialog({ 
+  booking, 
+  open, 
+  onClose, 
+  onStatusUpdate 
+}: { 
+  booking: Booking | null; 
+  open: boolean; 
+  onClose: () => void;
+  onStatusUpdate: (id: string, status: "confirmed" | "declined" | "completed") => void;
+}) {
   const [spaceName, setSpaceName] = useState<string>('')
   const [loadingSpace, setLoadingSpace] = useState(false)
 
@@ -154,9 +164,57 @@ function BookingDetailDialog({ booking, open, onClose }: { booking: Booking | nu
             </div>
           )}
 
+          {booking.declineReason && (
+            <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+              <p className="font-medium mb-1 flex items-center gap-2">
+                <X className="h-4 w-4" />
+                Decline Reason
+              </p>
+              <p className="text-gray-700 whitespace-pre-wrap">{booking.declineReason}</p>
+            </div>
+          )}
+
           <div className="text-gray-500 text-xs space-y-1 border-t pt-3">
             <p>Submitted: {new Date(booking.submittedAt).toLocaleString()}</p>
             {booking.total && <p>Total: ₱{Number(booking.total).toLocaleString()}</p>}
+          </div>
+        </div>
+
+        {/* Action buttons at the bottom */}
+        <div className="flex items-center justify-between pt-4 border-t flex-shrink-0">
+          <Badge className={getStatusColor(booking.status)}>
+            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+          </Badge>
+          
+          <div className="flex space-x-2">
+            {booking.status === "pending" && (
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => onStatusUpdate(booking.id, "confirmed")}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Confirm
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => onStatusUpdate(booking.id, "declined")}
+                >
+                  Decline
+                </Button>
+              </>
+            )}
+            
+            {booking.status === "confirmed" && (
+              <Button
+                size="sm"
+                onClick={() => onStatusUpdate(booking.id, "completed")}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Complete
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
@@ -216,6 +274,22 @@ export default function BookingsPage() {
     } else {
       updateBookingStatus(id, status)
       toast({ title: "Booking updated", description: `Booking has been ${status}.` })
+    }
+  }
+
+  const handleStatusUpdateFromDialog = (id: string, status: "confirmed" | "declined" | "completed") => {
+    if (status === "declined") {
+      // Close detail dialog and open decline dialog
+      setDetailOpen(false)
+      const booking = allBookings.find(b => b.id === id)
+      if (booking) {
+        setSelectedBooking(booking)
+        setDeclineDialogOpen(true)
+      }
+    } else {
+      updateBookingStatus(id, status)
+      toast({ title: "Booking updated", description: `Booking has been ${status}.` })
+      setDetailOpen(false)
     }
   }
 
@@ -299,51 +373,75 @@ export default function BookingsPage() {
     if (tab === 'cancelled' && cancelledPage < totalCancelledPages) setCancelledPage(cancelledPage + 1)
   }
 
+  const BookingCard = ({ booking }: { booking: Booking }) => {
+    return (
+      <div className="flex items-center justify-between p-4 border rounded-lg">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Badge className={getStatusColor(booking.status)}>
+              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+            </Badge>
+            <div>
+              <p className="font-medium text-gray-900">{booking.eventName}</p>
+              <p className="text-sm text-gray-500">{booking.userInfo?.name || "Unknown Customer"}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleViewDetails(booking)}
+          >
+            View Details
+          </Button>
+          
+          {booking.status === "pending" && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => handleStatusUpdate(booking.id, "confirmed")}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Confirm
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={() => handleStatusUpdate(booking.id, "declined")}
+              >
+                Decline
+              </Button>
+            </>
+          )}
+          
+          {booking.status === "confirmed" && (
+            <Button
+              size="sm"
+              onClick={() => handleStatusUpdate(booking.id, "completed")}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Complete
+            </Button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   const renderBookingList = (bookings: Booking[], tab: string, currentPage: number, totalPages: number, totalCount: number) => (
     <>
       <div className="space-y-4">
-        {bookings.map((booking) => (
-          <div key={booking.id} className="rounded-lg border p-4 md:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base md:text-lg font-semibold truncate">{booking.eventName}</h3>
-                <p className="text-sm text-gray-600 truncate">{booking.userInfo?.name || "Unknown Customer"}</p>
-              </div>
-              <Badge className={getStatusColor(booking.status)}>
-                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-              </Badge>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {booking.status === "pending" && (
-                <>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
-                    onClick={() => handleStatusUpdate(booking.id, "confirmed")}>
-                    Confirm Booking
-                  </Button>
-                  <Button size="sm" variant="destructive" className="w-full sm:w-auto"
-                    onClick={() => handleStatusUpdate(booking.id, "declined")}>
-                    Decline Booking
-                  </Button>
-                </>
-              )}
-              {booking.status === "confirmed" && (
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-                  onClick={() => handleStatusUpdate(booking.id, "completed")}>
-                  Mark as Completed
-                </Button>
-              )}
-              <Button size="sm" variant="outline" className="w-full sm:w-auto"
-                onClick={() => handleViewDetails(booking)}>
-                <FileText className="mr-2 h-4 w-4" />
-                View Details
-              </Button>
-            </div>
-          </div>
-        ))}
-
-        {bookings.length === 0 && (
-          <div className="text-center py-8 text-gray-500">No bookings found</div>
+        {bookings.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-gray-500">No bookings found</p>
+            </CardContent>
+          </Card>
+        ) : (
+          bookings.map((booking) => <BookingCard key={booking.id} booking={booking} />)
         )}
       </div>
 
@@ -436,6 +534,7 @@ export default function BookingsPage() {
         booking={selectedBooking}
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
+        onStatusUpdate={handleStatusUpdateFromDialog}
       />
 
       {/* Decline Booking Dialog */}
