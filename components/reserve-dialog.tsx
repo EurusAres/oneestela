@@ -122,6 +122,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
 
   // Fetch all bookings directly to ensure we have the latest reserved dates
   const [allBookingsData, setAllBookingsData] = useState<any[]>([])
+  const [adminUnavailableDates, setAdminUnavailableDates] = useState<any[]>([])
   
   useEffect(() => {
     if (open) {
@@ -136,7 +137,21 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
           console.error('Error fetching bookings:', error)
         }
       }
+      
+      const fetchUnavailableDates = async () => {
+        try {
+          const response = await fetch('/api/unavailable-dates')
+          if (response.ok) {
+            const data = await response.json()
+            setAdminUnavailableDates(data.unavailableDates || [])
+          }
+        } catch (error) {
+          console.error('Error fetching unavailable dates:', error)
+        }
+      }
+      
       fetchAllBookings()
+      fetchUnavailableDates()
     }
   }, [open])
 
@@ -150,8 +165,21 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
     })
     .filter(date => date !== null)
 
+  // Extract admin unavailable dates
+  const adminReservedDates = adminUnavailableDates.map((unavailable) => {
+    const dateStr = unavailable.date
+    if (dateStr.includes('-')) {
+      const [year, month, day] = dateStr.split('-').map(Number)
+      return new Date(year, month - 1, day)
+    }
+    return new Date(dateStr)
+  })
+
+  // Combine all reserved dates (bookings + admin unavailable)
+  const allReservedDates = [...reservedDates, ...adminReservedDates]
+
   const isDateReserved = (date: Date) => {
-    return reservedDates.some((reservedDate) => reservedDate.toDateString() === date.toDateString())
+    return allReservedDates.some((reservedDate) => reservedDate.toDateString() === date.toDateString())
   }
 
   const validateEventDetails = (): boolean => {
@@ -509,7 +537,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                         
                         // Check if this date is disabled/reserved
                         if (isDateReserved(clickedDate)) {
-                          setUnavailableMessage("⚠️ This date is already reserved by another customer and cannot be booked.")
+                          setUnavailableMessage("⚠️ This date is already reserved or marked as unavailable and cannot be booked.")
                           setTimeout(() => setUnavailableMessage(""), 5000) // Clear after 5 seconds
                         } else if (clickedDate < minDate) {
                           setUnavailableMessage("⚠️ This date is unavailable. Reservations must be made at least 1 month in advance.")
@@ -526,7 +554,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                       defaultMonth={defaultMonth}
                       fromDate={minDate}
                       modifiers={{
-                        reserved: reservedDates,
+                        reserved: allReservedDates,
                       }}
                       modifiersClassNames={{
                         reserved: "!bg-red-500 !text-white !font-bold line-through hover:!bg-red-600",
@@ -541,7 +569,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                   <div className="mt-3 text-xs text-gray-600 space-y-1">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-red-500 rounded"></div>
-                      <span>Reserved dates (unavailable)</span>
+                      <span>Reserved/Unavailable dates</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 border-2 border-blue-500 rounded"></div>
@@ -606,7 +634,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                       </p>
                       {isDateReserved(selectedDate) && (
                         <p className="text-sm text-red-600 mt-2 font-medium">
-                          ⚠️ This date is already reserved and cannot be booked
+                          ⚠️ This date is already reserved or unavailable and cannot be booked
                         </p>
                       )}
                     </div>

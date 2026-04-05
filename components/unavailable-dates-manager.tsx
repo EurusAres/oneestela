@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useToast } from "@/hooks/use-toast"
 import {
   CalendarX,
@@ -68,7 +67,7 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
   const [selectedVenue, setSelectedVenue] = useState<string>("")
   const [selectedDate, setSelectedDate] = useState<Date>()
   const [selectedReason, setSelectedReason] = useState<string>("")
-  const [notes, setNotes] = useState("")
+  const [showCalendar, setShowCalendar] = useState(false)
 
   // Fetch data
   useEffect(() => {
@@ -138,7 +137,6 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
           venueId: parseInt(selectedVenue),
           date: dateString,
           reason: selectedReason,
-          notes: notes.trim(),
           createdBy: 'admin'
         })
       })
@@ -204,7 +202,7 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
     setSelectedVenue("")
     setSelectedDate(undefined)
     setSelectedReason("")
-    setNotes("")
+    setShowCalendar(false)
   }
 
   const getReasonIcon = (reason: string) => {
@@ -301,9 +299,6 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
                                 })
                               })()}
                             </p>
-                            {item.notes && (
-                              <p className="text-gray-500 mt-1">{item.notes}</p>
-                            )}
                             <p className="text-xs text-gray-400">
                               Added by {item.created_by} on {new Date(item.created_at).toLocaleDateString()}
                             </p>
@@ -358,37 +353,17 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
             {/* Date Selection */}
             <div className="space-y-2">
               <Label>Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !selectedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent 
-                  className="w-auto p-0 max-h-[400px] overflow-y-auto" 
-                  align="start"
-                  side="bottom"
-                  sideOffset={4}
-                >
-                  <div className="p-3">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                      className="rounded-md border-0"
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !selectedDate && "text-muted-foreground"
+                )}
+                onClick={() => setShowCalendar(true)}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+              </Button>
             </div>
 
             {/* Reason Selection */}
@@ -414,17 +389,6 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label>Additional Notes (Optional)</Label>
-              <Textarea
-                placeholder="Add any additional details..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-              />
-            </div>
           </div>
 
           <DialogFooter>
@@ -435,6 +399,32 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
               Add Unavailable Date
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Calendar Selection Dialog */}
+      <Dialog open={showCalendar} onOpenChange={setShowCalendar}>
+        <DialogContent className="max-w-fit">
+          <DialogHeader>
+            <DialogTitle>Select Date</DialogTitle>
+            <DialogDescription>
+              Choose a date to mark as unavailable.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex justify-center p-4">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => {
+                setSelectedDate(date)
+                setShowCalendar(false)
+              }}
+              disabled={(date) => date < new Date()}
+              initialFocus
+              className="rounded-md border"
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </>
