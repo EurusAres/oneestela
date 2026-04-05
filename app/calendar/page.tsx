@@ -10,10 +10,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useBookings } from "@/components/booking-context"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar as CalendarIcon, Clock, Users, MapPin } from "lucide-react"
+import { UnavailableDatesManager } from "@/components/unavailable-dates-manager"
+import { Calendar as CalendarIcon, Clock, Users, MapPin, CalendarX } from "lucide-react"
 
 export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date())
+  const [unavailableDatesOpen, setUnavailableDatesOpen] = useState(false)
   const { getAllBookings } = useBookings()
   const { toast } = useToast()
   
@@ -65,7 +67,14 @@ export default function CalendarPage() {
             <h1 className="text-2xl md:text-3xl font-bold">Booking Calendar</h1>
             <p className="text-xs md:text-sm text-muted-foreground">View all customer reservations and bookings</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={() => setUnavailableDatesOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <CalendarX className="h-4 w-4" />
+              Manage Unavailable Dates
+            </Button>
             <Badge variant="outline" className="gap-1 text-xs md:text-sm">
               <div className="w-2 h-2 md:w-3 md:h-3 bg-red-500 rounded-full"></div>
               Reserved Dates
@@ -252,6 +261,12 @@ export default function CalendarPage() {
           </Card>
         </div>
       </div>
+
+      {/* Unavailable Dates Manager */}
+      <UnavailableDatesManager 
+        open={unavailableDatesOpen} 
+        onOpenChange={setUnavailableDatesOpen} 
+      />
     </MainLayout>
   )
 }
