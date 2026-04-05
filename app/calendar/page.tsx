@@ -16,8 +16,26 @@ import { Calendar as CalendarIcon, Clock, Users, MapPin, CalendarX } from "lucid
 export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [unavailableDatesOpen, setUnavailableDatesOpen] = useState(false)
+  const [adminUnavailableDates, setAdminUnavailableDates] = useState<any[]>([])
   const { getAllBookings } = useBookings()
   const { toast } = useToast()
+
+  // Fetch admin-managed unavailable dates
+  useEffect(() => {
+    const fetchUnavailableDates = async () => {
+      try {
+        const response = await fetch('/api/unavailable-dates')
+        if (response.ok) {
+          const data = await response.json()
+          setAdminUnavailableDates(data.unavailableDates || [])
+        }
+      } catch (error) {
+        console.error('Error fetching unavailable dates:', error)
+      }
+    }
+    
+    fetchUnavailableDates()
+  }, [unavailableDatesOpen]) // Refetch when dialog closes
   
   const allBookings = getAllBookings()
   
@@ -31,6 +49,19 @@ export default function CalendarPage() {
     const [year, month, day] = booking.date.split('-').map(Number)
     return new Date(year, month - 1, day)
   })
+
+  // Extract admin unavailable dates
+  const adminReservedDates = adminUnavailableDates.map((unavailable) => {
+    const dateStr = unavailable.date
+    if (dateStr.includes('-')) {
+      const [year, month, day] = dateStr.split('-').map(Number)
+      return new Date(year, month - 1, day)
+    }
+    return new Date(dateStr)
+  })
+
+  // Combine all reserved dates (bookings + admin unavailable)
+  const allReservedDates = [...reservedDates, ...adminReservedDates]
   
   // Find bookings for the selected date
   const bookingsForSelectedDate = date
@@ -140,7 +171,7 @@ export default function CalendarPage() {
             <CardHeader>
               <CardTitle className="text-base md:text-lg">Event Calendar</CardTitle>
               <CardDescription className="text-xs md:text-sm">
-                Dates highlighted in red are reserved by customers
+                Dates highlighted in red are reserved by customers or marked unavailable by admin
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center p-3 md:p-6">
@@ -150,7 +181,7 @@ export default function CalendarPage() {
                   selected={date}
                   onSelect={setDate}
                   modifiers={{
-                    reserved: reservedDates,
+                    reserved: allReservedDates,
                   }}
                   modifiersClassNames={{
                     reserved: "!bg-red-500 !text-white !font-bold hover:!bg-red-600",
