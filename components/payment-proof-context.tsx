@@ -93,6 +93,7 @@ export function PaymentProofProvider({ children }: { children: React.ReactNode }
               customerName: proof.customer_name || 'Unknown',
               customerEmail: proof.customer_email || '',
               eventName: proof.event_name || proof.room_name || 'Booking',
+              eventType: proof.event_type || 'general',
               roomName: proof.room_name || '',
             }
             console.log('Mapped proof fileUrl:', mapped.fileUrl?.substring(0, 100))
@@ -111,15 +112,21 @@ export function PaymentProofProvider({ children }: { children: React.ReactNode }
     
     loadProofs()
     
-    // Listen for booking cancellations to reload proofs
+    // Listen for booking cancellations and payment verifications to reload proofs
     const handleBookingCancelled = () => {
       loadProofs()
     }
     
+    const handlePaymentVerified = () => {
+      loadProofs()
+    }
+    
     window.addEventListener('booking-cancelled', handleBookingCancelled)
+    window.addEventListener('payment-verified', handlePaymentVerified)
     
     return () => {
       window.removeEventListener('booking-cancelled', handleBookingCancelled)
+      window.removeEventListener('payment-verified', handlePaymentVerified)
     }
   }, [])
 

@@ -128,17 +128,21 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center">
-                        <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">{new Date(booking.date).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">{booking.startTime} - {booking.endTime}</span>
-                      </div>
+                      {!booking.eventType.startsWith('office-') && (
+                        <>
+                          <div className="flex items-center">
+                            <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
+                            <span className="truncate">{new Date(booking.date).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+                            <span className="truncate">{booking.startTime} - {booking.endTime}</span>
+                          </div>
+                        </>
+                      )}
                       <div className="flex items-center">
                         <Users className="mr-2 h-4 w-4 flex-shrink-0" />
-                        <span>{booking.guestCount} guests</span>
+                        <span>{booking.guestCount} {booking.eventType.startsWith('office-') ? 'people' : 'guests'}</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
@@ -149,7 +153,9 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
                         </p>
                         <p className="text-sm text-gray-600">Event Type: {booking.eventType}</p>
                         {booking.specialRequests && (
-                          <p className="text-sm text-gray-600">Special Requests: {booking.specialRequests}</p>
+                          <p className="text-sm text-gray-600">
+                            {booking.eventType.startsWith('office-') ? 'Additional Requirements' : 'Special Requests'}: {booking.specialRequests}
+                          </p>
                         )}
                         
                         {/* Show decline reason if booking was declined */}

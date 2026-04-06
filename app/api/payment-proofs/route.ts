@@ -15,7 +15,9 @@ export async function GET(request: NextRequest) {
         u.email as customer_email,
         b.check_in_date,
         b.check_out_date,
-        b.special_requests as event_name,
+        b.event_name,
+        b.event_type,
+        b.special_requests,
         o.name as room_name
       FROM payment_proofs pp
       LEFT JOIN users u ON pp.user_id = u.id

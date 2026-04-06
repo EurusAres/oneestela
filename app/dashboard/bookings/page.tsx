@@ -107,31 +107,53 @@ function BookingDetailDialog({
         </DialogHeader>
 
         <div className="space-y-4 text-sm overflow-y-auto flex-1 pr-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 text-gray-600">
-              <Calendar className="h-4 w-4" />
-              <span>{new Date(booking.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
+          {/* Check if this is an office space inquiry */}
+          {booking.eventType.startsWith('office-') ? (
+            // Office Space Inquiry Layout
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Users className="h-4 w-4" />
+                <span>{booking.guestCount} people</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <FileText className="h-4 w-4" />
+                <span>{loadingSpace ? 'Loading...' : spaceName || 'N/A'}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-gray-600">
-              <Clock className="h-4 w-4" />
-              <span>{booking.startTime} – {booking.endTime}</span>
+          ) : (
+            // Event Venue Layout
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Calendar className="h-4 w-4" />
+                <span>{booking.date ? new Date(booking.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }) : 'No date specified'}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Clock className="h-4 w-4" />
+                <span>{booking.startTime && booking.endTime ? `${booking.startTime} – ${booking.endTime}` : 'No time specified'}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Users className="h-4 w-4" />
+                <span>{booking.guestCount} guests</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <FileText className="h-4 w-4" />
+                <span>{loadingSpace ? 'Loading...' : spaceName || 'N/A'}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-gray-600">
-              <Users className="h-4 w-4" />
-              <span>{booking.guestCount} guests</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-600">
-              <FileText className="h-4 w-4" />
-              <span>{loadingSpace ? 'Loading...' : spaceName || 'N/A'}</span>
-            </div>
-          </div>
+          )}
 
           <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
-            <p className="font-medium mb-2">Event Details</p>
+            <p className="font-medium mb-2">{booking.eventType.startsWith('office-') ? 'Inquiry Details' : 'Event Details'}</p>
             <div className="space-y-1 text-gray-700">
-              <p><span className="font-medium">Event Name:</span> {booking.eventName}</p>
-              <p><span className="font-medium">Event Space:</span> {loadingSpace ? 'Loading...' : spaceName || 'N/A'}</p>
-              <p><span className="font-medium">Expected Guests:</span> {booking.guestCount}</p>
+              <p><span className="font-medium">{booking.eventType.startsWith('office-') ? 'Purpose/Description:' : 'Event Name:'}</span> {booking.eventName}</p>
+              <p><span className="font-medium">{booking.eventType.startsWith('office-') ? 'Office Space:' : 'Event Space:'}</span> {loadingSpace ? 'Loading...' : spaceName || 'N/A'}</p>
+              <p><span className="font-medium">Expected {booking.eventType.startsWith('office-') ? 'People:' : 'Guests:'}</span> {booking.guestCount}</p>
+              {!booking.eventType.startsWith('office-') && booking.date && (
+                <p><span className="font-medium">Date:</span> {new Date(booking.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+              )}
+              {!booking.eventType.startsWith('office-') && booking.startTime && booking.endTime && (
+                <p><span className="font-medium">Time:</span> {booking.startTime} – {booking.endTime}</p>
+              )}
             </div>
           </div>
 
@@ -158,7 +180,7 @@ function BookingDetailDialog({
             <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-4">
               <p className="font-medium mb-1 flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
-                Special Requests
+                {booking.eventType.startsWith('office-') ? 'Additional Requirements' : 'Special Requests'}
               </p>
               <p className="text-gray-700 whitespace-pre-wrap">{booking.specialRequests}</p>
             </div>
@@ -255,9 +277,12 @@ export default function BookingsPage() {
         new Date((b as any).modifiedAt || b.submittedAt).getTime() > Date.now() - 1000 * 60 * 5,
     )
     recentCancellations.forEach((b) => {
+      const isOfficeInquiry = b.eventType.startsWith('office-')
+      const dateInfo = isOfficeInquiry ? '' : ` for ${new Date(b.date).toLocaleDateString()}`
+      
       toast({
-        title: "Booking Cancelled",
-        description: `${b.userInfo?.name} cancelled their ${b.eventType} booking for ${new Date(b.date).toLocaleDateString()}`,
+        title: isOfficeInquiry ? "Inquiry Cancelled" : "Booking Cancelled",
+        description: `${b.userInfo?.name} cancelled their ${isOfficeInquiry ? 'office space inquiry' : `${b.eventType} booking`}${dateInfo}`,
         variant: "destructive",
       })
     })
@@ -272,8 +297,35 @@ export default function BookingsPage() {
         setDeclineDialogOpen(true)
       }
     } else {
+      const booking = allBookings.find(b => b.id === id)
+      const isOfficeInquiry = booking?.eventType.startsWith('office-')
+      
       updateBookingStatus(id, status)
-      toast({ title: "Booking updated", description: `Booking has been ${status}.` })
+      
+      // Trigger booking status change event for real-time updates
+      window.dispatchEvent(new CustomEvent('booking-status-changed', { 
+        detail: { 
+          bookingId: id, 
+          newStatus: status 
+        } 
+      }))
+      
+      let message = `Booking has been ${status}.`
+      if (isOfficeInquiry) {
+        if (status === "confirmed") {
+          message = "Office inquiry has been approved."
+        } else if (status === "completed") {
+          message = "Office inquiry has been completed."
+        }
+      } else {
+        if (status === "confirmed") {
+          message = "Event booking has been confirmed."
+        } else if (status === "completed") {
+          message = "Event booking has been completed."
+        }
+      }
+      
+      toast({ title: "Status updated", description: message })
     }
   }
 
@@ -287,18 +339,60 @@ export default function BookingsPage() {
         setDeclineDialogOpen(true)
       }
     } else {
+      const booking = allBookings.find(b => b.id === id)
+      const isOfficeInquiry = booking?.eventType.startsWith('office-')
+      
       updateBookingStatus(id, status)
-      toast({ title: "Booking updated", description: `Booking has been ${status}.` })
+      
+      // Trigger booking status change event for real-time updates
+      window.dispatchEvent(new CustomEvent('booking-status-changed', { 
+        detail: { 
+          bookingId: id, 
+          newStatus: status 
+        } 
+      }))
+      
+      let message = `Booking has been ${status}.`
+      if (isOfficeInquiry) {
+        if (status === "confirmed") {
+          message = "Office inquiry has been approved."
+        } else if (status === "completed") {
+          message = "Office inquiry has been completed."
+        }
+      } else {
+        if (status === "confirmed") {
+          message = "Event booking has been confirmed."
+        } else if (status === "completed") {
+          message = "Event booking has been completed."
+        }
+      }
+      
+      toast({ title: "Status updated", description: message })
       setDetailOpen(false)
     }
   }
 
   const confirmDecline = () => {
     if (selectedBooking && declineReason.trim()) {
+      const isOfficeInquiry = selectedBooking.eventType.startsWith('office-')
+      
       updateBookingStatus(selectedBooking.id, "declined", declineReason)
+      
+      // Trigger booking status change event for real-time updates
+      window.dispatchEvent(new CustomEvent('booking-status-changed', { 
+        detail: { 
+          bookingId: selectedBooking.id, 
+          newStatus: "declined" 
+        } 
+      }))
+      
+      const message = isOfficeInquiry 
+        ? "Office inquiry has been declined. Customer will be notified."
+        : "Booking has been declined. Customer will be notified."
+      
       toast({ 
-        title: "Booking declined", 
-        description: `Booking has been declined. Customer will be notified.` 
+        title: isOfficeInquiry ? "Inquiry declined" : "Booking declined", 
+        description: message
       })
       setDeclineDialogOpen(false)
       setDeclineReason("")
@@ -324,10 +418,21 @@ export default function BookingsPage() {
       toast({ title: "No email", description: "No email address found for this customer.", variant: "destructive" })
       return
     }
-    const subject = encodeURIComponent(`Re: Your booking – ${booking.eventName}`)
-    const body = encodeURIComponent(
-      `Hi ${booking.userInfo?.name},\n\nThank you for your booking at One Estela Place.\n\nBooking Details:\n- Event: ${booking.eventName}\n- Date: ${new Date(booking.date).toLocaleDateString()}\n- Time: ${booking.startTime} – ${booking.endTime}\n- Guests: ${booking.guestCount}\n\nPlease let us know if you have any questions.\n\nBest regards,\nOne Estela Place Team`
-    )
+    
+    const isOfficeInquiry = booking.eventType.startsWith('office-')
+    const subject = encodeURIComponent(`Re: Your ${isOfficeInquiry ? 'office space inquiry' : 'booking'} – ${booking.eventName}`)
+    
+    let body: string
+    if (isOfficeInquiry) {
+      body = encodeURIComponent(
+        `Hi ${booking.userInfo?.name},\n\nThank you for your office space inquiry at One Estela Place.\n\nInquiry Details:\n- Purpose: ${booking.eventName}\n- Expected People: ${booking.guestCount}\n${booking.specialRequests ? `- Requirements: ${booking.specialRequests}\n` : ''}\nWe'll review your inquiry and get back to you within 24 hours with availability and pricing information.\n\nBest regards,\nOne Estela Place Team`
+      )
+    } else {
+      body = encodeURIComponent(
+        `Hi ${booking.userInfo?.name},\n\nThank you for your booking at One Estela Place.\n\nBooking Details:\n- Event: ${booking.eventName}\n- Date: ${new Date(booking.date).toLocaleDateString()}\n- Time: ${booking.startTime} – ${booking.endTime}\n- Guests: ${booking.guestCount}\n\nPlease let us know if you have any questions.\n\nBest regards,\nOne Estela Place Team`
+      )
+    }
+    
     window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_blank")
   }
 
@@ -374,6 +479,8 @@ export default function BookingsPage() {
   }
 
   const BookingCard = ({ booking }: { booking: Booking }) => {
+    const isOfficeInquiry = booking.eventType.startsWith('office-')
+    
     return (
       <div className="flex items-center justify-between p-4 border rounded-lg">
         <div className="flex items-center space-x-4">
@@ -383,7 +490,14 @@ export default function BookingsPage() {
             </Badge>
             <div>
               <p className="font-medium text-gray-900">{booking.eventName}</p>
-              <p className="text-sm text-gray-500">{booking.userInfo?.name || "Unknown Customer"}</p>
+              <p className="text-sm text-gray-500">
+                {booking.userInfo?.name || "Unknown Customer"} • {isOfficeInquiry ? 'Office Inquiry' : 'Event Booking'}
+              </p>
+              {!isOfficeInquiry && booking.date && (
+                <p className="text-xs text-gray-400">
+                  {new Date(booking.date).toLocaleDateString()} at {booking.startTime}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -404,7 +518,7 @@ export default function BookingsPage() {
                 onClick={() => handleStatusUpdate(booking.id, "confirmed")}
                 className="bg-green-600 hover:bg-green-700"
               >
-                Confirm
+                {isOfficeInquiry ? 'Approve' : 'Confirm'}
               </Button>
               <Button 
                 variant="destructive" 
@@ -541,9 +655,11 @@ export default function BookingsPage() {
       <Dialog open={declineDialogOpen} onOpenChange={setDeclineDialogOpen}>
         <DialogContent className="w-full max-w-[95vw] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Decline Booking</DialogTitle>
+            <DialogTitle>
+              {selectedBooking?.eventType.startsWith('office-') ? 'Decline Inquiry' : 'Decline Booking'}
+            </DialogTitle>
             <DialogDescription>
-              Please provide a reason for declining this booking. The customer will be notified.
+              Please provide a reason for declining this {selectedBooking?.eventType.startsWith('office-') ? 'inquiry' : 'booking'}. The customer will be notified.
             </DialogDescription>
           </DialogHeader>
           
@@ -552,7 +668,9 @@ export default function BookingsPage() {
               <div className="rounded-lg bg-gray-50 p-3 text-sm">
                 <p className="font-medium">{selectedBooking.eventName}</p>
                 <p className="text-gray-600">{selectedBooking.userInfo?.name}</p>
-                <p className="text-gray-600">{new Date(selectedBooking.date).toLocaleDateString()}</p>
+                {!selectedBooking.eventType.startsWith('office-') && selectedBooking.date && (
+                  <p className="text-gray-600">{new Date(selectedBooking.date).toLocaleDateString()}</p>
+                )}
               </div>
             )}
             
@@ -560,7 +678,10 @@ export default function BookingsPage() {
               <Label htmlFor="decline-reason">Reason for Declining *</Label>
               <Textarea
                 id="decline-reason"
-                placeholder="e.g., Date unavailable, venue already booked, does not meet requirements..."
+                placeholder={selectedBooking?.eventType.startsWith('office-') 
+                  ? "e.g., No availability, requirements cannot be met, space not suitable..."
+                  : "e.g., Date unavailable, venue already booked, does not meet requirements..."
+                }
                 value={declineReason}
                 onChange={(e) => setDeclineReason(e.target.value)}
                 rows={4}
@@ -587,7 +708,7 @@ export default function BookingsPage() {
               disabled={!declineReason.trim()}
               className="w-full sm:w-auto"
             >
-              Decline Booking
+              {selectedBooking?.eventType.startsWith('office-') ? 'Decline Inquiry' : 'Decline Booking'}
             </Button>
           </DialogFooter>
         </DialogContent>

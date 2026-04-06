@@ -36,7 +36,6 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
     paymentMethod: "",
     paymentAmount: "",
     paymentDate: new Date().toISOString().split('T')[0], // Auto-fill with today's date
-    paymentReference: "",
   })
 
   const booking = getBookingById(bookingId)
@@ -145,7 +144,6 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
         paymentMethod: "",
         paymentAmount: "",
         paymentDate: new Date().toISOString().split('T')[0], // Reset to today's date
-        paymentReference: "",
       })
       setShowUploadForm(false)
 
@@ -238,13 +236,6 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
                 </div>
               </div>
 
-              {existingProof.paymentReference && (
-                <div>
-                  <span className="font-medium">Reference:</span>
-                  <p className="text-gray-600">{existingProof.paymentReference}</p>
-                </div>
-              )}
-
               <div className="flex items-center space-x-2">
                 <FileImage className="h-4 w-4" />
                 <span className="text-sm">{existingProof.fileName}</span>
@@ -278,7 +269,7 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
               {existingProof.status === "verified" && (
                 <div className="bg-green-50 p-4 rounded-lg">
                   <p className="text-sm text-green-800">
-                    ✅ Your payment has been verified! Your booking status will be updated to confirmed shortly.
+                    ✅ Your payment has been verified!
                   </p>
                 </div>
               )}
@@ -380,16 +371,6 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
                   required
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="paymentReference">Reference Number (Optional)</Label>
-              <Input
-                id="paymentReference"
-                placeholder="Transaction ID, Check #, etc."
-                value={paymentDetails.paymentReference}
-                onChange={(e) => setPaymentDetails((prev) => ({ ...prev, paymentReference: e.target.value }))}
-              />
             </div>
 
             {/* Submit Button */}
