@@ -22,7 +22,7 @@ export function TourButton({ children, className, size, variant }: TourButtonPro
   const { toast } = useToast()
   const [showTour, setShowTour] = useState(false)
   const [showReserveDialog, setShowReserveDialog] = useState(false)
-  const [preSelectedSpace, setPreSelectedSpace] = useState<{type: string, id: string, name: string} | null>(null)
+  const [preSelectedSpace, setPreSelectedSpace] = useState<{type: string, id: string, name: string, capacity?: number} | null>(null)
   const [showWelcomeNotification, setShowWelcomeNotification] = useState(false)
 
   // Show welcome notification when tour is opened by a logged-in user
@@ -39,8 +39,8 @@ export function TourButton({ children, className, size, variant }: TourButtonPro
     }
   }
 
-  const handleBookSpace = (spaceType: string, spaceId: string, spaceName: string) => {
-    setPreSelectedSpace({ type: spaceType, id: spaceId, name: spaceName })
+  const handleBookSpace = (spaceType: string, spaceId: string, spaceName: string, capacity?: number) => {
+    setPreSelectedSpace({ type: spaceType, id: spaceId, name: spaceName, capacity })
     setShowReserveDialog(true)
   }
 

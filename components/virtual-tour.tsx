@@ -22,6 +22,7 @@ import {
   Monitor,
   Loader2,
   CalendarX,
+  Building2,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { PanoramicViewer } from "@/components/panoramic-viewer"
@@ -29,7 +30,7 @@ import { PanoramicViewer } from "@/components/panoramic-viewer"
 interface VirtualTourProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onBookSpace?: (spaceType: string, spaceId: string, spaceName: string) => void
+  onBookSpace?: (spaceType: string, spaceId: string, spaceName: string, capacity?: number) => void
 }
 
 interface TourAngle {
@@ -44,6 +45,7 @@ interface TourArea {
   name: string
   description: string
   capacity?: string
+  availableRooms?: number
   amenities?: string[]
   angles: TourAngle[]
   category: "event" | "office"
@@ -66,6 +68,29 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
   const [allBookings, setAllBookings] = useState<any[]>([])
   const [unavailableDates, setUnavailableDates] = useState<any[]>([])
   const tourRef = useRef<HTMLDivElement>(null)
+
+  // Calculate available rooms based on current bookings
+  const calculateAvailableRooms = (room: any, bookings: any[]) => {
+    const totalRooms = room.available_rooms || 1
+    
+    // Count confirmed office bookings for this specific room
+    const occupiedRooms = bookings.filter((booking: any) => {
+      return booking.event_type === `office-${room.id}` && 
+             (booking.status === 'confirmed' || booking.status === 'pending')
+    }).length
+    
+    // Calculate available rooms (minimum 0)
+    const available = Math.max(0, totalRooms - occupiedRooms)
+    
+    console.log(`Room ${room.name} (ID: ${room.id}):`, {
+      totalRooms,
+      occupiedRooms,
+      available,
+      bookings: bookings.filter(b => b.event_type === `office-${room.id}`)
+    })
+    
+    return available
+  }
 
   // Fetch venues and office spaces from CMS
   useEffect(() => {
@@ -197,7 +222,8 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
               id: `room-${room.id}`,
               name: room.name,
               description: room.description || 'Modern office space with premium amenities',
-              capacity: room.capacity ? `${room.capacity} workstations` : undefined,
+              capacity: room.capacity ? `Capacity: ${room.capacity}` : undefined,
+              availableRooms: calculateAvailableRooms(room, bookingsData.bookings || []),
               amenities: room.amenities ? JSON.parse(room.amenities) : [],
               category: 'office',
               floor,
@@ -222,6 +248,19 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
 
     if (open) {
       fetchTourData()
+      
+      // Listen for booking status changes to refresh availability
+      const handleBookingStatusChange = () => {
+        fetchTourData()
+      }
+      
+      window.addEventListener('booking-status-changed', handleBookingStatusChange)
+      window.addEventListener('payment-verified', handleBookingStatusChange)
+      
+      return () => {
+        window.removeEventListener('booking-status-changed', handleBookingStatusChange)
+        window.removeEventListener('payment-verified', handleBookingStatusChange)
+      }
     }
   }, [open, toast])
 
@@ -476,9 +515,22 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                           {currentArea.capacity}
                         </Badge>
                       )}
+                      {currentArea.availableRooms && currentArea.category === 'office' && (
+                        <Badge variant="secondary" className={`${
+                          currentArea.availableRooms === 0 
+                            ? "bg-red-600/80 text-white" 
+                            : "bg-purple-600/80 text-white"
+                        }`}>
+                          <Building2 className="w-3 h-3 mr-1" />
+                          {currentArea.availableRooms === 0 
+                            ? "Fully Occupied" 
+                            : `Available Rooms: ${currentArea.availableRooms}`
+                          }
+                        </Badge>
+                      )}
                       {currentArea.price && currentArea.price > 0 && (
                         <Badge variant="secondary" className="bg-green-600/80 text-white">
-                          ₱{currentArea.price.toLocaleString()}/hour
+                          ₱{currentArea.price.toLocaleString()}{currentArea.category === 'office' ? '/mo' : '/hour'}
                         </Badge>
                       )}
                     </div>
@@ -662,7 +714,7 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                                                   globalIndex === currentAreaIndex ? "text-blue-100" : "text-green-600"
                                                 }`}
                                               >
-                                                ₱{area.price.toLocaleString()}/hr
+                                                ₱{area.price.toLocaleString()}/mo
                                               </div>
                                             )}
                                           </div>
@@ -718,7 +770,7 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                                                   globalIndex === currentAreaIndex ? "text-blue-100" : "text-green-600"
                                                 }`}
                                               >
-                                                ₱{area.price.toLocaleString()}/hr
+                                                ₱{area.price.toLocaleString()}/mo
                                               </div>
                                             )}
                                           </div>
@@ -774,7 +826,7 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                                                   globalIndex === currentAreaIndex ? "text-blue-100" : "text-green-600"
                                                 }`}
                                               >
-                                                ₱{area.price.toLocaleString()}/hr
+                                                ₱{area.price.toLocaleString()}/mo
                                               </div>
                                             )}
                                           </div>
@@ -800,8 +852,8 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                 </div>
               )}
 
-              {/* Unavailable Dates Panel - Bottom Left */}
-              {unavailableSpaceDates.length > 0 && (
+              {/* Unavailable Dates Panel - Bottom Left - Only show for event venues */}
+              {unavailableSpaceDates.length > 0 && currentArea.category === 'event' && (
                 <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border max-w-sm">
                   <div className="p-3">
                     <h4 className="font-semibold text-sm mb-2 flex items-center text-red-600">
@@ -924,8 +976,30 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                 <Button
                   onClick={() => {
                     if (currentArea && onBookSpace) {
+                      // Check if office space is fully occupied
+                      if (currentArea.category === 'office' && currentArea.availableRooms === 0) {
+                        toast({
+                          title: "Space Unavailable",
+                          description: "All rooms in this office space are currently occupied. Please check back later or contact us for availability updates.",
+                          variant: "destructive",
+                        })
+                        return
+                      }
+                      
                       const [spaceType, spaceId] = currentArea.id.split('-')
-                      onBookSpace(spaceType, spaceId, currentArea.name)
+                      // Convert 'room' to 'office' for consistency with reserve dialog
+                      const mappedSpaceType = spaceType === 'room' ? 'office' : spaceType
+                      
+                      // Extract numeric capacity from the capacity string
+                      let numericCapacity: number | undefined = undefined
+                      if (currentArea.capacity) {
+                        const capacityMatch = currentArea.capacity.match(/\d+/)
+                        if (capacityMatch) {
+                          numericCapacity = parseInt(capacityMatch[0])
+                        }
+                      }
+                      
+                      onBookSpace(mappedSpaceType, spaceId, currentArea.name, numericCapacity)
                       closeTour()
                     } else {
                       closeTour()
@@ -935,8 +1009,10 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                       })
                     }
                   }}
+                  disabled={currentArea?.category === 'office' && currentArea?.availableRooms === 0}
+                  className={currentArea?.category === 'office' && currentArea?.availableRooms === 0 ? "opacity-50 cursor-not-allowed" : ""}
                 >
-                  Book Now
+                  {currentArea?.category === 'office' && currentArea?.availableRooms === 0 ? "Fully Occupied" : "Book Now"}
                 </Button>
               </div>
             </div>

@@ -49,9 +49,20 @@ export async function POST(request: NextRequest) {
     
     // Handle both API formats: office room booking and event booking
     const userId = body.userId;
+    const isOfficeInquiry = (body.eventType || '').startsWith('office-');
 
-    // Resolve officeRoomId — fall back to the first room in the DB if not provided
+    // Resolve officeRoomId
     let officeRoomId = body.officeRoomId;
+    
+    if (isOfficeInquiry && body.eventType) {
+      // Extract office room ID from eventType (format: "office-20")
+      const parts = body.eventType.split('-');
+      if (parts.length === 2 && parts[0] === 'office') {
+        officeRoomId = parseInt(parts[1]);
+      }
+    }
+    
+    // Fall back to the first room in the DB if not provided
     if (!officeRoomId) {
       const rooms = await executeQuery('SELECT id FROM office_rooms ORDER BY id ASC LIMIT 1') as any[];
       if (!rooms || rooms.length === 0) {
@@ -65,18 +76,26 @@ export async function POST(request: NextRequest) {
     
     // Handle date formatting more carefully
     let checkInDate, checkOutDate;
-    if (body.checkInDate) {
-      checkInDate = body.checkInDate;
-    } else if (body.date) {
-      const dateStr = body.date.includes('T') ? body.date.split('T')[0] : body.date;
-      checkInDate = `${dateStr} ${body.startTime || '09:00:00'}`;
-    }
     
-    if (body.checkOutDate) {
-      checkOutDate = body.checkOutDate;
-    } else if (body.date) {
-      const dateStr = body.date.includes('T') ? body.date.split('T')[0] : body.date;
-      checkOutDate = `${dateStr} ${body.endTime || '17:00:00'}`;
+    if (isOfficeInquiry) {
+      // For office inquiries, use placeholder dates since they don't need specific dates
+      checkInDate = '2024-01-01 09:00:00';
+      checkOutDate = '2024-01-01 17:00:00';
+    } else {
+      // For event bookings, handle date formatting as before
+      if (body.checkInDate) {
+        checkInDate = body.checkInDate;
+      } else if (body.date) {
+        const dateStr = body.date.includes('T') ? body.date.split('T')[0] : body.date;
+        checkInDate = `${dateStr} ${body.startTime || '09:00:00'}`;
+      }
+      
+      if (body.checkOutDate) {
+        checkOutDate = body.checkOutDate;
+      } else if (body.date) {
+        const dateStr = body.date.includes('T') ? body.date.split('T')[0] : body.date;
+        checkOutDate = `${dateStr} ${body.endTime || '17:00:00'}`;
+      }
     }
     
     const numberOfGuests = body.numberOfGuests || body.guestCount || 1;
@@ -85,12 +104,20 @@ export async function POST(request: NextRequest) {
     const eventName = body.eventName || 'Event Booking';
     const eventType = body.eventType || 'general';
 
-    console.log('Processed values:', { userId, officeRoomId, checkInDate, checkOutDate, numberOfGuests, eventName, eventType });
+    console.log('Processed values:', { userId, officeRoomId, checkInDate, checkOutDate, numberOfGuests, eventName, eventType, isOfficeInquiry });
 
-    if (!userId || !checkInDate || !checkOutDate) {
-      console.error('Validation failed:', { userId, checkInDate, checkOutDate });
+    if (!userId) {
+      console.error('Validation failed: Missing userId');
       return NextResponse.json(
-        { error: 'Missing required fields: userId, date/checkInDate, and time/checkOutDate are required', received: { userId, checkInDate, checkOutDate } },
+        { error: 'Missing required field: userId is required', received: { userId } },
+        { status: 400 }
+      );
+    }
+
+    if (!isOfficeInquiry && (!checkInDate || !checkOutDate)) {
+      console.error('Validation failed for event booking:', { userId, checkInDate, checkOutDate });
+      return NextResponse.json(
+        { error: 'Missing required fields for event booking: date/checkInDate and time/checkOutDate are required', received: { userId, checkInDate, checkOutDate } },
         { status: 400 }
       );
     }

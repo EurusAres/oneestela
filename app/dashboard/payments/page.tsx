@@ -98,6 +98,14 @@ export default function PaymentsPage() {
       // Update booking status to confirmed
       updateBookingStatus(selectedProof.bookingId, "confirmed")
 
+      // Trigger payment verification event for real-time updates
+      window.dispatchEvent(new CustomEvent('payment-verified', { 
+        detail: { 
+          proofId: selectedProof.id, 
+          bookingId: selectedProof.bookingId 
+        } 
+      }))
+
       toast({
         title: "Payment verified",
         description: "Payment has been verified and booking confirmed.",
@@ -113,6 +121,14 @@ export default function PaymentsPage() {
       }
 
       rejectPaymentProof(selectedProof.id, adminId, adminNote)
+
+      // Trigger payment verification event for real-time updates
+      window.dispatchEvent(new CustomEvent('payment-verified', { 
+        detail: { 
+          proofId: selectedProof.id, 
+          bookingId: selectedProof.bookingId 
+        } 
+      }))
 
       toast({
         title: "Payment rejected",
@@ -447,7 +463,11 @@ export default function PaymentsPage() {
                 <div>
                   <h4 className="font-medium text-sm mb-2">Booking Information</h4>
                   <div className="space-y-1 text-sm">
-                    <p><span className="font-medium">Event:</span> {selectedProof.eventName || "N/A"}</p>
+                    <p>
+                      <span className="font-medium">
+                        {selectedProof.eventType?.startsWith('office-') ? 'Purpose/Description:' : 'Event:'}
+                      </span> {selectedProof.eventName || "N/A"}
+                    </p>
                     <p><span className="font-medium">Booking ID:</span> {selectedProof.bookingId}</p>
                     <p><span className="font-medium">Uploaded:</span> {new Date(selectedProof.uploadedAt).toLocaleDateString()}</p>
                   </div>

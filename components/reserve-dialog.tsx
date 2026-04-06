@@ -20,13 +20,14 @@ import { Eye, EyeOff, Loader2 } from "lucide-react"
 interface ReserveDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  preSelectedSpace?: {type: string, id: string, name: string} | null
+  preSelectedSpace?: {type: string, id: string, name: string, capacity?: number} | null
 }
 
 interface Space {
   id: number
   name: string
   type: 'venue' | 'office'
+  capacity?: number
 }
 
 export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveDialogProps) {
@@ -78,6 +79,15 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
     }
   }, [open])
 
+  // Reset guest count if it exceeds the new space's capacity
+  useEffect(() => {
+    const capacity = getSelectedSpaceCapacity()
+    if (capacity && bookingData.guestCount && parseInt(bookingData.guestCount) > capacity) {
+      setBookingData(prev => ({ ...prev, guestCount: capacity.toString() }))
+      setErrors(prev => ({ ...prev, guestCount: "" }))
+    }
+  }, [bookingData.eventType, spaces])
+
   const fetchSpaces = async () => {
     setLoadingSpaces(true)
     try {
@@ -95,7 +105,8 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
           allSpaces.push({
             id: venue.id,
             name: venue.name,
-            type: 'venue'
+            type: 'venue',
+            capacity: venue.capacity || undefined
           })
         })
       }
@@ -107,7 +118,8 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
           allSpaces.push({
             id: room.id,
             name: room.name,
-            type: 'office'
+            type: 'office',
+            capacity: room.capacity || undefined
           })
         })
       }
@@ -182,11 +194,17 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
     return allReservedDates.some((reservedDate) => reservedDate.toDateString() === date.toDateString())
   }
 
+  // Check if capacity is exceeded
+  const isCapacityExceeded = () => {
+    const capacity = getSelectedSpaceCapacity()
+    return capacity && bookingData.guestCount && Number.parseInt(bookingData.guestCount) > capacity
+  }
+
   const validateEventDetails = (): boolean => {
     const newErrors: Record<string, string> = {}
 
     if (!bookingData.eventName.trim()) {
-      newErrors.eventName = "Event name is required"
+      newErrors.eventName = isOfficeSpace() ? "Purpose/Description is required" : "Event name is required"
     }
     if (!bookingData.eventType) {
       newErrors.eventType = "Event space is required"
@@ -195,15 +213,51 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
       newErrors.guestCount = "Expected guests is required"
     } else if (Number.parseInt(bookingData.guestCount) <= 0) {
       newErrors.guestCount = "Guest count must be greater than 0"
+    } else {
+      const capacity = getSelectedSpaceCapacity()
+      if (capacity && Number.parseInt(bookingData.guestCount) > capacity) {
+        newErrors.guestCount = `Maximum capacity is ${capacity} guests`
+      }
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
+  // Check if selected space is an office space
+  const isOfficeSpace = () => {
+    return bookingData.eventType.startsWith('office-')
+  }
+
+  // Get capacity for the selected space
+  const getSelectedSpaceCapacity = (): number | undefined => {
+    // First check if we have preSelectedSpace with capacity
+    if (preSelectedSpace?.capacity) {
+      return preSelectedSpace.capacity
+    }
+    
+    // Otherwise, find the capacity from the spaces list
+    if (bookingData.eventType && spaces.length > 0) {
+      const [spaceType, spaceId] = bookingData.eventType.split('-')
+      const selectedSpace = spaces.find(space => 
+        space.type === spaceType && space.id.toString() === spaceId
+      )
+      
+      return selectedSpace?.capacity
+    }
+    
+    return undefined
+  }
+
   const handleNext = () => {
     if (validateEventDetails()) {
-      setActiveTab("datetime")
+      // Skip date & time for office spaces, go directly to submission
+      if (isOfficeSpace()) {
+        // For office spaces, we don't need date/time selection
+        setActiveTab("details") // Stay on details tab but enable submission
+      } else {
+        setActiveTab("datetime")
+      }
     }
   }
 
@@ -267,6 +321,28 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
       return
     }
 
+    // Validate capacity before submission
+    const capacity = getSelectedSpaceCapacity()
+    if (capacity && Number.parseInt(bookingData.guestCount) > capacity) {
+      toast({
+        title: "Capacity exceeded",
+        description: `This space can accommodate a maximum of ${capacity} guests. Please reduce the number of guests or select a different space.`,
+        variant: "destructive",
+      })
+      return
+    }
+
+    // For office spaces, we don't need date/time validation
+    const isOffice = isOfficeSpace()
+    if (!isOffice && (!selectedDate || isDateReserved(selectedDate) || !bookingData.startTime || !bookingData.endTime)) {
+      toast({
+        title: "Missing information",
+        description: "Please select a date and time for your event.",
+        variant: "destructive",
+      })
+      return
+    }
+
     // Add booking to the system
     // Format date as YYYY-MM-DD without timezone conversion
     const formatLocalDate = (date: Date) => {
@@ -281,9 +357,9 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
       eventName: bookingData.eventName,
       eventType: bookingData.eventType,
       guestCount: Number.parseInt(bookingData.guestCount),
-      date: selectedDate ? formatLocalDate(selectedDate) : "",
-      startTime: bookingData.startTime,
-      endTime: bookingData.endTime,
+      date: isOffice ? "" : (selectedDate ? formatLocalDate(selectedDate) : ""),
+      startTime: isOffice ? "" : bookingData.startTime,
+      endTime: isOffice ? "" : bookingData.endTime,
       specialRequests: bookingData.specialRequests,
       status: "pending",
       userInfo: {
@@ -295,7 +371,9 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
 
     toast({
       title: "Reservation request submitted",
-      description: "Your booking has been added to My Transactions. We'll review and get back to you within 24 hours.",
+      description: isOffice 
+        ? "Your office space inquiry has been submitted. We'll review and get back to you within 24 hours."
+        : "Your booking has been added to My Transactions. We'll review and get back to you within 24 hours.",
     })
 
     // Reset form
@@ -335,9 +413,15 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg">
         <DialogHeader>
-          <DialogTitle>Reserve Your Event</DialogTitle>
+          <DialogTitle>{isOfficeSpace() ? "Office Space Inquiry" : "Reserve Your Event"}</DialogTitle>
           <DialogDescription>
-            {user ? "Fill out the details for your event reservation" : "Please log in to make a reservation"}
+            {user 
+              ? (isOfficeSpace() 
+                  ? "Fill out the details for your office space inquiry" 
+                  : "Fill out the details for your event reservation"
+                ) 
+              : "Please log in to make a reservation"
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -424,19 +508,21 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
           )
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="details">Event Details</TabsTrigger>
-              <TabsTrigger value="datetime" disabled={activeTab === "details"}>
-                Date & Time
-              </TabsTrigger>
+            <TabsList className={`grid w-full ${isOfficeSpace() ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              <TabsTrigger value="details">{isOfficeSpace() ? "Inquiry Details" : "Event Details"}</TabsTrigger>
+              {!isOfficeSpace() && (
+                <TabsTrigger value="datetime" disabled={activeTab === "details"}>
+                  Date & Time
+                </TabsTrigger>
+              )}
             </TabsList>
             <TabsContent value="details" className="space-y-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="eventName">Event Name</Label>
+                  <Label htmlFor="eventName">{isOfficeSpace() ? "Purpose/Description" : "Event Name"}</Label>
                   <Input
                     id="eventName"
-                    placeholder="Enter event name"
+                    placeholder={isOfficeSpace() ? "e.g., Monthly office rental, Business operations" : "Enter event name"}
                     value={bookingData.eventName}
                     onChange={(e) => {
                       setBookingData({ ...bookingData, eventName: e.target.value })
@@ -467,6 +553,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                         {spaces.map((space) => (
                           <SelectItem key={`${space.type}-${space.id}`} value={`${space.type}-${space.id}`}>
                             {space.name} ({space.type === 'venue' ? 'Venue' : 'Office Space'})
+                            {space.capacity && ` - Max ${space.capacity} guests`}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -474,40 +561,108 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                     {errors.eventType && <p className="text-sm text-red-500">{errors.eventType}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="guestCount">Expected Guests</Label>
+                    <Label htmlFor="guestCount">
+                      Expected Guests
+                      {(() => {
+                        const capacity = getSelectedSpaceCapacity()
+                        return capacity ? ` (Max: ${capacity})` : ''
+                      })()}
+                    </Label>
                     <Input
                       id="guestCount"
                       type="number"
+                      min="1"
+                      max={getSelectedSpaceCapacity() || undefined}
                       placeholder="Number of guests"
                       value={bookingData.guestCount}
                       onChange={(e) => {
-                        setBookingData({ ...bookingData, guestCount: e.target.value })
-                        if (errors.guestCount) {
+                        const value = e.target.value
+                        const capacity = getSelectedSpaceCapacity()
+                        
+                        // Validate against capacity if available
+                        if (capacity && parseInt(value) > capacity) {
+                          setErrors({ ...errors, guestCount: `Maximum capacity is ${capacity} guests` })
+                        } else if (errors.guestCount) {
                           setErrors({ ...errors, guestCount: "" })
                         }
+                        
+                        setBookingData({ ...bookingData, guestCount: value })
                       }}
                       className={errors.guestCount ? "border-red-500" : ""}
                     />
                     {errors.guestCount && <p className="text-sm text-red-500">{errors.guestCount}</p>}
+                    {(() => {
+                      const capacity = getSelectedSpaceCapacity()
+                      if (capacity && !errors.guestCount) {
+                        return (
+                          <p className="text-xs text-gray-500">
+                            This space can accommodate up to {capacity} guests
+                          </p>
+                        )
+                      }
+                      return null
+                    })()}
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="specialRequests">Special Requests</Label>
+                  <Label htmlFor="specialRequests">{isOfficeSpace() ? "Additional Requirements" : "Special Requests"}</Label>
                   <Textarea
                     id="specialRequests"
-                    placeholder="Any special requirements, decorations, catering preferences, etc."
+                    placeholder={isOfficeSpace() 
+                      ? "Any specific requirements, furniture needs, access hours, etc." 
+                      : "Any special requirements, decorations, catering preferences, etc."
+                    }
                     value={bookingData.specialRequests}
                     onChange={(e) => setBookingData({ ...bookingData, specialRequests: e.target.value })}
                   />
                 </div>
               </div>
+              {isOfficeSpace() && (
+                <div className="border-t pt-4 space-y-4">
+                  <div className="flex items-start space-x-2">
+                    <input
+                      type="checkbox"
+                      id="terms-office"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      className="mt-1"
+                    />
+                    <div className="text-sm">
+                      <label htmlFor="terms-office" className="text-gray-700">
+                        I have read and agree to the{" "}
+                        <button
+                          type="button"
+                          onClick={() => setShowTerms(true)}
+                          className="text-blue-600 hover:underline font-medium"
+                        >
+                          Terms and Conditions
+                        </button>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleNext}>
-                  Next
-                </Button>
+                {isOfficeSpace() ? (
+                  <Button 
+                    onClick={handleBookingSubmit}
+                    disabled={!agreedToTerms || isCapacityExceeded()}
+                    title={isCapacityExceeded() ? "Please reduce the number of guests to submit inquiry" : ""}
+                  >
+                    Submit Inquiry
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleNext}
+                    disabled={isCapacityExceeded()}
+                    title={isCapacityExceeded() ? "Please reduce the number of guests to continue" : ""}
+                  >
+                    Next
+                  </Button>
+                )}
               </div>
             </TabsContent>
             <TabsContent value="datetime" className="space-y-4">
@@ -668,7 +823,8 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                 <Button 
                   onClick={handleBookingSubmit} 
                   className="w-full md:w-auto"
-                  disabled={!selectedDate || isDateReserved(selectedDate) || !bookingData.startTime || !bookingData.endTime || !agreedToTerms}
+                  disabled={!selectedDate || isDateReserved(selectedDate) || !bookingData.startTime || !bookingData.endTime || !agreedToTerms || isCapacityExceeded()}
+                  title={isCapacityExceeded() ? "Please reduce the number of guests to submit reservation" : ""}
                 >
                   Submit Reservation Request
                 </Button>

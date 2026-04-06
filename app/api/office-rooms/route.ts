@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
       description, 
       capacity, 
       pricePerHour, 
+      availableRooms,
       imageUrl, 
       image360Url,
       amenities,
@@ -85,8 +86,8 @@ export async function POST(request: NextRequest) {
     }
 
     const query = `INSERT INTO office_rooms 
-      (venue_id, name, description, capacity, price_per_hour, image_url, image_360_url, amenities, type, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      (venue_id, name, description, capacity, price_per_hour, available_rooms, image_url, image_360_url, amenities, type, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     
     const values = [
       venueId || null, 
@@ -94,6 +95,7 @@ export async function POST(request: NextRequest) {
       description || '', 
       parseInt(capacity) || 0, 
       parseFloat(pricePerHour) || 0, 
+      parseInt(availableRooms) || 1,
       imageUrl || '', 
       image360Url || '',
       amenitiesJson,
@@ -145,6 +147,7 @@ export async function PATCH(request: NextRequest) {
       description, 
       capacity, 
       pricePerHour, 
+      availableRooms,
       imageUrl, 
       image360Url,
       amenities,
@@ -177,6 +180,10 @@ export async function PATCH(request: NextRequest) {
     if (pricePerHour !== undefined) {
       updates.push('price_per_hour = ?');
       params.push(pricePerHour);
+    }
+    if (availableRooms !== undefined) {
+      updates.push('available_rooms = ?');
+      params.push(availableRooms);
     }
     if (imageUrl !== undefined) {
       updates.push('image_url = ?');

@@ -23,7 +23,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Edit, Trash2, Image, Camera, Users, DollarSign, RefreshCw } from 'lucide-react'
+import { Plus, Edit, Trash2, Image, Camera, Users, DollarSign, RefreshCw, Building2 } from 'lucide-react'
 
 interface OfficeRoom {
   id: number
@@ -31,6 +31,7 @@ interface OfficeRoom {
   description: string
   capacity: number
   price_per_hour: number
+  available_rooms: number
   image_url: string
   image_360_url: string
   type: string
@@ -51,6 +52,7 @@ export function CMSOfficeRoomEditor() {
     description: '',
     capacity: '',
     pricePerHour: '',
+    availableRooms: '',
     imageUrl: '',
     image360Url: '',
     type: 'meeting',
@@ -93,6 +95,7 @@ export function CMSOfficeRoomEditor() {
       description: '',
       capacity: '',
       pricePerHour: '',
+      availableRooms: '',
       imageUrl: '',
       image360Url: '',
       type: 'meeting',
@@ -110,6 +113,7 @@ export function CMSOfficeRoomEditor() {
       description: room.description || '',
       capacity: room.capacity.toString(),
       pricePerHour: room.price_per_hour.toString(),
+      availableRooms: (room.available_rooms || 1).toString(),
       imageUrl: room.image_url || '',
       image360Url: room.image_360_url || '',
       type: room.type || 'office',
@@ -166,6 +170,7 @@ export function CMSOfficeRoomEditor() {
         description: formData.description,
         capacity: parseInt(formData.capacity),
         pricePerHour: parseFloat(formData.pricePerHour) || 0,
+        availableRooms: parseInt(formData.availableRooms) || 1,
         imageUrl,
         image360Url,
         type: formData.type,
@@ -287,14 +292,18 @@ export function CMSOfficeRoomEditor() {
               <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
                 <div className="flex items-center gap-2">
                   <Users className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
-                  <span>Up to {room.capacity} people</span>
+                  <span>Capacity: {room.capacity}</span>
                 </div>
                 {room.price_per_hour > 0 && (
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
-                    <span>₱{room.price_per_hour}/hour</span>
+                    <span>₱{room.price_per_hour}/month</span>
                   </div>
                 )}
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
+                  <span>Available Rooms: {room.available_rooms || 1}</span>
+                </div>
                 <div className="flex items-center gap-2">
                   <Camera className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
                   <span className={room.image_360_url ? 'text-green-600' : 'text-gray-400'}>
@@ -370,7 +379,7 @@ export function CMSOfficeRoomEditor() {
               />
             </div>
 
-            <div className="grid gap-3 md:gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 md:gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="capacity" className="text-xs md:text-sm">Capacity *</Label>
                 <Input
@@ -384,13 +393,26 @@ export function CMSOfficeRoomEditor() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price" className="text-xs md:text-sm">Price per Hour (₱)</Label>
+                <Label htmlFor="price" className="text-xs md:text-sm">Monthly (₱)</Label>
                 <Input
                   id="price"
                   type="number"
                   value={formData.pricePerHour}
                   onChange={(e) => setFormData({ ...formData, pricePerHour: e.target.value })}
                   placeholder="e.g., 500"
+                  className="text-xs md:text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="availableRooms" className="text-xs md:text-sm">Available Rooms</Label>
+                <Input
+                  id="availableRooms"
+                  type="number"
+                  min="1"
+                  value={formData.availableRooms}
+                  onChange={(e) => setFormData({ ...formData, availableRooms: e.target.value })}
+                  placeholder="e.g., 5"
                   className="text-xs md:text-sm"
                 />
               </div>

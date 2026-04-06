@@ -29,6 +29,7 @@ interface OfficeRoom {
   image_360_url: string
   type: string
   amenities: string
+  available_rooms: number
 }
 
 export function AvailableSpacesSection() {
@@ -36,12 +37,27 @@ export function AvailableSpacesSection() {
   const [rooms, setRooms] = useState<OfficeRoom[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Calculate available rooms based on current bookings
+  const calculateAvailableRooms = (room: any, bookings: any[]) => {
+    const totalRooms = room.available_rooms || 1
+    
+    // Count confirmed office bookings for this specific room
+    const occupiedRooms = bookings.filter((booking: any) => {
+      return booking.event_type === `office-${room.id}` && 
+             (booking.status === 'confirmed' || booking.status === 'pending')
+    }).length
+    
+    // Calculate available rooms (minimum 0)
+    return Math.max(0, totalRooms - occupiedRooms)
+  }
+
   useEffect(() => {
     const fetchSpaces = async () => {
       try {
-        const [venuesRes, roomsRes] = await Promise.all([
+        const [venuesRes, roomsRes, bookingsRes] = await Promise.all([
           fetch('/api/venues'),
-          fetch('/api/office-rooms')
+          fetch('/api/office-rooms'),
+          fetch('/api/bookings')
         ])
 
         if (venuesRes.ok) {
@@ -49,9 +65,17 @@ export function AvailableSpacesSection() {
           setVenues(venuesData.venues || [])
         }
 
-        if (roomsRes.ok) {
+        if (roomsRes.ok && bookingsRes.ok) {
           const roomsData = await roomsRes.json()
-          setRooms(roomsData.rooms || [])
+          const bookingsData = await bookingsRes.json()
+          
+          // Calculate available rooms for each office space
+          const roomsWithAvailability = (roomsData.rooms || []).map((room: any) => ({
+            ...room,
+            available_rooms: calculateAvailableRooms(room, bookingsData.bookings || [])
+          }))
+          
+          setRooms(roomsWithAvailability)
         }
       } catch (error) {
         console.error('Error fetching spaces:', error)
@@ -61,6 +85,19 @@ export function AvailableSpacesSection() {
     }
 
     fetchSpaces()
+    
+    // Listen for booking status changes to refresh availability
+    const handleBookingStatusChange = () => {
+      fetchSpaces()
+    }
+    
+    window.addEventListener('booking-status-changed', handleBookingStatusChange)
+    window.addEventListener('payment-verified', handleBookingStatusChange)
+    
+    return () => {
+      window.removeEventListener('booking-status-changed', handleBookingStatusChange)
+      window.removeEventListener('payment-verified', handleBookingStatusChange)
+    }
   }, [])
 
   if (loading) {
@@ -188,14 +225,22 @@ export function AvailableSpacesSection() {
                   <div className="space-y-2 mb-4">
                     {room.capacity > 0 && (
                       <div className="flex items-center text-sm text-gray-600">
-                        <Building2 className="w-4 h-4 mr-2" />
-                        Up to {room.capacity} people
+                        <Users className="w-4 h-4 mr-2" />
+                        Capacity: {room.capacity}
                       </div>
                     )}
                     {room.price_per_hour > 0 && (
                       <div className="flex items-center text-sm text-gray-600">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        ₱{parseFloat(room.price_per_hour).toFixed(2)}/hour
+                        ₱{parseFloat(room.price_per_hour).toFixed(2)}/month
+                      </div>
+                    )}
+                    {room.available_rooms !== undefined && (
+                      <div className={`flex items-center text-sm ${
+                        room.available_rooms === 0 ? 'text-red-600 font-medium' : 'text-gray-600'
+                      }`}>
+                        <Building2 className="w-4 h-4 mr-2" />
+                        {room.available_rooms === 0 ? 'Fully Occupied' : `Available Rooms: ${room.available_rooms}`}
                       </div>
                     )}
                   </div>
@@ -213,8 +258,12 @@ export function AvailableSpacesSection() {
                       )}
                     </div>
                   )}
-                  <ReserveButton className="w-full bg-amber-700 hover:bg-amber-800">
-                    Book Now
+                  <ReserveButton 
+                    className="w-full bg-amber-700 hover:bg-amber-800"
+                    disabled={room.available_rooms === 0}
+                    disabledMessage="All rooms in this office space are currently occupied"
+                  >
+                    {room.available_rooms === 0 ? "Fully Occupied" : "Book Now"}
                   </ReserveButton>
                 </CardContent>
               </Card>
