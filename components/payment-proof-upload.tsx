@@ -33,7 +33,7 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [paymentDetails, setPaymentDetails] = useState({
-    paymentMethod: "",
+    paymentMethod: "bank-transfer",
     paymentAmount: "",
     paymentDate: new Date().toISOString().split('T')[0], // Auto-fill with today's date
   })
@@ -61,11 +61,11 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
     }
 
     // Validate file type
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp", "application/pdf"]
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"]
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: "Invalid file type",
-        description: "Please upload an image (JPG, PNG, GIF, WebP) or PDF file",
+        description: "Please upload an image (JPG, PNG) file",
         variant: "destructive",
       })
       return
@@ -329,36 +329,26 @@ export function PaymentProofUpload({ open, onOpenChange, bookingId }: PaymentPro
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*,.pdf"
+                accept="image/*"
                 onChange={handleFileInputChange}
                 className="hidden"
               />
-              <p className="text-xs text-gray-500">Supported formats: JPG, PNG, GIF, WebP, PDF. Maximum size: 10MB</p>
+              <p className="text-xs text-gray-500">Supported formats: JPG, PNG. Maximum size: 10MB</p>
             </div>
 
             {/* Payment Details */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="paymentMethod">Payment Method *</Label>
-                <Select
-                  value={paymentDetails.paymentMethod}
-                  onValueChange={(value) => setPaymentDetails((prev) => ({ ...prev, paymentMethod: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="credit-card">Credit Card</SelectItem>
-                    <SelectItem value="debit-card">Debit Card</SelectItem>
-                    <SelectItem value="paypal">PayPal</SelectItem>
-                    <SelectItem value="gcash">GCash</SelectItem>
-                    <SelectItem value="paymaya">PayMaya</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="check">Check</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="paymentMethod">Payment Method</Label>
+                <Input
+                  id="paymentMethod"
+                  value="Bank Transfer"
+                  disabled
+                  className="bg-gray-50"
+                />
+                <p className="text-xs text-blue-600">
+                  ℹ️ All payments are processed through bank transfer only
+                </p>
               </div>
 
               <div className="space-y-2">

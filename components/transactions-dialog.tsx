@@ -233,9 +233,9 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
                     </Button>
                   )}
                   {(booking.status === "confirmed" || booking.status === "pending") &&
-                    new Date(booking.date) > new Date() && (
+                    (booking.eventType.startsWith('office-') || new Date(booking.date) > new Date()) && (
                       <Button variant="destructive" size="sm" onClick={() => handleCancelBooking(booking)} className="w-full sm:w-auto">
-                        Cancel Booking
+                        Cancel {booking.eventType.startsWith('office-') ? 'Inquiry' : 'Booking'}
                       </Button>
                     )}
                 </div>

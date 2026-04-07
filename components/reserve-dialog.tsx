@@ -649,16 +649,24 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                 {isOfficeSpace() ? (
                   <Button 
                     onClick={handleBookingSubmit}
-                    disabled={!agreedToTerms || isCapacityExceeded()}
-                    title={isCapacityExceeded() ? "Please reduce the number of guests to submit inquiry" : ""}
+                    disabled={!agreedToTerms || isCapacityExceeded() || !bookingData.guestCount.trim() || !bookingData.eventName.trim() || !bookingData.eventType}
+                    title={
+                      isCapacityExceeded() 
+                        ? "Please reduce the number of guests to submit inquiry" 
+                        : (!bookingData.guestCount.trim() ? "Expected guests is required" : "")
+                    }
                   >
                     Submit Inquiry
                   </Button>
                 ) : (
                   <Button 
                     onClick={handleNext}
-                    disabled={isCapacityExceeded()}
-                    title={isCapacityExceeded() ? "Please reduce the number of guests to continue" : ""}
+                    disabled={isCapacityExceeded() || !bookingData.guestCount.trim() || !bookingData.eventName.trim() || !bookingData.eventType}
+                    title={
+                      isCapacityExceeded() 
+                        ? "Please reduce the number of guests to continue" 
+                        : (!bookingData.guestCount.trim() ? "Expected guests is required" : "")
+                    }
                   >
                     Next
                   </Button>
@@ -823,8 +831,12 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                 <Button 
                   onClick={handleBookingSubmit} 
                   className="w-full md:w-auto"
-                  disabled={!selectedDate || isDateReserved(selectedDate) || !bookingData.startTime || !bookingData.endTime || !agreedToTerms || isCapacityExceeded()}
-                  title={isCapacityExceeded() ? "Please reduce the number of guests to submit reservation" : ""}
+                  disabled={!selectedDate || isDateReserved(selectedDate) || !bookingData.startTime || !bookingData.endTime || !agreedToTerms || isCapacityExceeded() || !bookingData.guestCount.trim() || !bookingData.eventName.trim() || !bookingData.eventType}
+                  title={
+                    isCapacityExceeded() 
+                      ? "Please reduce the number of guests to submit reservation" 
+                      : (!bookingData.guestCount.trim() ? "Expected guests is required" : "")
+                  }
                 >
                   Submit Reservation Request
                 </Button>

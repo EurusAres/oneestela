@@ -2,13 +2,13 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { VirtualTour } from "@/components/virtual-tour"
 import { ReserveDialog } from "@/components/reserve-dialog"
 import { useAuth } from "@/components/auth-context"
 import { useToast } from "@/hooks/use-toast"
-import { Camera, X } from "lucide-react"
+import { Camera } from "lucide-react"
 
 interface TourButtonProps {
   children: React.ReactNode
@@ -23,30 +23,14 @@ export function TourButton({ children, className, size, variant }: TourButtonPro
   const [showTour, setShowTour] = useState(false)
   const [showReserveDialog, setShowReserveDialog] = useState(false)
   const [preSelectedSpace, setPreSelectedSpace] = useState<{type: string, id: string, name: string, capacity?: number} | null>(null)
-  const [showWelcomeNotification, setShowWelcomeNotification] = useState(false)
-
-  // Show welcome notification when tour is opened by a logged-in user
-  useEffect(() => {
-    if (showTour && user && !showWelcomeNotification) {
-      setShowWelcomeNotification(true)
-    }
-  }, [showTour, user, showWelcomeNotification])
 
   const handleTourClick = () => {
     setShowTour(true)
-    if (user) {
-      setShowWelcomeNotification(true)
-    }
   }
 
   const handleBookSpace = (spaceType: string, spaceId: string, spaceName: string, capacity?: number) => {
     setPreSelectedSpace({ type: spaceType, id: spaceId, name: spaceName, capacity })
     setShowReserveDialog(true)
-  }
-
-  const dismissWelcomeNotification = (e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent event from bubbling up
-    setShowWelcomeNotification(false)
   }
 
   return (
@@ -67,26 +51,6 @@ export function TourButton({ children, className, size, variant }: TourButtonPro
         onOpenChange={setShowReserveDialog}
         preSelectedSpace={preSelectedSpace}
       />
-
-      {/* Welcome Notification - Only shows for logged-in users when tour is active */}
-      {showTour && showWelcomeNotification && user && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center justify-between max-w-md">
-          <div className="flex items-center">
-            <Camera className="mr-3 h-5 w-5" />
-            <div>
-              <p className="font-medium">Welcome to the virtual tour!</p>
-              <p className="text-sm text-blue-100">Explore our venue with the 360-degree experience.</p>
-            </div>
-          </div>
-          <button
-            onClick={dismissWelcomeNotification}
-            className="ml-4 p-1 rounded-full hover:bg-blue-700 transition-colors"
-            aria-label="Dismiss notification"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
     </>
   )
 }
