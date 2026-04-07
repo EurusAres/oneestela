@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { PanoramicViewer } from "@/components/panoramic-viewer"
+import { useAuth } from "@/components/auth-context"
 
 interface VirtualTourProps {
   open: boolean
@@ -56,6 +57,7 @@ interface TourArea {
 
 export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProps) {
   const { toast } = useToast()
+  const { user } = useAuth()
   const [currentAreaIndex, setCurrentAreaIndex] = useState(0)
   const [currentAngleIndex, setCurrentAngleIndex] = useState(0)
   const [zoom, setZoom] = useState(1)
@@ -853,8 +855,8 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                 </div>
               )}
 
-              {/* Unavailable Dates Panel - Bottom Left - Only show for event venues */}
-              {unavailableSpaceDates.length > 0 && currentArea.category === 'event' && (
+              {/* Unavailable Dates Panel - Bottom Left - Only show for event venues and logged-in users */}
+              {unavailableSpaceDates.length > 0 && currentArea.category === 'event' && user && (
                 <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border max-w-sm">
                   <div className="p-3">
                     <h4 className="font-semibold text-sm mb-2 flex items-center text-red-600">
