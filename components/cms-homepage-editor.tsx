@@ -207,7 +207,7 @@ export function CMSHomepageEditor() {
     <Tabs defaultValue="hero" className="w-full">
       <div className="w-full overflow-x-auto">
         <TabsList className="inline-flex w-full sm:w-auto grid-cols-2">
-          <TabsTrigger value="hero" className="text-xs sm:text-sm">Hero Section</TabsTrigger>
+          <TabsTrigger value="hero" className="text-xs sm:text-sm">Home Section</TabsTrigger>
           <TabsTrigger value="contact" className="text-xs sm:text-sm">Contact Info</TabsTrigger>
         </TabsList>
       </div>
