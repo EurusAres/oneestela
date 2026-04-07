@@ -49,9 +49,6 @@ export default function StaffManagementPage() {
       s.position.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const activeStaffCount = staff.filter((s) => s.status === 'active').length
-  const inactiveStaffCount = staff.filter((s) => s.status === 'inactive').length
-
   const resetForm = () => {
     setFormData({
       firstName: '',
@@ -331,7 +328,7 @@ export default function StaffManagementPage() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-xs md:text-sm font-medium">Total Staff</CardTitle>
@@ -339,24 +336,6 @@ export default function StaffManagementPage() {
             <CardContent>
               <div className="text-xl md:text-2xl font-bold">{staff.length}</div>
               <p className="text-xs text-muted-foreground mt-1">Registered staff members</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-xs md:text-sm font-medium">Active</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl md:text-2xl font-bold text-green-600">{activeStaffCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">Currently active</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-xs md:text-sm font-medium">Inactive</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl md:text-2xl font-bold text-amber-600">{inactiveStaffCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">Deactivated accounts</p>
             </CardContent>
           </Card>
         </div>

@@ -206,10 +206,8 @@ export function CMSHomepageEditor() {
   return (
     <Tabs defaultValue="hero" className="w-full">
       <div className="w-full overflow-x-auto">
-        <TabsList className="inline-flex w-full sm:w-auto grid-cols-2 sm:grid-cols-4">
+        <TabsList className="inline-flex w-full sm:w-auto grid-cols-2">
           <TabsTrigger value="hero" className="text-xs sm:text-sm">Hero Section</TabsTrigger>
-          <TabsTrigger value="about" className="text-xs sm:text-sm">About Section</TabsTrigger>
-          <TabsTrigger value="cta" className="text-xs sm:text-sm">CTA Section</TabsTrigger>
           <TabsTrigger value="contact" className="text-xs sm:text-sm">Contact Info</TabsTrigger>
         </TabsList>
       </div>
@@ -223,21 +221,6 @@ export function CMSHomepageEditor() {
           </div>
         </TabsContent>
 
-        <TabsContent value="about">
-          <div className="space-y-4">
-            <SectionEditor title="About Title" field="aboutTitle" />
-            <SectionEditor title="About Description" field="aboutDescription" />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="cta">
-          <div className="space-y-4">
-            <SectionEditor title="CTA Title" field="ctaTitle" />
-            <SectionEditor title="CTA Description" field="ctaDescription" />
-            <SectionEditor title="CTA Button Text" field="ctaButtonText" />
-          </div>
-        </TabsContent>
-
         <TabsContent value="contact">
           <div className="space-y-4">
             <SectionEditor title="Location" field="contactLocation" />
@@ -248,27 +231,6 @@ export function CMSHomepageEditor() {
         </TabsContent>
       </div>
 
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="text-sm md:text-base">Features</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h4 className="font-medium mb-2 text-xs md:text-sm">Features ({(homepage?.features || []).length})</h4>
-            <div className="space-y-2">
-              {(homepage?.features || []).map((feature) => (
-                <div key={feature.id} className="p-3 bg-gray-50 rounded-lg">
-                  <p className="font-medium text-xs md:text-sm">{feature.title}</p>
-                  <p className="text-xs text-muted-foreground">{feature.description}</p>
-                </div>
-              ))}
-            </div>
-            {(!homepage?.features || homepage.features.length === 0) && (
-              <p className="text-xs md:text-sm text-muted-foreground">No features added yet</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
     </Tabs>
   )
 }

@@ -3,7 +3,8 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -471,8 +472,8 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0">
-        <div className="relative h-[80vh] overflow-hidden rounded-lg">
+      <DialogContent className="max-w-6xl h-[90vh] p-0 overflow-hidden flex flex-col">
+        <div className="relative flex-1 overflow-hidden rounded-lg">
           {/* Loading State */}
           {loading && (
             <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -502,9 +503,9 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
             <>
               {/* Tour Header */}
               <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent p-4">
-                <DialogHeader className="text-white">
-                  <DialogTitle className="flex items-center justify-between">
-                    <span>Virtual Tour - {currentArea.name}</span>
+                <div className="text-white">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xl font-semibold">Virtual Tour - {currentArea.name}</span>
                     <div className="flex items-center space-x-2">
                       <Badge variant="secondary" className="bg-white/20 text-white">
                         {currentAngle.name}
@@ -534,9 +535,9 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                         </Badge>
                       )}
                     </div>
-                  </DialogTitle>
-                  <DialogDescription className="text-white/90">{currentArea.description}</DialogDescription>
-                </DialogHeader>
+                  </div>
+                  <p className="text-white/90">{currentArea.description}</p>
+                </div>
               </div>
 
               {/* Close Tour Button - Transparent */}
@@ -948,7 +949,7 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
 
         {/* Enhanced Tour Info Footer */}
         {!loading && tourAreas.length > 0 && currentArea && (
-          <div className="p-4 border-t bg-gray-50">
+          <div className="flex-shrink-0 p-4 border-t bg-gray-50">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-sm text-gray-600 mb-2">
@@ -969,7 +970,7 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                   </div>
                 )}
               </div>
-              <div className="flex space-x-2 ml-4">
+              <div className="flex space-x-2 ml-4 flex-shrink-0">
                 <Button variant="outline" onClick={closeTour}>
                   Close Tour
                 </Button>

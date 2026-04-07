@@ -79,15 +79,6 @@ export default function CMSPage() {
             </Card>
           </TabsContent>
         </Tabs>
-
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-blue-900 text-base md:text-lg">💡 Real-Time Updates</CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs md:text-sm text-blue-900">
-            All changes made in this CMS are automatically reflected on the public website and within the 360-degree virtual tour. No coding or server restarts required.
-          </CardContent>
-        </Card>
       </div>
     </MainLayout>
   )
