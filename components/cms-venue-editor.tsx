@@ -240,59 +240,42 @@ export function CMSVenueEditor() {
         </Button>
       </div>
 
-      <div className="grid gap-3 md:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-4">
         {venues.map((venue) => (
-          <Card key={venue.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <CardTitle className="text-sm md:text-base lg:text-lg truncate">{venue.name}</CardTitle>
-                  {venue.location && (
-                    <CardDescription className="mt-1 flex items-center gap-1 text-xs md:text-sm">
-                      <MapPin className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">{venue.location}</span>
-                    </CardDescription>
-                  )}
-                </div>
-                <div className="flex gap-1 flex-shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEdit(venue)}
-                  >
-                    <Edit className="h-3 w-3 md:h-4 md:w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(venue.id)}
-                  >
-                    <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
-                  </Button>
+          <div key={venue.id} className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${venue.image_360_url ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <div>
+                  <p className="font-medium text-gray-900">{venue.name}</p>
+                  <p className="text-sm text-gray-500">
+                    Up to {venue.capacity} guests • ₱{venue.price_per_hour}/hour
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {venue.location || 'No location set'}
+                    {venue.image_360_url && ' • 360° Available'}
+                  </p>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
-                <div className="flex items-center gap-2">
-                  <Users className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
-                  <span>Up to {venue.capacity} guests</span>
-                </div>
-                {venue.price_per_hour > 0 && (
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
-                    <span>₱{venue.price_per_hour}/hour</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <Camera className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
-                  <span className={venue.image_360_url ? 'text-green-600' : 'text-gray-400'}>
-                    {venue.image_360_url ? '360° Available' : 'No 360° image'}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(venue)}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleDelete(venue.id)}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
         ))}
       </div>
 
