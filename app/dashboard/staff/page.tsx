@@ -373,15 +373,12 @@ export default function StaffManagementPage() {
                 {filteredStaff.map((staffMember) => (
                   <div
                     key={staffMember.id}
-                    className="flex flex-col gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between p-4 border rounded-lg"
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-semibold text-base md:text-lg">
-                          {staffMember.firstName} {staffMember.lastName}
-                        </h3>
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
                         <span
-                          className={`inline-flex items-center rounded-full px-2 md:px-3 py-1 text-xs font-medium whitespace-nowrap ${
+                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                             staffMember.status === 'active'
                               ? 'bg-green-100 text-green-800'
                               : 'bg-amber-100 text-amber-800'
@@ -389,62 +386,44 @@ export default function StaffManagementPage() {
                         >
                           {staffMember.status.charAt(0).toUpperCase() + staffMember.status.slice(1)}
                         </span>
-                      </div>
-                      <div className="mt-2 space-y-1 text-xs md:text-sm text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
-                          <span className="truncate">{staffMember.email}</span>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {staffMember.firstName} {staffMember.lastName}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {staffMember.position} • {staffMember.email}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Hired: {new Date(staffMember.hireDate).toLocaleDateString()}
+                            {staffMember.phone && ` • ${staffMember.phone}`}
+                          </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
-                          <span>{staffMember.phone || 'Not provided'}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Briefcase className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
-                          <span>{staffMember.position}</span>
-                          {staffMember.department && <span className="text-xs">• {staffMember.department}</span>}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
-                          <span>Hired: {new Date(staffMember.hireDate).toLocaleDateString()}</span>
-                        </div>
-                        {staffMember.salary && parseFloat(staffMember.salary) > 0 && (
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
-                            <span>₱{parseFloat(staffMember.salary).toLocaleString()}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
-
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    
+                    <div className="flex items-center space-x-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="gap-2 w-full sm:w-auto text-xs md:text-sm"
                         onClick={() => handleOpenEditDialog(staffMember)}
                       >
-                        <Edit2 className="h-3 w-3 md:h-4 md:w-4" />
                         Edit
                       </Button>
+                      
                       {staffMember.status === 'active' ? (
                         <Button
-                          size="sm"
-                          className="gap-2 w-full sm:w-auto text-xs md:text-sm"
                           variant="destructive"
+                          size="sm"
                           onClick={() => handleOpenRemoveDialog(staffMember)}
                         >
-                          <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
                           Remove
                         </Button>
                       ) : (
                         <Button
                           size="sm"
-                          className="gap-2 w-full sm:w-auto text-xs md:text-sm"
-                          variant="default"
                           onClick={() => handleToggleStatus(staffMember)}
+                          className="bg-blue-600 hover:bg-blue-700"
                         >
-                          <RotateCcw className="h-3 w-3 md:h-4 md:w-4" />
                           Activate
                         </Button>
                       )}

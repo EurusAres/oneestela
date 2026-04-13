@@ -259,60 +259,42 @@ export function CMSOfficeRoomEditor() {
         </Button>
       </div>
 
-      <div className="grid gap-3 md:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-4">
         {rooms.map((room) => (
-          <Card key={room.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <CardTitle className="text-sm md:text-base lg:text-lg truncate">{room.name}</CardTitle>
-                  <CardDescription className="mt-1">
-                    <Badge variant="outline" className="text-xs">{room.type}</Badge>
-                  </CardDescription>
-                </div>
-                <div className="flex gap-1 flex-shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEdit(room)}
-                  >
-                    <Edit className="h-3 w-3 md:h-4 md:w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(room.id)}
-                  >
-                    <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
-                  </Button>
+          <div key={room.id} className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${room.image_360_url ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <div>
+                  <p className="font-medium text-gray-900">{room.name}</p>
+                  <p className="text-sm text-gray-500">
+                    Capacity: {room.capacity} • ₱{room.price_per_hour}/month
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Available Rooms: {room.available_rooms || 1} • {room.type}
+                    {room.image_360_url && ' • 360° Available'}
+                  </p>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
-                <div className="flex items-center gap-2">
-                  <Users className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
-                  <span>Capacity: {room.capacity}</span>
-                </div>
-                {room.price_per_hour > 0 && (
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
-                    <span>₱{room.price_per_hour}/month</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
-                  <span>Available Rooms: {room.available_rooms || 1}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Camera className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
-                  <span className={room.image_360_url ? 'text-green-600' : 'text-gray-400'}>
-                    {room.image_360_url ? '360° Available' : 'No 360° image'}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(room)}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleDelete(room.id)}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
         ))}
       </div>
 
