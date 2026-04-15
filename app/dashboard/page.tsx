@@ -43,7 +43,7 @@ export default function DashboardPage() {
 
   const s = stats?.summary
   const bookingDelta = pctChange(stats?.thisMonth.bookings ?? 0, stats?.lastMonth.bookings ?? 0)
-  const revenueDelta = pctChange(stats?.thisMonth.revenue ?? 0, stats?.lastMonth.revenue ?? 0)
+  const salesDelta = pctChange(stats?.thisMonth.revenue ?? 0, stats?.lastMonth.revenue ?? 0)
 
   const handleStatusUpdate = async (id: string, status: "confirmed" | "cancelled") => {
     await updateBookingStatus(id, status)
@@ -121,17 +121,17 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">₱{(s?.totalRevenue ?? 0).toLocaleString()}</div>
               <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                {revenueDelta >= 0
+                {salesDelta >= 0
                   ? <TrendingUp className="h-3 w-3 text-green-500" />
                   : <TrendingDown className="h-3 w-3 text-red-500" />}
-                <span className={revenueDelta >= 0 ? "text-green-600" : "text-red-600"}>
-                  {revenueDelta >= 0 ? "+" : ""}{revenueDelta}%
+                <span className={salesDelta >= 0 ? "text-green-600" : "text-red-600"}>
+                  {salesDelta >= 0 ? "+" : ""}{salesDelta}%
                 </span> vs last month
               </p>
             </CardContent>
@@ -152,7 +152,7 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium">Monthly Sales</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -242,7 +242,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-                <TrendingUp className="h-4 w-4" /> Monthly Revenue (₱)
+                <TrendingUp className="h-4 w-4" /> Monthly Sales (₱)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -252,7 +252,7 @@ export default function DashboardPage() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(v) => [`₱${Number(v).toLocaleString()}`, "Revenue"]} />
+                    <Tooltip formatter={(v) => [`₱${Number(v).toLocaleString()}`, "Sales"]} />
                     <Area type="monotone" dataKey="amount" stroke="#22c55e" fill="#22c55e" fillOpacity={0.4} />
                   </AreaChart>
                 </ResponsiveContainer>

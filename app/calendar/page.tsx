@@ -11,11 +11,13 @@ import { Badge } from "@/components/ui/badge"
 import { useBookings } from "@/components/booking-context"
 import { useToast } from "@/hooks/use-toast"
 import { UnavailableDatesManager } from "@/components/unavailable-dates-manager"
-import { Calendar as CalendarIcon, Clock, Users, MapPin, CalendarX } from "lucide-react"
+import { UnavailableOfficeManager } from "@/components/unavailable-office-manager"
+import { Calendar as CalendarIcon, Clock, Users, MapPin, CalendarX, Building2 } from "lucide-react"
 
 export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [unavailableDatesOpen, setUnavailableDatesOpen] = useState(false)
+  const [unavailableOfficesOpen, setUnavailableOfficesOpen] = useState(false)
   const [adminUnavailableDates, setAdminUnavailableDates] = useState<any[]>([])
   const { getAllBookings } = useBookings()
   const { toast } = useToast()
@@ -105,6 +107,14 @@ export default function CalendarPage() {
             >
               <CalendarX className="h-4 w-4" />
               Manage Unavailable Dates
+            </Button>
+            <Button 
+              onClick={() => setUnavailableOfficesOpen(true)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Building2 className="h-4 w-4" />
+              Manage Unavailable Office Space
             </Button>
             <Badge variant="outline" className="gap-1 text-xs md:text-sm">
               <div className="w-2 h-2 md:w-3 md:h-3 bg-red-500 rounded-full"></div>
@@ -297,6 +307,12 @@ export default function CalendarPage() {
       <UnavailableDatesManager 
         open={unavailableDatesOpen} 
         onOpenChange={setUnavailableDatesOpen} 
+      />
+
+      {/* Unavailable Office Manager */}
+      <UnavailableOfficeManager 
+        open={unavailableOfficesOpen} 
+        onOpenChange={setUnavailableOfficesOpen} 
       />
     </MainLayout>
   )

@@ -76,7 +76,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       badge: pendingPayments > 0 ? pendingPayments : undefined,
       roles: ['admin', 'staff']
     },
-    { name: "Reports & Analytics", href: "/dashboard/reports", icon: BarChart3, roles: ['admin', 'staff'] },
+    { name: "Reports", href: "/dashboard/reports", icon: BarChart3, roles: ['admin', 'staff'] },
     { name: "Staff Management", href: "/dashboard/staff", icon: UserCheck, roles: ['admin'] },
     { name: "CMS - Content Management", href: "/dashboard/cms", icon: Settings, roles: ['admin'] },
     { name: "Reviews", href: "/reviews", icon: Star, roles: ['admin'] },

@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const venueId = searchParams.get('venueId');
     const includeAll = searchParams.get('includeAll') === 'true';
 
-    // Build query dynamically
+    // First, get all office rooms
     let query = 'SELECT * FROM office_rooms';
     const params: any[] = [];
 
@@ -30,12 +30,84 @@ export async function GET(request: NextRequest) {
 
     const rooms = await executeQuery(query, params);
 
-    // Ensure all rooms have the expected fields
-    const normalizedRooms = (rooms as any[]).map(room => ({
-      ...room,
-      image_360_url: room.image_360_url || '',
-      type: room.type || 'office'
-    }));
+    // Get unavailable rooms data with details
+    let unavailableRooms: any[] = [];
+    try {
+      const unavailableQuery = `
+        SELECT 
+          office_room_id, 
+          reason,
+          unavailable_rooms,
+          created_at
+        FROM unavailable_offices 
+        ORDER BY office_room_id, created_at
+      `;
+      unavailableRooms = await executeQuery(unavailableQuery, []) as any[];
+    } catch (error) {
+      console.log('Unavailable offices table not found or empty, using original available rooms');
+    }
+
+    // Get confirmed bookings for office spaces (exclude completed bookings)
+    let bookedRooms: any[] = [];
+    try {
+      const bookingsQuery = `
+        SELECT 
+          SUBSTRING(event_type, 8) as office_room_id,
+          COUNT(*) as booked_count
+        FROM bookings 
+        WHERE event_type LIKE 'office-%' 
+        AND status IN ('confirmed', 'pending')
+        GROUP BY event_type
+      `;
+      bookedRooms = await executeQuery(bookingsQuery, []) as any[];
+    } catch (error) {
+      console.log('Bookings table not found or empty, using original available rooms');
+    }
+
+    // Create maps for unavailable and booked rooms
+    const unavailableMap = new Map();
+    const unavailableEntriesMap = new Map();
+    
+    // Group unavailable rooms by office_room_id
+    unavailableRooms.forEach((item: any) => {
+      const roomId = item.office_room_id;
+      const currentCount = unavailableMap.get(roomId) || 0;
+      unavailableMap.set(roomId, currentCount + (parseInt(item.unavailable_rooms) || 0));
+      
+      const currentEntries = unavailableEntriesMap.get(roomId) || [];
+      currentEntries.push({
+        reason: item.reason,
+        unavailable_rooms: parseInt(item.unavailable_rooms) || 0,
+        created_at: item.created_at
+      });
+      unavailableEntriesMap.set(roomId, currentEntries);
+    });
+
+    const bookedMap = new Map();
+    bookedRooms.forEach((item: any) => {
+      const roomId = parseInt(item.office_room_id);
+      if (!isNaN(roomId)) {
+        bookedMap.set(roomId, parseInt(item.booked_count) || 0);
+      }
+    });
+
+    // Ensure all rooms have the expected fields and calculate actual available rooms
+    const normalizedRooms = (rooms as any[]).map(room => {
+      const unavailableCount = unavailableMap.get(room.id) || 0;
+      const bookedCount = bookedMap.get(room.id) || 0;
+      const totalOccupied = Number(unavailableCount) + Number(bookedCount);
+      const actualAvailableRooms = Math.max(0, Number(room.available_rooms || 0) - totalOccupied);
+      const unavailableEntries = unavailableEntriesMap.get(room.id) || [];
+      
+      return {
+        ...room,
+        image_360_url: room.image_360_url || '',
+        type: room.type || 'office',
+        available_rooms: actualAvailableRooms,
+        unavailable_entries: unavailableEntries,
+        unavailable_count: unavailableCount
+      };
+    });
 
     return NextResponse.json({ rooms: normalizedRooms });
   } catch (error) {

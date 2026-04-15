@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MessageCircle, X, Send, Minimize2, Maximize2, Check, CheckCheck, Bot, User, Sparkles } from "lucide-react"
+import { MessageCircle, X, Send, Minimize2, Maximize2, Check, CheckCheck, Bot, User, Sparkles, HelpCircle } from "lucide-react"
 import { useChat } from "@/components/chat-context"
 import { useAuth } from "@/components/auth-context"
 import { useChatbot } from "@/components/chatbot-service"
@@ -63,8 +63,23 @@ export function ChatWidget() {
   const [messageInput, setMessageInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [chatMode, setChatMode] = useState<"bot" | "human">("bot")
+  const [showPredefinedQuestions, setShowPredefinedQuestions] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Predefined questions that appear for new accounts
+  const predefinedQuestions = [
+    "Check venue availability",
+    "View office spaces",
+    "Get pricing information",
+    "Learn about reservation process",
+  ]
+
+  const handlePredefinedQuestionClick = (question: string) => {
+    setMessageInput(question)
+    setShowPredefinedQuestions(false)
+    inputRef.current?.focus()
+  }
 
   // Determine which messages to show based on mode and escalation
   const displayMessages = chatMode === "bot" && !isEscalated ? botMessages : getChatHistory()
@@ -255,6 +270,15 @@ export function ChatWidget() {
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={() => setShowPredefinedQuestions(!showPredefinedQuestions)}
+                className={cn("h-8 w-8 text-white", chatMode === "bot" ? "hover:bg-green-700" : "hover:bg-blue-700")}
+                title="Quick Questions"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setIsMinimized(!isMinimized)}
                 className={cn("h-8 w-8 text-white", chatMode === "bot" ? "hover:bg-green-700" : "hover:bg-blue-700")}
               >
@@ -297,6 +321,25 @@ export function ChatWidget() {
                     Human Support
                   </Button>
                 </div>
+                
+                {/* Predefined Questions Dropdown */}
+                {showPredefinedQuestions && (
+                  <div className="mt-2 p-2 bg-white rounded border border-gray-200">
+                    <div className="space-y-1">
+                      {predefinedQuestions.map((question, index) => (
+                        <Button
+                          key={index}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePredefinedQuestionClick(question)}
+                          className="w-full text-left justify-start text-xs h-7 hover:bg-gray-100"
+                        >
+                          {question}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Messages Area */}

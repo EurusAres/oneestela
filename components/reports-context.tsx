@@ -31,7 +31,7 @@ interface ReportsContextType {
   isLoading: boolean
   // Legacy fields kept for backward compat with reports page
   bookingReport: any
-  revenueReport: any
+  salesReport: any
   inquiryReport: any
   customerReport: any
 }
@@ -94,7 +94,7 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
     weeklyBookings: [],
   }
 
-  const revenueReport = {
+  const salesReport = {
     totalRevenue: s.summary.totalRevenue,
     monthlyRevenue: s.monthlyRevenue.map(m => ({ month: m.month, amount: m.amount })),
     revenueByEventType: s.bookingsByRoom.map(r => ({ eventType: r.area, amount: 0 })),
@@ -128,7 +128,7 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <ReportsContext.Provider value={{ stats, generateReports, isLoading, bookingReport, revenueReport, inquiryReport, customerReport }}>
+    <ReportsContext.Provider value={{ stats, generateReports, isLoading, bookingReport, salesReport, inquiryReport, customerReport }}>
       {children}
     </ReportsContext.Provider>
   )

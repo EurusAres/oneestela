@@ -7,10 +7,12 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useUsers } from '@/components/users-context'
-import { Users, Mail, CheckCircle, AlertCircle, Phone, Calendar, RefreshCw, UserCheck, Shield } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { Users, Mail, Phone, Calendar, RefreshCw, UserCheck, Shield, Trash2 } from 'lucide-react'
 
 export default function UsersPage() {
   const { users, stats, isLoading, refreshUsers } = useUsers()
+  const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredUsers = users.filter(
@@ -42,6 +44,37 @@ export default function UsersPage() {
     }
   }
 
+  const handleDeleteUser = async (user: any) => {
+    if (!confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: user.id })
+      })
+
+      if (response.ok) {
+        toast({
+          title: 'Success',
+          description: 'User deleted successfully'
+        })
+        refreshUsers()
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete user')
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete user',
+        variant: 'destructive'
+      })
+    }
+  }
+
   if (isLoading) {
     return (
       <MainLayout>
@@ -62,7 +95,7 @@ export default function UsersPage() {
           <div>
             <h1 className="text-3xl font-bold">User Information</h1>
             <p className="text-muted-foreground mt-1">
-              View all registered user accounts and their details. Read-only administrative reference.
+              View registered user accounts and their details. Delete user accounts when necessary.
             </p>
           </div>
           <Button onClick={refreshUsers} variant="outline" size="sm">
@@ -134,7 +167,7 @@ export default function UsersPage() {
                       <th className="h-12 px-4 text-left font-medium">Phone</th>
                       <th className="h-12 px-4 text-left font-medium">Role</th>
                       <th className="h-12 px-4 text-left font-medium">Registered</th>
-                      <th className="h-12 px-4 text-left font-medium">Status</th>
+                      <th className="h-12 px-4 text-left font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -171,15 +204,15 @@ export default function UsersPage() {
                             </div>
                           </td>
                           <td className="p-4">
-                            <span
-                              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                                user.status === 'Active'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-amber-100 text-amber-800'
-                              }`}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteUser(user)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              {user.status}
-                            </span>
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
                           </td>
                         </tr>
                       ))
@@ -195,11 +228,11 @@ export default function UsersPage() {
               </div>
             </div>
 
-            {/* Read-Only Notice */}
+            {/* Updated Notice */}
             <div className="mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200">
               <p className="text-sm text-blue-800">
-                <strong>Read-Only Access:</strong> This module displays registered user account information for administrative reference only.
-                User accounts are managed through the registration system and staff management for staff roles.
+                <strong>User Management:</strong> You can view user information and delete accounts when necessary. 
+                Deleted users will be permanently removed from the database.
               </p>
             </div>
           </CardContent>
