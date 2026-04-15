@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 const COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6"]
 
 export default function ReportsPage() {
-  const { stats, bookingReport, revenueReport, inquiryReport, customerReport, generateReports, isLoading } = useReports()
+  const { stats, bookingReport, salesReport, inquiryReport, customerReport, generateReports, isLoading } = useReports()
   const { toast } = useToast()
 
   const handleExport = (type: string) => {
@@ -34,7 +34,7 @@ export default function ReportsPage() {
       textContent += `  - Cancelled: ${stats.summary?.cancelled ?? 0}\n`
       textContent += `  - Completed: ${stats.summary?.completed ?? 0}\n\n`
       
-      textContent += `Total Revenue: ₱${(stats.summary?.totalRevenue ?? 0).toLocaleString()}\n`
+      textContent += `Total Sales: ₱${(stats.summary?.totalRevenue ?? 0).toLocaleString()}\n`
       textContent += `Total Customers: ${stats.summary?.totalUsers ?? 0}\n`
       textContent += `Average Rating: ${stats.summary?.avgRating ?? "N/A"} ★\n`
       textContent += `Total Reviews: ${stats.summary?.totalReviews ?? 0}\n\n`
@@ -42,12 +42,12 @@ export default function ReportsPage() {
       textContent += `THIS MONTH\n`
       textContent += `${"-".repeat(60)}\n`
       textContent += `Bookings: ${stats.thisMonth?.bookings ?? 0}\n`
-      textContent += `Revenue: ₱${(stats.thisMonth?.revenue ?? 0).toLocaleString()}\n\n`
+      textContent += `Sales: ₱${(stats.thisMonth?.revenue ?? 0).toLocaleString()}\n\n`
 
       textContent += `LAST MONTH\n`
       textContent += `${"-".repeat(60)}\n`
       textContent += `Bookings: ${stats.lastMonth?.bookings ?? 0}\n`
-      textContent += `Revenue: ₱${(stats.lastMonth?.revenue ?? 0).toLocaleString()}\n\n`
+      textContent += `Sales: ₱${(stats.lastMonth?.revenue ?? 0).toLocaleString()}\n\n`
 
       if (stats.monthlyBookings && stats.monthlyBookings.length > 0) {
         textContent += `MONTHLY BOOKINGS\n`
@@ -59,7 +59,7 @@ export default function ReportsPage() {
       }
 
       if (stats.monthlyRevenue && stats.monthlyRevenue.length > 0) {
-        textContent += `MONTHLY REVENUE\n`
+        textContent += `MONTHLY SALES\n`
         textContent += `${"-".repeat(60)}\n`
         stats.monthlyRevenue.forEach((mr: any) => {
           textContent += `${mr.month}: ₱${Number(mr.amount).toLocaleString()}\n`
@@ -96,7 +96,7 @@ export default function ReportsPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Business Reports & Analytics</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">Business Reports</h1>
             <p className="text-sm md:text-base text-muted-foreground">Live data from your venue database</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -127,7 +127,7 @@ export default function ReportsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs md:text-sm font-medium">Total Revenue</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Total Sales</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -154,7 +154,7 @@ export default function ReportsPage() {
             <TabsList className="inline-flex w-full sm:w-auto grid-cols-2 sm:grid-cols-4">
               <TabsTrigger value="monthly" className="text-xs sm:text-sm">Monthly Summary</TabsTrigger>
               <TabsTrigger value="bookings" className="text-xs sm:text-sm">Booking Report</TabsTrigger>
-              <TabsTrigger value="revenue" className="text-xs sm:text-sm">Financial Report</TabsTrigger>
+              <TabsTrigger value="revenue" className="text-xs sm:text-sm">Sales Report</TabsTrigger>
               <TabsTrigger value="customers" className="text-xs sm:text-sm">Customer Report</TabsTrigger>
             </TabsList>
           </div>
@@ -165,9 +165,9 @@ export default function ReportsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                   <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-indigo-600" />
-                  Monthly Bookings & Revenue
+                  Monthly Bookings & Sales
                 </CardTitle>
-                <CardDescription className="text-xs md:text-sm">Combined view of bookings and revenue per month</CardDescription>
+                <CardDescription className="text-xs md:text-sm">Combined view of bookings and sales per month</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="w-full overflow-x-auto">
@@ -177,7 +177,7 @@ export default function ReportsPage() {
                       <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                       <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
                       <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-                      <Tooltip formatter={(v, name) => name === "revenue" ? [`₱${Number(v).toLocaleString()}`, "Revenue"] : [v, "Bookings"]} />
+                      <Tooltip formatter={(v, name) => name === "revenue" ? [`₱${Number(v).toLocaleString()}`, "Sales"] : [v, "Bookings"]} />
                       <Bar yAxisId="left" dataKey="bookings" fill="#6366f1" radius={[4,4,0,0]} name="bookings" />
                       <Bar yAxisId="right" dataKey="revenue" fill="#22c55e" radius={[4,4,0,0]} name="revenue" />
                     </BarChart>
@@ -192,7 +192,7 @@ export default function ReportsPage() {
                   <tr className="border-b bg-gray-50">
                     <th className="px-4 py-3 text-left font-medium">Month</th>
                     <th className="px-4 py-3 text-left font-medium">Bookings</th>
-                    <th className="px-4 py-3 text-left font-medium">Revenue</th>
+                    <th className="px-4 py-3 text-left font-medium">Sales</th>
                     <th className="px-4 py-3 text-left font-medium">Avg per Booking</th>
                   </tr>
                 </thead>
@@ -222,7 +222,7 @@ export default function ReportsPage() {
               </Card>
               <Card className="bg-green-50 border-green-200">
                 <CardContent className="pt-4">
-                  <div className="text-xs md:text-sm text-green-600 font-medium">This Month Revenue</div>
+                  <div className="text-xs md:text-sm text-green-600 font-medium">This Month Sales</div>
                   <div className="text-2xl md:text-3xl font-bold text-green-700">₱{(stats?.thisMonth.revenue ?? 0).toLocaleString()}</div>
                 </CardContent>
               </Card>
@@ -345,21 +345,21 @@ export default function ReportsPage() {
             </div>
           </TabsContent>
 
-          {/* Financial Report */}
+          {/* Sales Report */}
           <TabsContent value="revenue" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Monthly Revenue Trend</CardTitle>
+                  <CardTitle>Monthly Sales Trend</CardTitle>
                   <CardDescription>Revenue growth over time</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={280}>
-                    <LineChart data={revenueReport.monthlyRevenue}>
+                    <LineChart data={salesReport.monthlyRevenue}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                       <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip formatter={(v) => [`₱${Number(v).toLocaleString()}`, "Revenue"]} />
+                      <Tooltip formatter={(v) => [`₱${Number(v).toLocaleString()}`, "Sales"]} />
                       <Line type="monotone" dataKey="amount" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -368,30 +368,30 @@ export default function ReportsPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Revenue by Room</CardTitle>
+                  <CardTitle>Sales by Room</CardTitle>
                   <CardDescription>Income breakdown by space</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {revenueReport.revenueByEventType.length > 0 ? (
+                  {salesReport.revenueByEventType.length > 0 ? (
                     <ResponsiveContainer width="100%" height={280}>
                       <PieChart>
                         <Pie
-                          data={revenueReport.revenueByEventType}
+                          data={salesReport.revenueByEventType}
                           cx="50%" cy="50%"
                           outerRadius={90}
                           dataKey="amount"
                           label={({ eventType, percent }) => `${eventType} ${(percent * 100).toFixed(0)}%`}
                         >
-                          {revenueReport.revenueByEventType.map((_: any, i: number) => (
+                          {salesReport.revenueByEventType.map((_: any, i: number) => (
                             <Cell key={i} fill={COLORS[i % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(v) => [`₱${Number(v).toLocaleString()}`, "Revenue"]} />
+                        <Tooltip formatter={(v) => [`₱${Number(v).toLocaleString()}`, "Sales"]} />
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
                     <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
-                      No revenue data yet
+                      No sales data yet
                     </div>
                   )}
                 </CardContent>
@@ -403,7 +403,7 @@ export default function ReportsPage() {
                 <CardHeader><CardTitle>Payment Status</CardTitle></CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {revenueReport.paymentStatus.map((st: any, i: number) => (
+                    {salesReport.paymentStatus.map((st: any, i: number) => (
                       <div key={i} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
@@ -415,7 +415,7 @@ export default function ReportsPage() {
                         </div>
                       </div>
                     ))}
-                    {revenueReport.paymentStatus.length === 0 && (
+                    {salesReport.paymentStatus.length === 0 && (
                       <p className="text-sm text-muted-foreground">No data yet</p>
                     )}
                   </div>
@@ -423,10 +423,10 @@ export default function ReportsPage() {
               </Card>
 
               <Card>
-                <CardHeader><CardTitle>Financial Summary</CardTitle></CardHeader>
+                <CardHeader><CardTitle>Sales Summary</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                    <span className="text-sm font-medium">Total Revenue</span>
+                    <span className="text-sm font-medium">Total Sales</span>
                     <span className="font-bold text-green-600">₱{(s?.totalRevenue ?? 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg">
@@ -442,8 +442,8 @@ export default function ReportsPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button variant="outline" onClick={() => handleExport("financial")}>
-                <Download className="mr-2 h-4 w-4" /> Export Financial Report
+              <Button variant="outline" onClick={() => handleExport("sales")}>
+                <Download className="mr-2 h-4 w-4" /> Export Sales Report
               </Button>
             </div>
           </TabsContent>

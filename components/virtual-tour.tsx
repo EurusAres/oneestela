@@ -48,6 +48,12 @@ interface TourArea {
   description: string
   capacity?: string
   availableRooms?: number
+  unavailableEntries?: Array<{
+    reason: string
+    unavailable_rooms: number
+    created_at: string
+  }>
+  unavailableCount?: number
   amenities?: string[]
   angles: TourAngle[]
   category: "event" | "office"
@@ -71,29 +77,6 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
   const [allBookings, setAllBookings] = useState<any[]>([])
   const [unavailableDates, setUnavailableDates] = useState<any[]>([])
   const tourRef = useRef<HTMLDivElement>(null)
-
-  // Calculate available rooms based on current bookings
-  const calculateAvailableRooms = (room: any, bookings: any[]) => {
-    const totalRooms = room.available_rooms || 1
-    
-    // Count confirmed office bookings for this specific room
-    const occupiedRooms = bookings.filter((booking: any) => {
-      return booking.event_type === `office-${room.id}` && 
-             (booking.status === 'confirmed' || booking.status === 'pending')
-    }).length
-    
-    // Calculate available rooms (minimum 0)
-    const available = Math.max(0, totalRooms - occupiedRooms)
-    
-    console.log(`Room ${room.name} (ID: ${room.id}):`, {
-      totalRooms,
-      occupiedRooms,
-      available,
-      bookings: bookings.filter(b => b.event_type === `office-${room.id}`)
-    })
-    
-    return available
-  }
 
   // Fetch venues and office spaces from CMS
   useEffect(() => {
@@ -226,7 +209,9 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
               name: room.name,
               description: room.description || 'Modern office space with premium amenities',
               capacity: room.capacity ? `Capacity: ${room.capacity}` : undefined,
-              availableRooms: calculateAvailableRooms(room, bookingsData.bookings || []),
+              availableRooms: room.available_rooms, // Use the corrected value from API
+              unavailableEntries: room.unavailable_entries || [],
+              unavailableCount: room.unavailable_count || 0,
               amenities: room.amenities ? JSON.parse(room.amenities) : [],
               category: 'office',
               floor,
@@ -518,7 +503,7 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                           {currentArea.capacity}
                         </Badge>
                       )}
-                      {currentArea.availableRooms && currentArea.category === 'office' && (
+                      {currentArea.availableRooms !== undefined && currentArea.category === 'office' && (
                         <Badge variant="secondary" className={`${
                           currentArea.availableRooms === 0 
                             ? "bg-red-600/80 text-white" 
@@ -908,6 +893,68 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                         <div className="flex items-center gap-1">
                           <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                           <span>Maintenance</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Unavailable Rooms Panel - Bottom Left - Only show for office spaces with unavailable rooms */}
+              {currentArea.unavailableCount && currentArea.unavailableCount > 0 && currentArea.category === 'office' && (
+                <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border max-w-sm">
+                  <div className="p-3">
+                    <h4 className="font-semibold text-sm mb-2 flex items-center text-orange-600">
+                      <Building2 className="w-4 h-4 mr-2" />
+                      Unavailable Rooms
+                    </h4>
+                    <div className="text-xs text-gray-600 mb-2">
+                      Some rooms in this office space are currently unavailable:
+                    </div>
+                    <div className="max-h-32 overflow-y-auto space-y-2">
+                      {currentArea.unavailableEntries && (() => {
+                        // Group entries by reason and sum up the rooms
+                        const groupedEntries = currentArea.unavailableEntries.reduce((acc: any, entry: any) => {
+                          const reason = entry.reason;
+                          if (acc[reason]) {
+                            acc[reason].unavailable_rooms += entry.unavailable_rooms;
+                            // Keep the earliest date
+                            if (new Date(entry.created_at) < new Date(acc[reason].created_at)) {
+                              acc[reason].created_at = entry.created_at;
+                            }
+                          } else {
+                            acc[reason] = {
+                              reason: entry.reason,
+                              unavailable_rooms: entry.unavailable_rooms,
+                              created_at: entry.created_at
+                            };
+                          }
+                          return acc;
+                        }, {});
+                        
+                        return Object.values(groupedEntries).map((entry: any, index: number) => (
+                          <div key={index} className="flex items-start text-xs">
+                            <div className="w-2 h-2 rounded-full mr-2 flex-shrink-0 mt-1 bg-orange-500"></div>
+                            <div className="flex-1">
+                              <span className="font-medium text-gray-800 block">
+                                {entry.unavailable_rooms} room{entry.unavailable_rooms !== 1 ? 's' : ''} - {entry.reason}
+                              </span>
+                              <span className="text-gray-500 text-xs">
+                                Since {new Date(entry.created_at).toLocaleDateString("en-US", { 
+                                  month: "short", 
+                                  day: "numeric"
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                    <div className="mt-2 pt-2 border-t text-xs text-gray-500">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                          <span>Admin Marked</span>
                         </div>
                       </div>
                     </div>
