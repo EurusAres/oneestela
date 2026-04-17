@@ -53,7 +53,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
             id: b.id?.toString(),
             userId: b.userId || b.user_id?.toString(),
             eventName: b.eventName || b.event_name || 'Event Booking',
-            eventType: b.eventType || b.event_type || 'general',
+            eventType: b.room_name || b.eventType || b.event_type || 'general', // Use resolved room/venue name
             guestCount: b.guestCount || b.number_of_guests || 0,
             date: b.date || (b.check_in_date ? b.check_in_date.split('T')[0] : ''),
             startTime: b.startTime || (b.check_in_date ? new Date(b.check_in_date).toTimeString().slice(0,5) : ''),

@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Verify code
+      // Verify code with robust comparison
       const storedCode = String(passwordResetVerification.code).trim();
       const providedCode = String(code).trim();
       
@@ -66,7 +66,12 @@ export async function POST(request: NextRequest) {
       console.log('Match:', storedCode === providedCode);
       console.log('='.repeat(50));
       
-      if (storedCode !== providedCode) {
+      // More robust comparison - handle both string and number types
+      const codesMatch = storedCode === providedCode || 
+                        String(passwordResetVerification.code) === String(code) ||
+                        parseInt(storedCode) === parseInt(providedCode);
+      
+      if (!codesMatch) {
         return NextResponse.json(
           { error: 'Invalid verification code' },
           { status: 400 }
@@ -114,16 +119,26 @@ export async function POST(request: NextRequest) {
     const storedCode = String(emailVerification.code).trim();
     const providedCode = String(code).trim();
     
+    // Verify code with robust comparison
+    const storedCode = String(emailVerification.code).trim();
+    const providedCode = String(code).trim();
+    
     console.log('='.repeat(50));
-    console.log('EMAIL VERIFICATION');
+    console.log('EMAIL VERIFICATION DEBUG');
     console.log('='.repeat(50));
     console.log('Email:', email);
-    console.log('Stored code:', storedCode);
-    console.log('Provided code:', providedCode);
+    console.log('Stored code (raw):', emailVerification.code);
+    console.log('Stored code (string):', storedCode);
+    console.log('Provided code (string):', providedCode);
     console.log('Match:', storedCode === providedCode);
     console.log('='.repeat(50));
     
-    if (storedCode !== providedCode) {
+    // More robust comparison - handle both string and number types
+    const codesMatch = storedCode === providedCode || 
+                      String(emailVerification.code) === String(code) ||
+                      parseInt(storedCode) === parseInt(providedCode);
+    
+    if (!codesMatch) {
       return NextResponse.json(
         { error: 'Invalid verification code' },
         { status: 400 }
