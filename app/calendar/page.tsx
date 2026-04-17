@@ -77,6 +77,31 @@ export default function CalendarPage() {
       })
     : []
 
+  // Find admin unavailable dates for the selected date
+  const unavailableDatesForSelectedDate = date
+    ? adminUnavailableDates.filter((unavailable) => {
+        // Parse date string properly to avoid timezone issues
+        const dateStr = unavailable.date
+        let unavailableDate: Date
+        
+        if (dateStr.includes('-')) {
+          const [year, month, day] = dateStr.split('-').map(Number)
+          unavailableDate = new Date(year, month - 1, day)
+        } else {
+          unavailableDate = new Date(dateStr)
+        }
+        
+        return (
+          unavailableDate.getDate() === date.getDate() &&
+          unavailableDate.getMonth() === date.getMonth() &&
+          unavailableDate.getFullYear() === date.getFullYear()
+        )
+      })
+    : []
+
+  // Combine bookings and unavailable dates for display
+  const totalEventsForSelectedDate = bookingsForSelectedDate.length + unavailableDatesForSelectedDate.length
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -230,72 +255,116 @@ export default function CalendarPage() {
                 })}
               </CardTitle>
               <CardDescription className="text-xs md:text-sm">
-                {bookingsForSelectedDate.length === 0
-                  ? "No bookings scheduled for this date"
-                  : `${bookingsForSelectedDate.length} booking(s) scheduled`}
+                {totalEventsForSelectedDate === 0
+                  ? "No bookings or unavailable dates scheduled for this date"
+                  : `${bookingsForSelectedDate.length} booking(s)${unavailableDatesForSelectedDate.length > 0 ? ` and ${unavailableDatesForSelectedDate.length} unavailable date(s)` : ''} scheduled`}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 md:space-y-4">
-                {bookingsForSelectedDate.length === 0 ? (
+                {totalEventsForSelectedDate === 0 ? (
                   <div className="text-center py-6 md:py-8 text-gray-500">
                     <CalendarIcon className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-2 text-gray-300" />
                     <p className="text-xs md:text-sm">No events on this date</p>
                   </div>
                 ) : (
-                  bookingsForSelectedDate.map((booking) => (
-                    <div key={booking.id} className="rounded-lg border p-3 md:p-4 space-y-2 md:space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-semibold text-sm md:text-base lg:text-lg truncate">{booking.eventName}</h4>
-                          <p className="text-xs md:text-sm text-muted-foreground capitalize">{booking.eventType}</p>
+                  <>
+                    {/* Display customer bookings */}
+                    {bookingsForSelectedDate.map((booking) => (
+                      <div key={booking.id} className="rounded-lg border p-3 md:p-4 space-y-2 md:space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-semibold text-sm md:text-base lg:text-lg truncate">{booking.eventName}</h4>
+                            <p className="text-xs md:text-sm text-muted-foreground capitalize">{booking.eventType}</p>
+                          </div>
+                          <Badge className={`${getStatusColor(booking.status)} text-xs flex-shrink-0`}>
+                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          </Badge>
                         </div>
-                        <Badge className={`${getStatusColor(booking.status)} text-xs flex-shrink-0`}>
-                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                        </Badge>
-                      </div>
 
-                      <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Users className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
-                          <span>{booking.guestCount} guests</span>
+                        <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Users className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                            <span>{booking.guestCount} guests</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Clock className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                            <span>
+                              {booking.startTime} - {booking.endTime}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Users className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                            <span className="truncate">{booking.userInfo?.name || "Unknown"}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Clock className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
-                          <span>
-                            {booking.startTime} - {booking.endTime}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Users className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
-                          <span className="truncate">{booking.userInfo?.name || "Unknown"}</span>
+
+                        {booking.specialRequests && (
+                          <div className="pt-2 border-t">
+                            <p className="text-xs font-medium text-gray-700">Special Requests:</p>
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{booking.specialRequests}</p>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 text-xs md:text-sm"
+                            onClick={() => {
+                              toast({
+                                title: "Booking Details",
+                                description: `Booking ID: ${booking.id}`,
+                              })
+                            }}
+                          >
+                            View Details
+                          </Button>
                         </div>
                       </div>
+                    ))}
 
-                      {booking.specialRequests && (
-                        <div className="pt-2 border-t">
-                          <p className="text-xs font-medium text-gray-700">Special Requests:</p>
-                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">{booking.specialRequests}</p>
+                    {/* Display admin unavailable dates */}
+                    {unavailableDatesForSelectedDate.map((unavailable, index) => (
+                      <div key={`unavailable-${index}`} className="rounded-lg border border-orange-200 bg-orange-50 p-3 md:p-4 space-y-2 md:space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-semibold text-sm md:text-base lg:text-lg truncate text-orange-800">
+                              {unavailable.venue_name} - Unavailable
+                            </h4>
+                            <p className="text-xs md:text-sm text-orange-600">Admin marked as unavailable - {unavailable.reason}</p>
+                          </div>
+                          <Badge className="bg-orange-100 text-orange-800 text-xs flex-shrink-0">
+                            Unavailable
+                          </Badge>
                         </div>
-                      )}
 
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 text-xs md:text-sm"
-                          onClick={() => {
-                            toast({
-                              title: "Booking Details",
-                              description: `Booking ID: ${booking.id}`,
-                            })
-                          }}
-                        >
-                          View Details
-                        </Button>
+                        <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
+                          <div className="flex items-center gap-2 text-orange-700">
+                            <MapPin className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                            <span>Venue: {unavailable.venue_name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-orange-700">
+                            <CalendarX className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                            <span>Reason: {unavailable.reason}</span>
+                          </div>
+                          {unavailable.notes && (
+                            <div className="flex items-center gap-2 text-orange-700">
+                              <Users className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                              <span>Notes: {unavailable.notes}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {unavailable.notes && (
+                          <div className="pt-2 border-t border-orange-200">
+                            <p className="text-xs font-medium text-orange-800">Additional Notes:</p>
+                            <p className="text-xs text-orange-700 mt-1 line-clamp-2">{unavailable.notes}</p>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))
+                    ))}
+                  </>
                 )}
               </div>
             </CardContent>

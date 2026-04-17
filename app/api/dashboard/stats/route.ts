@@ -98,6 +98,32 @@ export async function GET() {
       ORDER BY month ASC
     `) as any[];
 
+    // Reviews stats
+    const [[reviewStats]] = await Promise.all([
+      executeQuery(`
+        SELECT COUNT(*) as total_reviews,
+               AVG(rating) as avg_rating,
+               SUM(CASE WHEN is_approved = 1 THEN 1 ELSE 0 END) as approved_reviews,
+               SUM(CASE WHEN is_featured = 1 THEN 1 ELSE 0 END) as featured_reviews
+        FROM reviews
+      `) as any,
+    ]);
+
+    // Recent reviews (last 5 approved)
+    const recentReviews = await executeQuery(`
+      SELECT r.*, 
+             u.full_name, 
+             o.name as room_name,
+             v.name as venue_name
+      FROM reviews r
+      JOIN users u ON r.user_id = u.id
+      LEFT JOIN office_rooms o ON r.office_room_id = o.id
+      LEFT JOIN venues v ON r.venue_id = v.id
+      WHERE r.is_approved = 1
+      ORDER BY r.created_at DESC
+      LIMIT 5
+    `) as any[];
+
 
 
     // Contact messages stats
@@ -145,6 +171,10 @@ export async function GET() {
         totalUsers: userStats.total_users,
         unreadMessages: msgStats.unread,
         totalMessages: msgStats.total,
+        totalReviews: reviewStats.total_reviews,
+        avgRating: reviewStats.avg_rating ? parseFloat(reviewStats.avg_rating).toFixed(1) : null,
+        approvedReviews: reviewStats.approved_reviews,
+        featuredReviews: reviewStats.featured_reviews,
       },
       thisMonth: {
         bookings: thisMonth.count,
@@ -155,6 +185,7 @@ export async function GET() {
         revenue: parseFloat(lastMonth.revenue),
       },
       recentBookings,
+      recentReviews,
       monthlyBookings,
       monthlyRevenue,
       bookingsByRoom,

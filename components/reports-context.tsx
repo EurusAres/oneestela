@@ -14,10 +14,15 @@ export interface DashboardStats {
     totalUsers: number
     unreadMessages: number
     totalMessages: number
+    totalReviews: number
+    avgRating: string | null
+    approvedReviews: number
+    featuredReviews: number
   }
   thisMonth: { bookings: number; revenue: number }
   lastMonth: { bookings: number; revenue: number }
   recentBookings: any[]
+  recentReviews: any[]
   monthlyBookings: { month: string; count: number }[]
   monthlyRevenue: { month: string; amount: number }[]
   bookingsByRoom: { area: string; count: number }[]
@@ -37,10 +42,25 @@ interface ReportsContextType {
 }
 
 const defaultStats: DashboardStats = {
-  summary: { totalBookings: 0, confirmed: 0, pending: 0, cancelled: 0, completed: 0, totalRevenue: 0, totalUsers: 0, unreadMessages: 0, totalMessages: 0 },
+  summary: { 
+    totalBookings: 0, 
+    confirmed: 0, 
+    pending: 0, 
+    cancelled: 0, 
+    completed: 0, 
+    totalRevenue: 0, 
+    totalUsers: 0, 
+    unreadMessages: 0, 
+    totalMessages: 0,
+    totalReviews: 0,
+    avgRating: null,
+    approvedReviews: 0,
+    featuredReviews: 0
+  },
   thisMonth: { bookings: 0, revenue: 0 },
   lastMonth: { bookings: 0, revenue: 0 },
   recentBookings: [],
+  recentReviews: [],
   monthlyBookings: [],
   monthlyRevenue: [],
   bookingsByRoom: [],

@@ -65,21 +65,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing session
-    const savedUser = localStorage.getItem("user")
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser)
-        if (parsedUser && parsedUser.name && parsedUser.email) {
-          setUser(parsedUser)
-        } else {
+    // Check for existing session and validate with server
+    const checkSession = async () => {
+      const savedUser = localStorage.getItem("user")
+      const sessionUser = sessionStorage.getItem("user")
+      
+      if (savedUser || sessionUser) {
+        try {
+          const parsedUser = JSON.parse(savedUser || sessionUser || '{}')
+          if (parsedUser && parsedUser.name && parsedUser.email) {
+            // Validate session with server
+            try {
+              const response = await fetch("/api/auth/profile", {
+                method: "GET",
+                headers: { "Content-Type": "application/json" },
+              })
+              
+              if (response.ok) {
+                const serverUser = await response.json()
+                // Update user data from server (in case of changes)
+                const validatedUser = {
+                  id: serverUser.id,
+                  name: serverUser.name,
+                  email: serverUser.email,
+                  avatar: serverUser.avatar || "/placeholder.svg?height=40&width=40",
+                  role: serverUser.role || "user",
+                }
+                setUser(validatedUser)
+                
+                // Update stored user data
+                if (savedUser) {
+                  localStorage.setItem("user", JSON.stringify(validatedUser))
+                } else {
+                  sessionStorage.setItem("user", JSON.stringify(validatedUser))
+                }
+              } else {
+                // Session invalid, clear storage
+                localStorage.removeItem("user")
+                sessionStorage.removeItem("user")
+                setUser(null)
+              }
+            } catch (error) {
+              console.error("Session validation failed:", error)
+              // On network error, keep local session but don't auto-login
+              localStorage.removeItem("user")
+              sessionStorage.removeItem("user")
+              setUser(null)
+            }
+          } else {
+            localStorage.removeItem("user")
+            sessionStorage.removeItem("user")
+          }
+        } catch (error) {
           localStorage.removeItem("user")
+          sessionStorage.removeItem("user")
         }
-      } catch (error) {
-        localStorage.removeItem("user")
       }
+      setIsLoading(false)
     }
-    setIsLoading(false)
+    
+    checkSession()
   }, [])
 
   const login = async (email: string, password: string, rememberMe = false): Promise<boolean> => {
@@ -138,7 +183,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role: data.role || "user",
         }
         setUser(newUser)
-        localStorage.setItem("user", JSON.stringify(newUser))
+        // Only save to sessionStorage for new signups (temporary session)
+        sessionStorage.setItem("user", JSON.stringify(newUser))
         return true
       }
       return false
@@ -175,6 +221,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
     localStorage.removeItem("user")
     sessionStorage.removeItem("user")
+    localStorage.removeItem("rememberedEmail")
+    // Force page reload to ensure clean state
+    window.location.reload()
   }
 
   const updateUser = (updates: Partial<User>) => {

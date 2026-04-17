@@ -55,6 +55,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
   const [activeTab, setActiveTab] = useState("details")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [unavailableMessage, setUnavailableMessage] = useState<string>("")
+  const [clickedUnavailableDate, setClickedUnavailableDate] = useState<any>(null)
 
   // Calculate dates (1 month from today)
   const today = new Date()
@@ -194,6 +195,56 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
     return allReservedDates.some((reservedDate) => reservedDate.toDateString() === date.toDateString())
   }
 
+  // Get unavailable date details for a specific date
+  const getUnavailableDateDetails = (date: Date) => {
+    // Check admin unavailable dates
+    const adminUnavailable = adminUnavailableDates.find((unavailable) => {
+      const dateStr = unavailable.date
+      let unavailableDate: Date
+      
+      if (dateStr.includes('-')) {
+        const [year, month, day] = dateStr.split('-').map(Number)
+        unavailableDate = new Date(year, month - 1, day)
+      } else {
+        unavailableDate = new Date(dateStr)
+      }
+      
+      return unavailableDate.toDateString() === date.toDateString()
+    })
+
+    if (adminUnavailable) {
+      return {
+        type: 'admin',
+        venue: adminUnavailable.venue_name,
+        reason: adminUnavailable.reason,
+        notes: adminUnavailable.notes
+      }
+    }
+
+    // Check customer bookings
+    const customerBooking = allBookingsData.find((booking) => {
+      if (booking.status !== "confirmed" && booking.status !== "pending") return false
+      
+      const dateStr = booking.date || (booking.check_in_date ? booking.check_in_date.split('T')[0] : '')
+      if (!dateStr) return false
+      
+      const [year, month, day] = dateStr.split('-').map(Number)
+      const bookingDate = new Date(year, month - 1, day)
+      
+      return bookingDate.toDateString() === date.toDateString()
+    })
+
+    if (customerBooking) {
+      return {
+        type: 'booking',
+        eventName: customerBooking.eventName,
+        status: customerBooking.status
+      }
+    }
+
+    return null
+  }
+
   // Check if capacity is exceeded
   const isCapacityExceeded = () => {
     const capacity = getSelectedSpaceCapacity()
@@ -294,12 +345,43 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
     if (!date) {
       setSelectedDate(date)
       setUnavailableMessage("")
+      setClickedUnavailableDate(null)
+      return
+    }
+    
+    // Check if the date is reserved/unavailable
+    if (isDateReserved(date)) {
+      const details = getUnavailableDateDetails(date)
+      setClickedUnavailableDate(details)
+      
+      if (details?.type === 'admin') {
+        setUnavailableMessage(`⚠️ ${details.venue} is unavailable on this date due to ${details.reason.toLowerCase()}.`)
+      } else if (details?.type === 'booking') {
+        setUnavailableMessage(`⚠️ This date is already reserved by another customer.`)
+      } else {
+        setUnavailableMessage("⚠️ This date is already reserved or marked as unavailable and cannot be booked.")
+      }
+      
+      setTimeout(() => {
+        setUnavailableMessage("")
+        setClickedUnavailableDate(null)
+      }, 8000) // Clear after 8 seconds
+      
+      // Don't set the date as selected since it's unavailable
+      return
+    }
+    
+    if (date < minDate) {
+      setUnavailableMessage("⚠️ This date is unavailable. Reservations must be made at least 1 month in advance.")
+      setClickedUnavailableDate(null)
+      setTimeout(() => setUnavailableMessage(""), 5000) // Clear after 5 seconds
       return
     }
     
     // Only set the date if it's valid (not disabled)
     setSelectedDate(date)
     setUnavailableMessage("")
+    setClickedUnavailableDate(null)
   }
 
   const handleBookingSubmit = (e: React.FormEvent) => {
@@ -684,36 +766,12 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
               <div className="grid gap-6 md:grid-cols-[1.2fr_1fr]">
                 <div className="flex flex-col">
                   <Label className="text-base font-medium mb-2">Select Date</Label>
-                  <div 
-                    className="flex justify-center relative"
-                    onClick={(e) => {
-                      // Simple click handler
-                      const target = e.target as HTMLElement
-                      const buttonText = target.textContent?.trim()
-                      
-                      // Check if it's a number (day button)
-                      if (buttonText && /^\d+$/.test(buttonText)) {
-                        const day = parseInt(buttonText)
-                        const currentMonth = defaultMonth.getMonth()
-                        const currentYear = defaultMonth.getFullYear()
-                        const clickedDate = new Date(currentYear, currentMonth, day)
-                        
-                        // Check if this date is disabled/reserved
-                        if (isDateReserved(clickedDate)) {
-                          setUnavailableMessage("⚠️ This date is already reserved or marked as unavailable and cannot be booked.")
-                          setTimeout(() => setUnavailableMessage(""), 5000) // Clear after 5 seconds
-                        } else if (clickedDate < minDate) {
-                          setUnavailableMessage("⚠️ This date is unavailable. Reservations must be made at least 1 month in advance.")
-                          setTimeout(() => setUnavailableMessage(""), 5000) // Clear after 5 seconds
-                        }
-                      }
-                    }}
-                  >
+                  <div className="flex justify-center relative">
                     <Calendar
                       mode="single"
                       selected={selectedDate}
                       onSelect={handleDateSelect}
-                      disabled={(date) => date < minDate || isDateReserved(date)}
+                      disabled={(date) => date < minDate}
                       defaultMonth={defaultMonth}
                       fromDate={minDate}
                       modifiers={{
@@ -780,7 +838,25 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                   
                   {unavailableMessage && (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm text-red-800">{unavailableMessage}</p>
+                      <p className="text-sm text-red-800 font-medium">{unavailableMessage}</p>
+                      {clickedUnavailableDate?.type === 'admin' && (
+                        <div className="mt-2 space-y-1 text-xs text-red-700">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Venue:</span>
+                            <span>{clickedUnavailableDate.venue}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Reason:</span>
+                            <span>{clickedUnavailableDate.reason}</span>
+                          </div>
+                          {clickedUnavailableDate.notes && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-medium">Notes:</span>
+                              <span>{clickedUnavailableDate.notes}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                   

@@ -1,86 +1,321 @@
 "use client"
 
+import { useState } from "react"
 import { MainLayout } from "@/components/main-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 import { useReports } from "@/components/reports-context"
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, AreaChart, Area,
 } from "recharts"
-import { Calendar, DollarSign, Users, MessageSquare, RefreshCw, Download, Star, AlertCircle, TrendingUp } from "lucide-react"
+import { Calendar, DollarSign, Users, MessageSquare, RefreshCw, Download, Star, AlertCircle, TrendingUp, CalendarDays } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import jsPDF from "jspdf"
+import html2canvas from "html2canvas"
 
 const COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6"]
 
 export default function ReportsPage() {
   const { stats, bookingReport, salesReport, inquiryReport, customerReport, generateReports, isLoading } = useReports()
   const { toast } = useToast()
+  const [exportDateRange, setExportDateRange] = useState("all")
+  const [isExporting, setIsExporting] = useState(false)
 
-  const handleExport = (type: string) => {
-    // Format data as readable text
-    let textContent = `ONE ESTELA PLACE - ${type.toUpperCase()} REPORT\n`
-    textContent += `Generated: ${new Date().toLocaleString()}\n`
-    textContent += `${"=".repeat(60)}\n\n`
+  const handleExport = async (type: string) => {
+    try {
+      setIsExporting(true)
+      const doc = new jsPDF()
+      const pageWidth = doc.internal.pageSize.width
+      const pageHeight = doc.internal.pageSize.height
+      const margin = 20
+      let yPosition = 30
 
-    if (stats) {
-      textContent += `SUMMARY STATISTICS\n`
-      textContent += `${"-".repeat(60)}\n`
-      textContent += `Total Bookings: ${stats.summary?.totalBookings ?? 0}\n`
-      textContent += `  - Confirmed: ${stats.summary?.confirmed ?? 0}\n`
-      textContent += `  - Pending: ${stats.summary?.pending ?? 0}\n`
-      textContent += `  - Cancelled: ${stats.summary?.cancelled ?? 0}\n`
-      textContent += `  - Completed: ${stats.summary?.completed ?? 0}\n\n`
+      // Helper function to add text with word wrapping
+      const addText = (text: string, x: number, y: number, options: any = {}) => {
+        const maxWidth = pageWidth - (margin * 2)
+        const lines = doc.splitTextToSize(text, maxWidth)
+        doc.text(lines, x, y, options)
+        return y + (lines.length * (options.lineHeight || 7))
+      }
+
+      // Filter data based on selected date range
+      const filterDataByRange = (data: any[]) => {
+        if (exportDateRange === "all" || !data) return data
+        
+        const now = new Date()
+        const monthsBack = parseInt(exportDateRange)
+        const cutoffDate = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1)
+        
+        return data.filter((item: any) => {
+          if (item.month) {
+            const [monthName, year] = item.month.split(' ')
+            const monthIndex = new Date(Date.parse(monthName + " 1, 2000")).getMonth()
+            const itemDate = new Date(parseInt(year), monthIndex, 1)
+            return itemDate >= cutoffDate
+          }
+          return true
+        })
+      }
+
+      // Get filtered data
+      const filteredMonthlyBookings = filterDataByRange(stats?.monthlyBookings || [])
+      const filteredMonthlyRevenue = filterDataByRange(stats?.monthlyRevenue || [])
+
+      // Header
+      doc.setFontSize(20)
+      doc.setFont("helvetica", "bold")
+      yPosition = addText("ONE ESTELA PLACE", margin, yPosition)
       
-      textContent += `Total Sales: ₱${(stats.summary?.totalRevenue ?? 0).toLocaleString()}\n`
-      textContent += `Total Customers: ${stats.summary?.totalUsers ?? 0}\n`
-      textContent += `Average Rating: ${stats.summary?.avgRating ?? "N/A"} ★\n`
-      textContent += `Total Reviews: ${stats.summary?.totalReviews ?? 0}\n\n`
+      doc.setFontSize(16)
+      yPosition = addText(`${type.toUpperCase()} REPORT`, margin, yPosition + 5)
+      
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "normal")
+      yPosition = addText(`Generated: ${new Date().toLocaleString()}`, margin, yPosition + 10)
+      
+      const rangeText = exportDateRange === "all" ? "All Time" : `Last ${exportDateRange} Months`
+      yPosition = addText(`Date Range: ${rangeText}`, margin, yPosition + 5)
+      
+      // Add separator line
+      doc.setDrawColor(0, 0, 0)
+      doc.line(margin, yPosition + 5, pageWidth - margin, yPosition + 5)
+      yPosition += 20
 
-      textContent += `THIS MONTH\n`
-      textContent += `${"-".repeat(60)}\n`
-      textContent += `Bookings: ${stats.thisMonth?.bookings ?? 0}\n`
-      textContent += `Sales: ₱${(stats.thisMonth?.revenue ?? 0).toLocaleString()}\n\n`
-
-      textContent += `LAST MONTH\n`
-      textContent += `${"-".repeat(60)}\n`
-      textContent += `Bookings: ${stats.lastMonth?.bookings ?? 0}\n`
-      textContent += `Sales: ₱${(stats.lastMonth?.revenue ?? 0).toLocaleString()}\n\n`
-
-      if (stats.monthlyBookings && stats.monthlyBookings.length > 0) {
-        textContent += `MONTHLY BOOKINGS\n`
-        textContent += `${"-".repeat(60)}\n`
-        stats.monthlyBookings.forEach((mb: any) => {
-          textContent += `${mb.month}: ${mb.count} bookings\n`
-        })
-        textContent += `\n`
+      // Capture and add chart if available
+      const chartElement = document.getElementById('monthly-chart')
+      if (chartElement) {
+        try {
+          const canvas = await html2canvas(chartElement, {
+            backgroundColor: '#ffffff',
+            scale: 2,
+            logging: false,
+            useCORS: true
+          })
+          
+          const imgData = canvas.toDataURL('image/png')
+          const imgWidth = pageWidth - (margin * 2)
+          const imgHeight = (canvas.height * imgWidth) / canvas.width
+          
+          // Check if chart fits on current page
+          if (yPosition + imgHeight > pageHeight - 40) {
+            doc.addPage()
+            yPosition = 30
+          }
+          
+          doc.setFontSize(14)
+          doc.setFont("helvetica", "bold")
+          yPosition = addText("MONTHLY BOOKINGS & SALES CHART", margin, yPosition)
+          yPosition += 10
+          
+          doc.addImage(imgData, 'PNG', margin, yPosition, imgWidth, imgHeight)
+          yPosition += imgHeight + 20
+        } catch (chartError) {
+          console.warn('Could not capture chart:', chartError)
+        }
       }
 
-      if (stats.monthlyRevenue && stats.monthlyRevenue.length > 0) {
-        textContent += `MONTHLY SALES\n`
-        textContent += `${"-".repeat(60)}\n`
-        stats.monthlyRevenue.forEach((mr: any) => {
-          textContent += `${mr.month}: ₱${Number(mr.amount).toLocaleString()}\n`
-        })
-        textContent += `\n`
+      // Check if we need a new page
+      if (yPosition > pageHeight - 100) {
+        doc.addPage()
+        yPosition = 30
       }
+
+      if (stats) {
+        // Summary Statistics
+        doc.setFontSize(14)
+        doc.setFont("helvetica", "bold")
+        yPosition = addText("SUMMARY STATISTICS", margin, yPosition)
+        yPosition += 5
+
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "normal")
+        
+        const summaryData = [
+          `Total Bookings: ${stats.summary?.totalBookings ?? 0}`,
+          `  • Confirmed: ${stats.summary?.confirmed ?? 0}`,
+          `  • Pending: ${stats.summary?.pending ?? 0}`,
+          `  • Cancelled: ${stats.summary?.cancelled ?? 0}`,
+          `  • Completed: ${stats.summary?.completed ?? 0}`,
+          ``,
+          `Total Sales: ₱${(stats.summary?.totalRevenue ?? 0).toLocaleString()}`,
+          `Total Customers: ${stats.summary?.totalUsers ?? 0}`,
+          ``,
+          `Customer Reviews:`,
+          `  • Total Reviews: ${stats.summary?.totalReviews ?? 0}`,
+          `  • Average Rating: ${stats.summary?.avgRating ?? "N/A"} ★`,
+          `  • Approved Reviews: ${stats.summary?.approvedReviews ?? 0}`,
+          `  • Featured Reviews: ${stats.summary?.featuredReviews ?? 0}`,
+        ]
+
+        summaryData.forEach(line => {
+          yPosition = addText(line, margin, yPosition)
+          yPosition += 2
+        })
+
+        yPosition += 10
+
+        // This Month vs Last Month
+        doc.setFontSize(12)
+        doc.setFont("helvetica", "bold")
+        yPosition = addText("MONTHLY COMPARISON", margin, yPosition)
+        yPosition += 5
+
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "normal")
+        
+        const monthlyData = [
+          `This Month:`,
+          `  • Bookings: ${stats.thisMonth?.bookings ?? 0}`,
+          `  • Sales: ₱${(stats.thisMonth?.revenue ?? 0).toLocaleString()}`,
+          ``,
+          `Last Month:`,
+          `  • Bookings: ${stats.lastMonth?.bookings ?? 0}`,
+          `  • Sales: ₱${(stats.lastMonth?.revenue ?? 0).toLocaleString()}`,
+        ]
+
+        monthlyData.forEach(line => {
+          yPosition = addText(line, margin, yPosition)
+          yPosition += 2
+        })
+
+        yPosition += 10
+
+        // Check if we need a new page
+        if (yPosition > pageHeight - 80) {
+          doc.addPage()
+          yPosition = 30
+        }
+
+        // Monthly Bookings (filtered)
+        if (filteredMonthlyBookings && filteredMonthlyBookings.length > 0) {
+          doc.setFontSize(12)
+          doc.setFont("helvetica", "bold")
+          yPosition = addText(`MONTHLY BOOKINGS (${rangeText})`, margin, yPosition)
+          yPosition += 5
+
+          doc.setFontSize(10)
+          doc.setFont("helvetica", "normal")
+          
+          filteredMonthlyBookings.forEach((mb: any) => {
+            if (yPosition > pageHeight - 30) {
+              doc.addPage()
+              yPosition = 30
+            }
+            yPosition = addText(`${mb.month}: ${mb.count} bookings`, margin, yPosition)
+            yPosition += 2
+          })
+          yPosition += 10
+        }
+
+        // Monthly Sales (filtered)
+        if (filteredMonthlyRevenue && filteredMonthlyRevenue.length > 0) {
+          if (yPosition > pageHeight - 60) {
+            doc.addPage()
+            yPosition = 30
+          }
+
+          doc.setFontSize(12)
+          doc.setFont("helvetica", "bold")
+          yPosition = addText(`MONTHLY SALES (${rangeText})`, margin, yPosition)
+          yPosition += 5
+
+          doc.setFontSize(10)
+          doc.setFont("helvetica", "normal")
+          
+          filteredMonthlyRevenue.forEach((mr: any) => {
+            if (yPosition > pageHeight - 30) {
+              doc.addPage()
+              yPosition = 30
+            }
+            yPosition = addText(`${mr.month}: ₱${Number(mr.amount).toLocaleString()}`, margin, yPosition)
+            yPosition += 2
+          })
+          yPosition += 10
+        }
+
+        // Recent Reviews Section
+        if (stats.recentReviews && stats.recentReviews.length > 0) {
+          if (yPosition > pageHeight - 100) {
+            doc.addPage()
+            yPosition = 30
+          }
+
+          doc.setFontSize(12)
+          doc.setFont("helvetica", "bold")
+          yPosition = addText("RECENT CUSTOMER REVIEWS", margin, yPosition)
+          yPosition += 5
+
+          doc.setFontSize(10)
+          doc.setFont("helvetica", "normal")
+          
+          stats.recentReviews.slice(0, 5).forEach((review: any) => {
+            if (yPosition > pageHeight - 50) {
+              doc.addPage()
+              yPosition = 30
+            }
+            
+            const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating)
+            const reviewerName = review.full_name || "Anonymous"
+            const spaceName = review.room_name || review.venue_name || "Unknown Space"
+            
+            yPosition = addText(`${stars} (${review.rating}/5) - ${reviewerName}`, margin, yPosition)
+            yPosition += 2
+            yPosition = addText(`Space: ${spaceName}`, margin + 10, yPosition)
+            yPosition += 2
+            
+            if (review.title) {
+              yPosition = addText(`"${review.title}"`, margin + 10, yPosition)
+              yPosition += 2
+            }
+            
+            if (review.review_text) {
+              const reviewText = review.review_text.length > 100 
+                ? review.review_text.substring(0, 100) + "..." 
+                : review.review_text
+              yPosition = addText(`${reviewText}`, margin + 10, yPosition)
+              yPosition += 2
+            }
+            
+            yPosition += 3 // Space between reviews
+          })
+        }
+      }
+
+      // Footer
+      const pageCount = doc.internal.getNumberOfPages()
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i)
+        doc.setFontSize(8)
+        doc.setFont("helvetica", "normal")
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' })
+        doc.text('One Estela Place - Business Report', margin, pageHeight - 10)
+      }
+
+      // Save the PDF
+      const dateStr = new Date().toISOString().split("T")[0]
+      const rangeStr = exportDateRange === "all" ? "all-time" : `${exportDateRange}months`
+      const fileName = `${type}-report-${rangeStr}-${dateStr}.pdf`
+      doc.save(fileName)
+      
+      toast({ 
+        title: "Report Exported", 
+        description: `${type} report (${rangeText}) downloaded as PDF file.` 
+      })
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      toast({ 
+        title: "Export Error", 
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsExporting(false)
     }
-
-    textContent += `\nEnd of Report\n`
-    textContent += `${"=".repeat(60)}\n`
-
-    const blob = new Blob([textContent], { type: "text/plain" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `${type}-report-${new Date().toISOString().split("T")[0]}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    toast({ title: "Report Exported", description: `${type} report downloaded as TXT file.` })
   }
 
   const s = stats?.summary
@@ -100,13 +335,41 @@ export default function ReportsPage() {
             <p className="text-sm md:text-base text-muted-foreground">Live data from your venue database</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+              <Label htmlFor="export-range" className="text-sm font-medium whitespace-nowrap">Export Range:</Label>
+              <Select value={exportDateRange} onValueChange={setExportDateRange}>
+                <SelectTrigger className="w-full sm:w-[140px]" id="export-range">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="3">Last 3 Months</SelectItem>
+                  <SelectItem value="6">Last 6 Months</SelectItem>
+                  <SelectItem value="12">Last 12 Months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button onClick={generateReports} disabled={isLoading} className="w-full sm:w-auto">
               <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
-            <Button variant="outline" onClick={() => handleExport("comprehensive")} className="w-full sm:w-auto">
-              <Download className="mr-2 h-4 w-4" />
-              Export
+            <Button 
+              variant="outline" 
+              onClick={() => handleExport("comprehensive")} 
+              disabled={isExporting}
+              className="w-full sm:w-auto"
+            >
+              {isExporting ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export PDF
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -170,7 +433,7 @@ export default function ReportsPage() {
                 <CardDescription className="text-xs md:text-sm">Combined view of bookings and sales per month</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="w-full overflow-x-auto">
+                <div className="w-full overflow-x-auto" id="monthly-chart">
                   <ResponsiveContainer width="100%" height={320} minWidth={300}>
                     <BarChart data={monthlySummary}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -339,8 +602,22 @@ export default function ReportsPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button variant="outline" onClick={() => handleExport("booking")}>
-                <Download className="mr-2 h-4 w-4" /> Export Booking Report
+              <Button 
+                variant="outline" 
+                onClick={() => handleExport("booking")}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" /> 
+                    Export Booking Report
+                  </>
+                )}
               </Button>
             </div>
           </TabsContent>
@@ -442,8 +719,22 @@ export default function ReportsPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button variant="outline" onClick={() => handleExport("sales")}>
-                <Download className="mr-2 h-4 w-4" /> Export Sales Report
+              <Button 
+                variant="outline" 
+                onClick={() => handleExport("sales")}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" /> 
+                    Export Sales Report
+                  </>
+                )}
               </Button>
             </div>
           </TabsContent>
@@ -528,8 +819,22 @@ export default function ReportsPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button variant="outline" onClick={() => handleExport("customer")}>
-                <Download className="mr-2 h-4 w-4" /> Export Customer Report
+              <Button 
+                variant="outline" 
+                onClick={() => handleExport("customer")}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" /> 
+                    Export Customer Report
+                  </>
+                )}
               </Button>
             </div>
           </TabsContent>

@@ -11,13 +11,18 @@ export async function GET(request: NextRequest) {
              b.event_name, 
              b.event_type,
              b.decline_reason,
-             o.name as room_name, 
-             o.image_url,
+             CASE 
+               WHEN b.event_type LIKE 'venue-%' THEN v.name
+               WHEN b.event_type LIKE 'office-%' THEN o.name
+               ELSE o.name
+             END as room_name,
+             COALESCE(v.image_url, o.image_url) as image_url,
              u.full_name as user_name, 
              u.email as user_email, 
              u.phone as user_phone
       FROM bookings b
       LEFT JOIN office_rooms o ON b.office_room_id = o.id
+      LEFT JOIN venues v ON b.event_type LIKE 'venue-%' AND CAST(SUBSTRING(b.event_type, 7) AS UNSIGNED) = v.id
       LEFT JOIN users u ON b.user_id = u.id
     `;
     const params: any[] = [];
