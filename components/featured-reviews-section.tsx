@@ -97,17 +97,17 @@ export function FeaturedReviewsSection() {
 
   if (isLoading) {
     return (
-      <section className="py-16">
+      <section className="py-8 md:py-12 lg:py-16">
         <div className="container mx-auto px-4">
-          <h2 className="mb-12 text-center text-3xl font-bold">What Our Clients Say</h2>
-          <div className="grid gap-8 md:grid-cols-3">
+          <h2 className="mb-8 md:mb-12 text-center text-xl md:text-2xl lg:text-3xl font-bold">What Our Clients Say</h2>
+          <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <Card key={i}>
-                <CardContent className="pt-6">
+              <Card key={i} className="flex flex-col">
+                <CardContent className="pt-6 flex-1">
                   <div className="animate-pulse">
                     <div className="mb-4 flex space-x-1">
                       {[...Array(5)].map((_, j) => (
-                        <div key={j} className="h-5 w-5 bg-gray-200 rounded" />
+                        <div key={j} className="h-4 w-4 bg-gray-200 rounded" />
                       ))}
                     </div>
                     <div className="space-y-2 mb-4">
@@ -127,19 +127,30 @@ export function FeaturedReviewsSection() {
   }
 
   return (
-    <section className="py-16">
+    <section className="py-8 md:py-12 lg:py-16">
       <div className="container mx-auto px-4">
-        <h2 className="mb-12 text-center text-3xl font-bold">What Our Clients Say</h2>
-        <div className="grid gap-8 md:grid-cols-3">
+        <h2 className="mb-8 md:mb-12 text-center text-xl md:text-2xl lg:text-3xl font-bold">What Our Clients Say</h2>
+        <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {featuredReviews.map((review) => (
-            <Card key={review.id}>
-              <CardContent className="pt-6">
-                {renderStars(review.rating)}
-                <p className="mb-4 text-gray-600">
+            <Card key={review.id} className="flex flex-col">
+              <CardContent className="pt-6 flex-1">
+                <div className="flex items-center gap-0.5 flex-wrap mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star 
+                      key={i} 
+                      className={`h-4 w-4 ${
+                        i < review.rating 
+                          ? 'fill-yellow-400 text-yellow-400' 
+                          : 'text-gray-300'
+                      }`} 
+                    />
+                  ))}
+                </div>
+                <p className="mb-4 text-sm text-gray-600 line-clamp-4">
                   "{review.review_text}"
                 </p>
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold">- {review.full_name}</p>
+                  <p className="font-semibold text-sm md:text-base">- {review.full_name}</p>
                   {review.is_featured && (
                     <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
                       Featured

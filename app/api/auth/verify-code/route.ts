@@ -54,22 +54,22 @@ export async function POST(request: NextRequest) {
       }
 
       // Verify code with robust comparison
-      const storedCode = String(passwordResetVerification.code).trim();
-      const providedCode = String(code).trim();
+      const resetStoredCode = String(passwordResetVerification.code).trim();
+      const resetProvidedCode = String(code).trim();
       
       console.log('='.repeat(50));
       console.log('PASSWORD RESET CODE VERIFICATION');
       console.log('='.repeat(50));
       console.log('Email:', email);
-      console.log('Stored code:', storedCode);
-      console.log('Provided code:', providedCode);
-      console.log('Match:', storedCode === providedCode);
+      console.log('Stored code:', resetStoredCode);
+      console.log('Provided code:', resetProvidedCode);
+      console.log('Match:', resetStoredCode === resetProvidedCode);
       console.log('='.repeat(50));
       
       // More robust comparison - handle both string and number types
-      const codesMatch = storedCode === providedCode || 
+      const codesMatch = resetStoredCode === resetProvidedCode || 
                         String(passwordResetVerification.code) === String(code) ||
-                        parseInt(storedCode) === parseInt(providedCode);
+                        parseInt(resetStoredCode) === parseInt(resetProvidedCode);
       
       if (!codesMatch) {
         return NextResponse.json(
@@ -115,28 +115,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify code
-    const storedCode = String(emailVerification.code).trim();
-    const providedCode = String(code).trim();
-    
     // Verify code with robust comparison
-    const storedCode = String(emailVerification.code).trim();
-    const providedCode = String(code).trim();
+    const emailStoredCode = String(emailVerification.code).trim();
+    const emailProvidedCode = String(code).trim();
     
     console.log('='.repeat(50));
     console.log('EMAIL VERIFICATION DEBUG');
     console.log('='.repeat(50));
     console.log('Email:', email);
     console.log('Stored code (raw):', emailVerification.code);
-    console.log('Stored code (string):', storedCode);
-    console.log('Provided code (string):', providedCode);
-    console.log('Match:', storedCode === providedCode);
+    console.log('Stored code (string):', emailStoredCode);
+    console.log('Provided code (string):', emailProvidedCode);
+    console.log('Match:', emailStoredCode === emailProvidedCode);
     console.log('='.repeat(50));
     
     // More robust comparison - handle both string and number types
-    const codesMatch = storedCode === providedCode || 
+    const codesMatch = emailStoredCode === emailProvidedCode || 
                       String(emailVerification.code) === String(code) ||
-                      parseInt(storedCode) === parseInt(providedCode);
+                      parseInt(emailStoredCode) === parseInt(emailProvidedCode);
     
     if (!codesMatch) {
       return NextResponse.json(

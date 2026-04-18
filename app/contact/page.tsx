@@ -47,7 +47,7 @@ export default function ContactPage() {
 
         <div className="max-w-4xl mx-auto">
           {/* Contact Information */}
-          <div className="grid gap-4 md:gap-6 lg:gap-8 sm:grid-cols-2">
+          <div className="grid gap-4 md:gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2">
             <Card className="border-gray-200 shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader>
                 <CardTitle className="flex items-center text-base md:text-lg text-gray-900">

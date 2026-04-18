@@ -83,11 +83,11 @@ export default function FAQsPage() {
 
   return (
     <PublicLayout>
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-8 md:py-12 max-w-3xl">
         <div className="mx-auto max-w-3xl">
-          <div className="mb-12 text-center">
-            <h1 className="mb-6 text-4xl font-bold text-gray-900">Frequently Asked Questions</h1>
-            <p className="text-lg text-gray-600">
+          <div className="mb-8 md:mb-12 text-center">
+            <h1 className="mb-4 md:mb-6 text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">Frequently Asked Questions</h1>
+            <p className="text-sm md:text-base lg:text-lg text-gray-600">
               Find answers to common questions about booking and hosting events at One Estela Place.
             </p>
           </div>
@@ -99,25 +99,25 @@ export default function FAQsPage() {
                 value={`item-${index}`}
                 className="border border-gray-200 rounded-lg px-6 hover:shadow-md transition-shadow"
               >
-                <AccordionTrigger className="text-left font-semibold text-gray-900 hover:text-orange-500 transition-colors">
+                <AccordionTrigger className="text-sm md:text-base font-medium text-left text-gray-900 hover:text-orange-500 transition-colors">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-gray-600 leading-relaxed">{faq.answer}</AccordionContent>
+                <AccordionContent className="text-sm md:text-base text-gray-600 leading-relaxed">{faq.answer}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
 
-          <div className="mt-12 rounded-lg bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 p-8 text-center">
-            <h2 className="mb-4 text-2xl font-bold text-gray-900">Still have questions?</h2>
-            <p className="mb-6 text-gray-600">Can't find the answer you're looking for? Our team is here to help.</p>
-            <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-              <Button asChild className="bg-orange-500 text-white hover:bg-orange-600 shadow-lg border-0">
+          <div className="mt-8 md:mt-12 rounded-lg bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 p-6 md:p-8 text-center">
+            <h2 className="mb-3 md:mb-4 text-xl md:text-2xl font-bold text-gray-900">Still have questions?</h2>
+            <p className="mb-4 md:mb-6 text-sm md:text-base text-gray-600">Can't find the answer you're looking for? Our team is here to help.</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
+              <Button asChild className="bg-orange-500 text-white hover:bg-orange-600 shadow-lg border-0 w-full sm:w-auto">
                 <a href="/contact">Contact Us</a>
               </Button>
               <Button
                 asChild
                 variant="outline"
-                className="border-orange-500 text-orange-500 hover:bg-orange-50 bg-transparent"
+                className="border-orange-500 text-orange-500 hover:bg-orange-50 bg-transparent w-full sm:w-auto"
               >
                 <a href="tel:555-123-4567">Call (555) 123-4567</a>
               </Button>

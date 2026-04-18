@@ -227,7 +227,7 @@ export default function StaffManagementPage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="firstName">First Name *</Label>
                     <Input
@@ -284,7 +284,7 @@ export default function StaffManagementPage() {
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="hireDate">Hire Date *</Label>
                     <Input
@@ -373,10 +373,10 @@ export default function StaffManagementPage() {
                 {filteredStaff.map((staffMember) => (
                   <div
                     key={staffMember.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4"
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-4 min-w-0 flex-1">
+                      <div className="flex items-center space-x-2 min-w-0 flex-1">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                             staffMember.status === 'active'
@@ -386,11 +386,11 @@ export default function StaffManagementPage() {
                         >
                           {staffMember.status.charAt(0).toUpperCase() + staffMember.status.slice(1)}
                         </span>
-                        <div>
-                          <p className="font-medium text-gray-900">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 truncate">
                             {staffMember.firstName} {staffMember.lastName}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 truncate">
                             {staffMember.position} • {staffMember.email}
                           </p>
                           <p className="text-xs text-gray-400">
@@ -401,11 +401,12 @@ export default function StaffManagementPage() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleOpenEditDialog(staffMember)}
+                        className="w-full sm:w-auto"
                       >
                         Edit
                       </Button>
@@ -415,6 +416,7 @@ export default function StaffManagementPage() {
                           variant="destructive"
                           size="sm"
                           onClick={() => handleOpenRemoveDialog(staffMember)}
+                          className="w-full sm:w-auto"
                         >
                           Remove
                         </Button>
@@ -422,7 +424,7 @@ export default function StaffManagementPage() {
                         <Button
                           size="sm"
                           onClick={() => handleToggleStatus(staffMember)}
-                          className="bg-blue-600 hover:bg-blue-700"
+                          className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                         >
                           Activate
                         </Button>
@@ -446,27 +448,27 @@ export default function StaffManagementPage() {
               <DialogTitle className="text-base md:text-lg">Edit Staff Member</DialogTitle>
               <DialogDescription className="text-xs md:text-sm">Update staff information. Role cannot be changed (Staff role is permanent).</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-firstName">First Name *</Label>
-                  <Input
-                    id="edit-firstName"
-                    placeholder="First name"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  />
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-firstName">First Name *</Label>
+                    <Input
+                      id="edit-firstName"
+                      placeholder="First name"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-lastName">Last Name *</Label>
+                    <Input
+                      id="edit-lastName"
+                      placeholder="Last name"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    />
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-lastName">Last Name *</Label>
-                  <Input
-                    id="edit-lastName"
-                    placeholder="Last name"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  />
-                </div>
-              </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-email">Email *</Label>
                 <Input
@@ -504,7 +506,7 @@ export default function StaffManagementPage() {
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="edit-hireDate">Hire Date *</Label>
                   <Input

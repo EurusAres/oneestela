@@ -93,7 +93,7 @@ export default function AboutPage() {
         {/* Values Section */}
         <div className="mb-12 md:mb-16">
           <h2 className="mb-8 md:mb-12 text-center text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Our Values</h2>
-          <div className="grid gap-4 md:gap-6 lg:gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <Card className="text-center border-gray-200 hover:shadow-lg transition-shadow">
               <CardHeader>
                 <Heart className="mx-auto h-10 w-10 md:h-12 md:w-12 text-orange-500" />

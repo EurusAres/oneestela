@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -460,6 +460,10 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl h-[90vh] p-0 overflow-hidden flex flex-col">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Virtual Tour</DialogTitle>
+          <DialogDescription>Interactive 360-degree tour of the venue</DialogDescription>
+        </DialogHeader>
         <div className="relative flex-1 overflow-hidden rounded-lg">
           {/* Loading State */}
           {loading && (

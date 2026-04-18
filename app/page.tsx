@@ -60,7 +60,7 @@ export default async function HomePage() {
       <section className="py-8 md:py-12 lg:py-16">
         <div className="container mx-auto px-4">
           <h2 className="mb-8 md:mb-12 text-center text-2xl md:text-3xl font-bold">Why Choose One Estela Place?</h2>
-          <div className="grid gap-4 md:gap-6 lg:gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <Card className="text-center">
               <CardHeader>
                 <MapPin className="mx-auto h-10 w-10 md:h-12 md:w-12 text-amber-700" />

@@ -105,9 +105,9 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       {/* Header */}
       <header className="border-b bg-white shadow-sm">
         <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between">
+          <div className="flex h-16 items-center justify-between gap-2">
             {/* Logo */}
-            <Link href="/" className="text-2xl font-bold text-black">
+            <Link href="/" className="text-xl sm:text-2xl font-bold text-black truncate max-w-[160px] sm:max-w-none">
               One Estela Place
             </Link>
 
@@ -203,7 +203,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
           {/* Mobile Navigation */}
           {isMobileMenuOpen && (
-            <div className="border-t py-4 md:hidden">
+            <div className="border-t py-4 md:hidden max-h-[calc(100vh-4rem)] overflow-y-auto w-full">
               <nav className="flex flex-col space-y-4">
                 {navItems.map((item) => (
                   <Link
@@ -288,7 +288,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       {/* Footer */}
       <footer className="border-t bg-gray-50">
         <div className="container mx-auto px-4 py-8 md:py-12">
-          <div className="grid gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <h3 className="mb-3 md:mb-4 text-base md:text-lg font-semibold">One Estela Place</h3>
               <p className="text-sm text-gray-600">

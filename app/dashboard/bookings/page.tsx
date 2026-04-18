@@ -95,49 +95,49 @@ function BookingDetailDialog({
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center justify-between">
-            <span>{booking.eventName}</span>
+          <DialogTitle className="text-lg md:text-xl flex items-center justify-between">
+            <span className="truncate">{booking.eventName}</span>
             <Badge className={getStatusColor(booking.status)}>
               {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
             </Badge>
           </DialogTitle>
-          <DialogDescription>Booking ID: #{booking.id}</DialogDescription>
+          <DialogDescription className="text-xs md:text-sm">Booking ID: #{booking.id}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 text-sm overflow-y-auto flex-1 pr-2">
           {/* Check if this is an office space inquiry */}
           {booking.eventType.startsWith('office-') ? (
             // Office Space Inquiry Layout
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
               <div className="flex items-center gap-2 text-gray-600">
-                <Users className="h-4 w-4" />
+                <Users className="h-4 w-4 flex-shrink-0" />
                 <span>{booking.guestCount} people</span>
               </div>
               <div className="flex items-center gap-2 text-gray-600">
-                <FileText className="h-4 w-4" />
-                <span>{loadingSpace ? 'Loading...' : spaceName || 'N/A'}</span>
+                <FileText className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{loadingSpace ? 'Loading...' : spaceName || 'N/A'}</span>
               </div>
             </div>
           ) : (
             // Event Venue Layout
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
               <div className="flex items-center gap-2 text-gray-600">
-                <Calendar className="h-4 w-4" />
-                <span>{booking.date ? new Date(booking.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }) : 'No date specified'}</span>
+                <Calendar className="h-4 w-4 flex-shrink-0" />
+                <span className="text-xs sm:text-sm">{booking.date ? new Date(booking.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }) : 'No date specified'}</span>
               </div>
               <div className="flex items-center gap-2 text-gray-600">
-                <Clock className="h-4 w-4" />
+                <Clock className="h-4 w-4 flex-shrink-0" />
                 <span>{booking.startTime && booking.endTime ? `${booking.startTime} – ${booking.endTime}` : 'No time specified'}</span>
               </div>
               <div className="flex items-center gap-2 text-gray-600">
-                <Users className="h-4 w-4" />
+                <Users className="h-4 w-4 flex-shrink-0" />
                 <span>{booking.guestCount} guests</span>
               </div>
               <div className="flex items-center gap-2 text-gray-600">
-                <FileText className="h-4 w-4" />
-                <span>{loadingSpace ? 'Loading...' : spaceName || 'N/A'}</span>
+                <FileText className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{loadingSpace ? 'Loading...' : spaceName || 'N/A'}</span>
               </div>
             </div>
           )}
@@ -202,43 +202,43 @@ function BookingDetailDialog({
           </div>
         </div>
 
-        {/* Action buttons at the bottom */}
-        <div className="flex items-center justify-between pt-4 border-t flex-shrink-0">
-          <Badge className={getStatusColor(booking.status)}>
-            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-          </Badge>
-          
-          <div className="flex space-x-2">
-            {booking.status === "pending" && (
-              <>
+          <div className="flex items-center justify-between pt-4 border-t flex-shrink-0">
+            <Badge className={getStatusColor(booking.status)}>
+              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+            </Badge>
+            
+            <div className="flex flex-col sm:flex-row gap-2">
+              {booking.status === "pending" && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={() => onStatusUpdate(booking.id, "confirmed")}
+                    className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                  >
+                    Confirm
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={() => onStatusUpdate(booking.id, "declined")}
+                    className="w-full sm:w-auto"
+                  >
+                    Decline
+                  </Button>
+                </>
+              )}
+              
+              {booking.status === "confirmed" && (
                 <Button
                   size="sm"
-                  onClick={() => onStatusUpdate(booking.id, "confirmed")}
-                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => onStatusUpdate(booking.id, "completed")}
+                  className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                 >
-                  Confirm
+                  Complete
                 </Button>
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  onClick={() => onStatusUpdate(booking.id, "declined")}
-                >
-                  Decline
-                </Button>
-              </>
-            )}
-            
-            {booking.status === "confirmed" && (
-              <Button
-                size="sm"
-                onClick={() => onStatusUpdate(booking.id, "completed")}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Complete
-              </Button>
-            )}
+              )}
+            </div>
           </div>
-        </div>
       </DialogContent>
     </Dialog>
   )
@@ -478,71 +478,73 @@ export default function BookingsPage() {
     if (tab === 'cancelled' && cancelledPage < totalCancelledPages) setCancelledPage(cancelledPage + 1)
   }
 
-  const BookingCard = ({ booking }: { booking: Booking }) => {
-    const isOfficeInquiry = booking.eventType.startsWith('office-')
-    
-    return (
-      <div className="flex items-center justify-between p-4 border rounded-lg">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Badge className={getStatusColor(booking.status)}>
-              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-            </Badge>
-            <div>
-              <p className="font-medium text-gray-900">{booking.eventName}</p>
-              <p className="text-sm text-gray-500">
-                {booking.userInfo?.name || "Unknown Customer"} • {isOfficeInquiry ? 'Office Inquiry' : 'Event Booking'}
-              </p>
-              {!isOfficeInquiry && booking.date && (
-                <p className="text-xs text-gray-400">
-                  {new Date(booking.date).toLocaleDateString()} at {booking.startTime}
+    const BookingCard = ({ booking }: { booking: Booking }) => {
+      const isOfficeInquiry = booking.eventType.startsWith('office-')
+      
+      return (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4">
+          <div className="flex items-center space-x-4 min-w-0 flex-1">
+            <div className="flex items-center space-x-2 min-w-0 flex-1">
+              <Badge className={getStatusColor(booking.status)}>
+                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+              </Badge>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-gray-900 truncate">{booking.eventName}</p>
+                <p className="text-sm text-gray-500 truncate">
+                  {booking.userInfo?.name || "Unknown Customer"} • {isOfficeInquiry ? 'Office Inquiry' : 'Event Booking'}
                 </p>
-              )}
+                {!isOfficeInquiry && booking.date && (
+                  <p className="text-xs text-gray-400">
+                    {new Date(booking.date).toLocaleDateString()} at {booking.startTime}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => handleViewDetails(booking)}
-          >
-            View Details
-          </Button>
           
-          {booking.status === "pending" && (
-            <>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => handleViewDetails(booking)}
+              className="w-full sm:w-auto"
+            >
+              View Details
+            </Button>
+            
+            {booking.status === "pending" && (
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => handleStatusUpdate(booking.id, "confirmed")}
+                  className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                >
+                  {isOfficeInquiry ? 'Approve' : 'Confirm'}
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => handleStatusUpdate(booking.id, "declined")}
+                  className="w-full sm:w-auto"
+                >
+                  Decline
+                </Button>
+              </>
+            )}
+            
+            {booking.status === "confirmed" && (
               <Button
                 size="sm"
-                onClick={() => handleStatusUpdate(booking.id, "confirmed")}
-                className="bg-green-600 hover:bg-green-700"
+                onClick={() => handleStatusUpdate(booking.id, "completed")}
+                className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
               >
-                {isOfficeInquiry ? 'Approve' : 'Confirm'}
+                Complete
               </Button>
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                onClick={() => handleStatusUpdate(booking.id, "declined")}
-              >
-                Decline
-              </Button>
-            </>
-          )}
-          
-          {booking.status === "confirmed" && (
-            <Button
-              size="sm"
-              onClick={() => handleStatusUpdate(booking.id, "completed")}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Complete
-            </Button>
-          )}
+            )}
+          </div>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 
   const renderBookingList = (bookings: Booking[], tab: string, currentPage: number, totalPages: number, totalCount: number) => (
     <>
@@ -618,11 +620,11 @@ export default function BookingsPage() {
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
-                <TabsTrigger value="pending" className="text-xs sm:text-sm">Pending ({pendingBookings.length})</TabsTrigger>
-                <TabsTrigger value="confirmed" className="text-xs sm:text-sm">Confirmed ({confirmedBookings.length})</TabsTrigger>
-                <TabsTrigger value="completed" className="text-xs sm:text-sm">Completed ({completedBookings.length})</TabsTrigger>
-                <TabsTrigger value="cancelled" className="text-xs sm:text-sm">Cancelled ({cancelledBookings.length})</TabsTrigger>
-              </TabsList>
+              <TabsTrigger value="pending" className="text-xs sm:text-sm px-2 sm:px-4">Pending ({pendingBookings.length})</TabsTrigger>
+              <TabsTrigger value="confirmed" className="text-xs sm:text-sm px-2 sm:px-4">Confirmed ({confirmedBookings.length})</TabsTrigger>
+              <TabsTrigger value="completed" className="text-xs sm:text-sm px-2 sm:px-4">Completed ({completedBookings.length})</TabsTrigger>
+              <TabsTrigger value="cancelled" className="text-xs sm:text-sm px-2 sm:px-4">Cancelled ({cancelledBookings.length})</TabsTrigger>
+            </TabsList>
               
               <TabsContent value="pending" className="mt-6">
                 {renderBookingList(paginatedPendingBookings, 'pending', pendingPage, totalPendingPages, pendingBookings.length)}
