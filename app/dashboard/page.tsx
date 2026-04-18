@@ -100,14 +100,14 @@ export default function DashboardPage() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{s?.totalBookings ?? 0}</div>
+              <div className="text-xl md:text-2xl font-bold">{s?.totalBookings ?? 0}</div>
               <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                 {bookingDelta >= 0
                   ? <TrendingUp className="h-3 w-3 text-green-500" />
@@ -125,7 +125,7 @@ export default function DashboardPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₱{(s?.totalRevenue ?? 0).toLocaleString()}</div>
+              <div className="text-xl md:text-2xl font-bold">₱{(s?.totalRevenue ?? 0).toLocaleString()}</div>
               <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                 {salesDelta >= 0
                   ? <TrendingUp className="h-3 w-3 text-green-500" />
@@ -143,7 +143,7 @@ export default function DashboardPage() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.thisMonth.bookings ?? 0}</div>
+              <div className="text-xl md:text-2xl font-bold">{stats?.thisMonth.bookings ?? 0}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 This month
               </p>
@@ -156,7 +156,7 @@ export default function DashboardPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₱{(stats?.thisMonth.revenue ?? 0).toLocaleString()}</div>
+              <div className="text-xl md:text-2xl font-bold">₱{(stats?.thisMonth.revenue ?? 0).toLocaleString()}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 This month
               </p>
@@ -165,7 +165,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Status Summary Row */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Card 
             className="border-green-200 bg-green-50 cursor-pointer hover:bg-green-100 transition-colors"
             onClick={() => handleCardClick('confirmed')}
@@ -225,12 +225,12 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="w-full overflow-x-auto">
-                <ResponsiveContainer width="100%" height={250} minWidth={300}>
+              <div className="w-full h-[250px] sm:h-[300px] md:h-[350px]">
+                <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={stats?.monthlyBookings ?? []}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
+                    <XAxis dataKey="month" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                    <YAxis tick={{ fontSize: 10 }} width={40} />
                     <Tooltip />
                     <Area type="monotone" dataKey="count" stroke="#8884d8" fill="#8884d8" fillOpacity={0.4} />
                   </AreaChart>
@@ -246,12 +246,12 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="w-full overflow-x-auto">
-                <ResponsiveContainer width="100%" height={250} minWidth={300}>
+              <div className="w-full h-[250px] sm:h-[300px] md:h-[350px]">
+                <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={stats?.monthlyRevenue ?? []}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
+                    <XAxis dataKey="month" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                    <YAxis tick={{ fontSize: 10 }} width={40} />
                     <Tooltip formatter={(v) => [`₱${Number(v).toLocaleString()}`, "Sales"]} />
                     <Area type="monotone" dataKey="amount" stroke="#22c55e" fill="#22c55e" fillOpacity={0.4} />
                   </AreaChart>
@@ -268,12 +268,12 @@ export default function DashboardPage() {
               <CardTitle className="text-base md:text-lg">Bookings by Room</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="w-full overflow-x-auto">
-                <ResponsiveContainer width="100%" height={200} minWidth={300}>
+              <div className="w-full h-[200px] sm:h-[250px] md:h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stats?.bookingsByRoom ?? []}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="area" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
+                    <XAxis dataKey="area" tick={{ fontSize: 10 }} interval={0} angle={-30} textAnchor="end" height={50} />
+                    <YAxis tick={{ fontSize: 10 }} width={45} />
                     <Tooltip />
                     <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
                   </BarChart>
@@ -304,18 +304,18 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="w-full overflow-x-auto rounded-md border">
-              <table className="w-full text-sm min-w-[800px]">
+            <div className="overflow-x-auto w-full rounded-lg border">
+              <table className="w-full min-w-[640px]">
                 <thead>
                   <tr className="border-b bg-gray-50">
-                    <th className="px-4 py-3 text-left font-medium">ID</th>
-                    <th className="px-4 py-3 text-left font-medium">Client</th>
-                    <th className="px-4 py-3 text-left font-medium">Room</th>
-                    <th className="px-4 py-3 text-left font-medium">Check-in Date</th>
-                    <th className="px-4 py-3 text-left font-medium">Guests</th>
-                    <th className="px-4 py-3 text-left font-medium">Amount</th>
-                    <th className="px-4 py-3 text-left font-medium">Status</th>
-                    <th className="px-4 py-3 text-left font-medium">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">ID</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Client</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Room</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Check-in Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Guests</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Amount</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -328,9 +328,9 @@ export default function DashboardPage() {
                   ) : (
                     (stats?.recentBookings ?? []).map((b: any) => (
                       <tr key={b.id} className="border-b hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 text-muted-foreground font-mono">#{b.id}</td>
+                        <td className="px-4 py-3 text-muted-foreground font-mono text-sm">#{b.id}</td>
                         <td className="px-4 py-3">
-                          <div className="font-medium">{b.client_name || "—"}</div>
+                          <div className="font-medium text-sm">{b.client_name || "—"}</div>
                           {b.client_email && (
                             <div className="text-xs text-muted-foreground truncate max-w-[200px]">
                               {b.client_email}
@@ -338,7 +338,7 @@ export default function DashboardPage() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <div className="font-medium">{b.room_name || "—"}</div>
+                          <div className="font-medium text-sm">{b.room_name || "—"}</div>
                           {b.room_capacity && (
                             <div className="text-xs text-muted-foreground">Capacity: {b.room_capacity}</div>
                           )}
@@ -346,7 +346,7 @@ export default function DashboardPage() {
                         <td className="px-4 py-3">
                           {b.check_in_date ? (
                             <div>
-                              <div>{new Date(b.check_in_date).toLocaleDateString('en-US', { 
+                              <div className="text-sm">{new Date(b.check_in_date).toLocaleDateString('en-US', { 
                                 month: 'short', 
                                 day: 'numeric', 
                                 year: 'numeric' 
@@ -360,10 +360,10 @@ export default function DashboardPage() {
                             </div>
                           ) : "—"}
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-3 text-center text-sm">
                           {b.number_of_guests || "—"}
                         </td>
-                        <td className="px-4 py-3 font-semibold text-green-700">
+                        <td className="px-4 py-3 font-semibold text-green-700 text-sm">
                           {b.total_price ? `₱${Number(b.total_price).toLocaleString()}` : "—"}
                         </td>
                         <td className="px-4 py-3">

@@ -274,7 +274,7 @@ export default function AdminChatPage() {
           </Button>
         </div>
 
-        <Card className="h-[calc(100vh-150px)] flex flex-col overflow-hidden">
+        <Card className="h-[calc(100vh-8rem)] lg:h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
           <CardContent className="flex-1 flex p-0 overflow-hidden">
 
             {/* Sidebar */}

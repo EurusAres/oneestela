@@ -191,16 +191,16 @@ export function ChatWidget() {
     <>
       {/* Chat Toggle Button */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50">
           <Button
             onClick={() => setIsOpen(true)}
-            className="h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg relative group"
+            className="h-12 w-12 md:h-14 md:w-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg relative group"
             size="icon"
           >
-            <MessageCircle className="h-6 w-6 text-white" />
-            {chatMode === "bot" && <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full" />}
+            <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-white" />
+            {chatMode === "bot" && <div className="absolute -top-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full" />}
             {unreadCount > 0 && chatMode === "human" && (
-              <Badge className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+              <Badge className="absolute -top-2 -right-2 h-5 w-5 md:h-6 md:w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </Badge>
             )}
@@ -215,8 +215,8 @@ export function ChatWidget() {
       {isOpen && (
         <div
           className={cn(
-            "fixed bottom-6 right-6 z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300 flex flex-col",
-            isMinimized ? "w-80 h-14" : "w-96 h-[520px] md:w-[420px] md:h-[580px]",
+            "fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300 flex flex-col",
+            isMinimized ? "w-80 h-14" : "w-[95vw] h-[85vh] sm:w-96 sm:h-[520px] md:w-[420px] md:h-[580px]",
           )}
         >
           {/* Chat Header */}
@@ -343,7 +343,7 @@ export function ChatWidget() {
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 h-[280px] md:h-[340px] overflow-y-auto p-4 bg-white">
+              <div className="flex-1 h-[200px] sm:h-[280px] md:h-[340px] overflow-y-auto p-3 md:p-4 bg-white">
                 <div className="space-y-4">
                   {displayMessages.length === 0 ? (
                     <div className="text-center text-gray-500 py-8">

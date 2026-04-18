@@ -226,13 +226,13 @@ export default function PaymentsPage() {
     const isCancelled = proof.bookingStatus === 'cancelled'
     
     return (
-      <div className={`flex items-center justify-between p-4 border rounded-lg ${isCancelled ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
+      <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4 ${isCancelled ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}>
+        <div className="flex items-center space-x-4 min-w-0 flex-1">
+          <div className="flex items-center space-x-2 min-w-0 flex-1">
             {getStatusIcon(proof.status)}
-            <div>
-              <p className="font-medium text-gray-900">{proof.customerName || "Unknown Customer"}</p>
-              <p className="text-sm text-gray-500">
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-gray-900 truncate">{proof.customerName || "Unknown Customer"}</p>
+              <p className="text-sm text-gray-500 truncate">
                 Booking ID: {proof.bookingId} • {new Date(proof.uploadedAt).toLocaleDateString()}
               </p>
               {isCancelled && (
@@ -244,11 +244,12 @@ export default function PaymentsPage() {
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => handleViewDetails(proof)}
+            className="w-full sm:w-auto"
           >
             View Details
           </Button>
@@ -258,7 +259,7 @@ export default function PaymentsPage() {
               <Button
                 size="sm"
                 onClick={() => handleReviewProof(proof, "verify")}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
               >
                 Verify
               </Button>
@@ -266,6 +267,7 @@ export default function PaymentsPage() {
                 variant="destructive" 
                 size="sm" 
                 onClick={() => handleReviewProof(proof, "reject")}
+                className="w-full sm:w-auto"
               >
                 Reject
               </Button>
@@ -277,6 +279,7 @@ export default function PaymentsPage() {
               variant="destructive" 
               size="sm" 
               onClick={() => handleReviewProof(proof, "reject")}
+              className="w-full sm:w-auto"
             >
               Mark as Cancelled
             </Button>

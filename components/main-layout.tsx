@@ -23,7 +23,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
 import { usePaymentProof } from "@/components/payment-proof-context"
 import { ChangePasswordDialog } from "@/components/change-password-dialog"
@@ -107,7 +107,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b">
         <div className="flex items-center justify-between p-4">
-          <h1 className="text-lg font-bold">One Estela Place</h1>
+          <h1 className="text-base sm:text-lg font-bold truncate">One Estela Place</h1>
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -115,6 +115,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
+              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <div className="flex h-full flex-col">
                 <div className="flex items-center justify-center border-b p-4 bg-white">
                   <h1 className="text-xl font-bold">One Estela Place</h1>
@@ -199,8 +200,8 @@ export function MainLayout({ children }: MainLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 min-w-0 overflow-auto bg-white pt-16 lg:pt-0">
-        <main className="p-4 md:p-6">{children}</main>
+      <div className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto bg-white pt-16 lg:pt-0">
+        <main className="p-4 md:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   )

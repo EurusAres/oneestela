@@ -493,10 +493,10 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
         <DialogHeader>
-          <DialogTitle>{isOfficeSpace() ? "Office Space Inquiry" : "Reserve Your Event"}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg md:text-xl">{isOfficeSpace() ? "Office Space Inquiry" : "Reserve Your Event"}</DialogTitle>
+          <DialogDescription className="text-xs md:text-sm">
             {user 
               ? (isOfficeSpace() 
                   ? "Fill out the details for your office space inquiry" 
@@ -590,20 +590,23 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
           )
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className={`grid w-full ${isOfficeSpace() ? 'grid-cols-1' : 'grid-cols-2'}`}>
-              <TabsTrigger value="details">{isOfficeSpace() ? "Inquiry Details" : "Event Details"}</TabsTrigger>
-              {!isOfficeSpace() && (
-                <TabsTrigger value="datetime" disabled={activeTab === "details"}>
-                  Date & Time
-                </TabsTrigger>
-              )}
-            </TabsList>
+            <div className="overflow-x-auto">
+              <TabsList className={`inline-flex w-max sm:w-full ${isOfficeSpace() ? 'sm:grid sm:grid-cols-1' : 'sm:grid sm:grid-cols-2'}`}>
+                <TabsTrigger value="details" className="text-xs sm:text-sm whitespace-nowrap">{isOfficeSpace() ? "Inquiry Details" : "Event Details"}</TabsTrigger>
+                {!isOfficeSpace() && (
+                  <TabsTrigger value="datetime" disabled={activeTab === "details"} className="text-xs sm:text-sm whitespace-nowrap">
+                    Date & Time
+                  </TabsTrigger>
+                )}
+              </TabsList>
+            </div>
             <TabsContent value="details" className="space-y-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="eventName">{isOfficeSpace() ? "Purpose/Description" : "Event Name"}</Label>
+                  <Label htmlFor="eventName" className="text-sm">{isOfficeSpace() ? "Purpose/Description" : "Event Name"}</Label>
                   <Input
                     id="eventName"
+                    className="h-10"
                     placeholder={isOfficeSpace() ? "e.g., Monthly office rental, Business operations" : "Enter event name"}
                     value={bookingData.eventName}
                     onChange={(e) => {
@@ -616,9 +619,9 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                   />
                   {errors.eventName && <p className="text-sm text-red-500">{errors.eventName}</p>}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="eventType">Event Space</Label>
+                    <Label htmlFor="eventType" className="text-sm">Event Space</Label>
                     <Select
                       value={bookingData.eventType}
                       onValueChange={(value) => {
@@ -628,7 +631,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                         }
                       }}
                     >
-                      <SelectTrigger className={errors.eventType ? "border-red-500" : ""}>
+                      <SelectTrigger className={`w-full ${errors.eventType ? "border-red-500" : ""}`}>
                         <SelectValue placeholder={loadingSpaces ? "Loading spaces..." : "Select space"} />
                       </SelectTrigger>
                       <SelectContent>
@@ -643,7 +646,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                     {errors.eventType && <p className="text-sm text-red-500">{errors.eventType}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="guestCount">
+                    <Label htmlFor="guestCount" className="text-sm">
                       Expected Guests
                       {(() => {
                         const capacity = getSelectedSpaceCapacity()
@@ -656,6 +659,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                       min="1"
                       max={getSelectedSpaceCapacity() || undefined}
                       placeholder="Number of guests"
+                      className="h-10"
                       value={bookingData.guestCount}
                       onChange={(e) => {
                         const value = e.target.value
@@ -687,9 +691,10 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="specialRequests">{isOfficeSpace() ? "Additional Requirements" : "Special Requests"}</Label>
+                  <Label htmlFor="specialRequests" className="text-sm">{isOfficeSpace() ? "Additional Requirements" : "Special Requests"}</Label>
                   <Textarea
                     id="specialRequests"
+                    className="min-h-[80px] md:min-h-[100px] resize-none"
                     placeholder={isOfficeSpace() 
                       ? "Any specific requirements, furniture needs, access hours, etc." 
                       : "Any special requirements, decorations, catering preferences, etc."
@@ -724,8 +729,8 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                   </div>
                 </div>
               )}
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
                   Cancel
                 </Button>
                 {isOfficeSpace() ? (
@@ -737,6 +742,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                         ? "Please reduce the number of guests to submit inquiry" 
                         : (!bookingData.guestCount.trim() ? "Expected guests is required" : "")
                     }
+                    className="w-full sm:w-auto"
                   >
                     Submit Inquiry
                   </Button>
@@ -749,6 +755,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                         ? "Please reduce the number of guests to continue" 
                         : (!bookingData.guestCount.trim() ? "Expected guests is required" : "")
                     }
+                    className="w-full sm:w-auto"
                   >
                     Next
                   </Button>
