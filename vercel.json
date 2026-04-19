@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30
@@ -6,3 +7,23 @@
   },
   "regions": ["iad1"]
 }
+=======
+  "version": 2,
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["sin1"],
+  "env": {
+    "DB_HOST": "localhost",
+    "DB_USER": "dummy",
+    "DB_PASSWORD": "dummy123",
+    "DB_NAME": "dummy_db",
+    "DB_PORT": "3306",
+    "SMTP_HOST": "smtp.gmail.com",
+    "SMTP_PORT": "587",
+    "SMTP_USER": "estelatest1@gmail.com",
+    "SMTP_PASSWORD": "uthbphdsnsjmlutp"
+  }
+}
+>>>>>>> 62be08c34b20db1c4b6afe9b35bc7c5bd4a0377e
