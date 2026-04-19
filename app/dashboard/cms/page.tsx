@@ -12,7 +12,7 @@ import { CMSOfficeRoomEditor } from '@/components/cms-office-room-editor'
 import { ImageIcon, Home, Building2 } from 'lucide-react'
 
 export default function CMSPage() {
-  const { cmsData } = useCMS()
+  const { homepage, venues, officeRoomsGround, officeRoomsSecond } = useCMS()
   const [activeTab, setActiveTab] = useState('homepage')
 
   return (
