@@ -20,7 +20,7 @@ export async function GET() {
       })
     }
 
-    const content = results[0]
+    const content = results[0] as any
     
     return NextResponse.json({
       id: content.id,
