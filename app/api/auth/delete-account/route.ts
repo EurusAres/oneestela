@@ -26,7 +26,7 @@ export async function DELETE(request: Request) {
       )
     }
 
-    const user = users[0]
+    const user = users[0] as any
 
     // Check if user has a password set
     if (!user.password || user.password === '') {
