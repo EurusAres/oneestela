@@ -61,7 +61,7 @@ export async function PUT(request: Request) {
     
     // First check if table exists and has data
     const checkResults = await executeQuery('SELECT COUNT(*) as count FROM homepage_content')
-    const hasData = Array.isArray(checkResults) && checkResults[0]?.count > 0
+    const hasData = Array.isArray(checkResults) && (checkResults[0] as any)?.count > 0
     
     // Convert camelCase to snake_case for database
     const dbUpdates: any = {}
