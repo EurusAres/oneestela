@@ -50,7 +50,7 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      const user = users[0];
+      const user = users[0] as any;
 
       // Hash new password
       const hashedNewPassword = await bcrypt.hash(newPassword, 10);
@@ -87,7 +87,7 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      const user = users[0];
+      const user = users[0] as any;
 
       // Verify current password
       const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
