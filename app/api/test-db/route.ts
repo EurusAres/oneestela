@@ -16,11 +16,15 @@ export async function GET() {
     // Test users table
     const userCount = await executeQuery('SELECT COUNT(*) as count FROM users')
     
+    // Get actual users (without passwords)
+    const users = await executeQuery('SELECT id, email, full_name, role FROM users')
+    
     return NextResponse.json({
       success: true,
       message: 'Database connection successful',
       testQuery: result,
       userCount: userCount,
+      users: users,
       env: {
         DB_HOST: process.env.DB_HOST,
         DB_USER: process.env.DB_USER,
