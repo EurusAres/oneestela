@@ -1,60 +1,60 @@
-import mysql from 'mysql2/promise';
+import mysql from 'mysql2/promise'
 
-// Create a connection pool for better performance
-let pool: mysql.Pool | null = null;
-
-export async function getPool(): Promise<mysql.Pool> {
-  if (pool) {
-    return pool;
-  }
-
-  pool = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'one_estela_place',
-    waitForConnections: true,
-    connectionLimit: 50,
-    maxIdle: 10,
-    idleTimeout: 60000,
-    queueLimit: 0,
-    enableKeepAlive: true,
-    keepAliveInitialDelay: 0,
-  });
-
-  return pool;
+// Aiven MySQL configuration with SSL support
+const dbConfig = {
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT || '22321'),
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || 'one_estela_place',
+  ssl: {
+    rejectUnauthorized: false // Required for Aiven managed MySQL
+  },
+  connectTimeout: 60000,
+  acquireTimeout: 60000,
+  timeout: 60000,
+  // Connection pool settings for better performance
+  connectionLimit: 10,
+  queueLimit: 0
 }
 
-export async function executeQuery(query: string, values: any[] = []) {
-  const pool = await getPool();
+// Create connection pool for better performance
+const pool = mysql.createPool(dbConfig)
+
+export async function getConnection() {
   try {
-    const [results] = await pool.execute(query, values);
-    return results;
+    const connection = await pool.getConnection()
+    return connection
   } catch (error) {
-    console.error('Database query error:', error);
-    throw error;
+    console.error('Aiven database connection error:', error)
+    throw error
   }
 }
 
-export async function executeQueryWithConnection(
-  query: string,
-  values: any[] = []
-): Promise<any> {
-  const pool = await getPool();
-  const connection = await pool.getConnection();
-
+export async function executeQuery(query: string, params: any[] = []) {
+  const connection = await getConnection()
   try {
-    const [results] = await connection.execute(query, values);
-    return results;
+    const [results] = await connection.execute(query, params)
+    return results
+  } catch (error) {
+    console.error('Query execution error:', error)
+    throw error
   } finally {
-    connection.release();
+    connection.release()
   }
 }
 
-// Close the pool (useful for cleanup)
-export async function closePool(): Promise<void> {
-  if (pool) {
-    await pool.end();
-    pool = null;
-  }
+// Legacy functions for compatibility
+export async function getPool() {
+  return pool
 }
+
+export async function executeQueryWithConnection(query: string, values: any[] = []) {
+  return executeQuery(query, values)
+}
+
+export async function closePool() {
+  await pool.end()
+}
+
+export default pool
