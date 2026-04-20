@@ -38,7 +38,7 @@ export default function StaffManagementPage() {
     department: '',
     hireDate: '',
     salary: '',
-    status: 'active' as const,
+    status: 'active' as 'active' | 'inactive' | 'on_leave',
   })
 
   const filteredStaff = staff.filter(
