@@ -83,7 +83,7 @@ export function AdminChatPanel() {
 
   // Play notification sound for new messages (throttled)
   useEffect(() => {
-    if (newMessageNotifications.length > 0) {
+    if (newMessageNotifications && newMessageNotifications.length > 0) {
       const now = Date.now()
       if (now - lastNotificationSound > 2000) {
         // Throttle to once every 2 seconds
