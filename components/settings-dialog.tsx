@@ -93,8 +93,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   }
 
   const handleConfirmDelete = async () => {
-    // Allow deletion even without password for accounts that don't have one
-    if (!deletePassword && user?.password) {
+    // Require password for account deletion
+    if (!deletePassword) {
       toast({
         title: "Password required",
         description: "Please enter your password to confirm account deletion.",

@@ -144,7 +144,7 @@ export function UnifiedAdminChatPanel() {
 
   // Play notification sound for new messages (throttled)
   useEffect(() => {
-    if (newMessageNotifications.length > 0) {
+    if (newMessageNotifications && newMessageNotifications.length > 0) {
       const now = Date.now()
       if (now - lastNotificationSound > 2000) {
         playAdminNotificationSound()
@@ -153,7 +153,7 @@ export function UnifiedAdminChatPanel() {
 
       // Show toast notification for new messages
       const latestMessage = chatHistory.find(
-        (msg) => newMessageNotifications.includes(msg.id) && msg.senderId !== user?.id,
+        (msg) => newMessageNotifications?.includes(msg.id) && msg.senderId !== user?.id,
       )
 
       if (latestMessage) {
@@ -193,7 +193,7 @@ export function UnifiedAdminChatPanel() {
         const lastMessage = messages[messages.length - 1]
         const unreadCount = messages.filter((msg) => !msg.read && msg.senderId !== user?.id).length
         const userStatus = userStatuses[userId]
-        const hasNewNotification = messages.some((msg) => newMessageNotifications.includes(msg.id))
+        const hasNewNotification = messages.some((msg) => newMessageNotifications?.includes(msg.id))
         const isEscalated = escalatedChats[userId] !== undefined
         const hasBotHistory = escalatedChats[userId] !== undefined
         const botMessageCount = escalatedChats[userId]?.filter((msg) => msg.senderType === "bot").length || 0
@@ -295,12 +295,12 @@ export function UnifiedAdminChatPanel() {
         .filter(
           (msg) =>
             (msg.senderId === selectedConversation || msg.recipientId === selectedConversation) &&
-            newMessageNotifications.includes(msg.id),
+            newMessageNotifications?.includes(msg.id),
         )
         .map((msg) => msg.id)
 
       if (conversationNotifications.length > 0) {
-        clearNotifications()
+        clearNotifications?.()
       }
     }
   }, [selectedConversation, chatHistory, user?.id, markAsRead, newMessageNotifications, clearNotifications])
@@ -383,8 +383,8 @@ export function UnifiedAdminChatPanel() {
               {totalUnreadCount > 0 && (
                 <Badge className="bg-red-500 text-white animate-pulse">{totalUnreadCount}</Badge>
               )}
-              {newMessageNotifications.length > 0 && (
-                <Badge className="bg-orange-500 text-white animate-bounce">{newMessageNotifications.length} New</Badge>
+              {(newMessageNotifications?.length ?? 0) > 0 && (
+                <Badge className="bg-orange-500 text-white animate-bounce">{newMessageNotifications?.length} New</Badge>
               )}
             </CardTitle>
             <CardDescription>
@@ -482,7 +482,7 @@ export function UnifiedAdminChatPanel() {
                             >
                               <span>{conversation.userName}</span>
                               {conversation.hasBotHistory && (
-                                <Sparkles className="h-3 w-3 text-purple-500" title="Has AI chat history" />
+                                <Sparkles className="h-3 w-3 text-purple-500" />
                               )}
                             </h4>
                             <span className="text-xs text-gray-500">{formatTime(conversation.lastMessageTime)}</span>

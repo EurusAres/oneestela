@@ -164,7 +164,7 @@ export function AvailableSpacesSection() {
                     {venue.price_per_hour > 0 && (
                       <div className="flex items-center text-sm text-gray-600">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        ₱{parseFloat(venue.price_per_hour).toFixed(2)}/hour
+                        ₱{Number(venue.price_per_hour).toFixed(2)}/hour
                       </div>
                     )}
                     {venue.location && (
@@ -232,7 +232,7 @@ export function AvailableSpacesSection() {
                     {room.price_per_hour > 0 && (
                       <div className="flex items-center text-sm text-gray-600">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        ₱{parseFloat(room.price_per_hour).toFixed(2)}/month
+                        ₱{Number(room.price_per_hour).toFixed(2)}/month
                       </div>
                     )}
                     {room.available_rooms !== undefined && (

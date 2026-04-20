@@ -606,7 +606,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                   <Label htmlFor="eventName" className="text-sm">{isOfficeSpace() ? "Purpose/Description" : "Event Name"}</Label>
                   <Input
                     id="eventName"
-                    className="h-10"
+                    className={`h-10 ${errors.eventName ? "border-red-500" : ""}`}
                     placeholder={isOfficeSpace() ? "e.g., Monthly office rental, Business operations" : "Enter event name"}
                     value={bookingData.eventName}
                     onChange={(e) => {
@@ -615,7 +615,6 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                         setErrors({ ...errors, eventName: "" })
                       }
                     }}
-                    className={errors.eventName ? "border-red-500" : ""}
                   />
                   {errors.eventName && <p className="text-sm text-red-500">{errors.eventName}</p>}
                 </div>
@@ -659,7 +658,7 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                       min="1"
                       max={getSelectedSpaceCapacity() || undefined}
                       placeholder="Number of guests"
-                      className="h-10"
+                      className={`h-10 ${errors.guestCount ? "border-red-500" : ""}`}
                       value={bookingData.guestCount}
                       onChange={(e) => {
                         const value = e.target.value
@@ -674,7 +673,6 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                         
                         setBookingData({ ...bookingData, guestCount: value })
                       }}
-                      className={errors.guestCount ? "border-red-500" : ""}
                     />
                     {errors.guestCount && <p className="text-sm text-red-500">{errors.guestCount}</p>}
                     {(() => {

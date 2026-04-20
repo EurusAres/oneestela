@@ -62,7 +62,8 @@ const defaultContent: ContentDatabase = {
     heroImage: '/images/venue-interior.jpg',
     aboutTitle: 'About One Estela Place',
     aboutDescription: 'One Estela Place is a premier event venue that has been hosting memorable celebrations for over a decade. Our stunning architecture and versatile spaces provide the perfect backdrop for weddings, corporate events, and special occasions.',
-    ctaText: 'Ready to host your event?',
+    ctaTitle: 'Ready to host your event?',
+    ctaDescription: 'Contact us today to book your perfect event space and create unforgettable memories.',
     ctaButtonText: 'Book Your Event',
     features: [
       {

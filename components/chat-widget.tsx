@@ -102,7 +102,7 @@ export function ChatWidget() {
   useEffect(() => {
     if (isOpen && !isMinimized && chatMode === "human") {
       getChatHistory()
-        .filter((msg) => !msg.read && msg.senderId !== user?.id)
+        .filter((msg) => !msg.read && ("senderId" in msg && msg.senderId !== user?.id))
         .forEach((msg) => markAsRead(msg.id))
     }
   }, [isOpen, isMinimized, chatMode, getChatHistory, user?.id, markAsRead])
@@ -376,7 +376,9 @@ export function ChatWidget() {
                         <div
                           className={cn(
                             "flex",
-                            message.senderType === "bot" || message.senderId === user.id
+                            ("senderType" in message && message.senderType === "bot") || 
+                            ("isBot" in message && message.isBot) || 
+                            ("senderId" in message && message.senderId === user.id)
                               ? "justify-end"
                               : "justify-start",
                           )}
@@ -384,47 +386,49 @@ export function ChatWidget() {
                           <div
                             className={cn(
                               "flex items-end space-x-2 max-w-[85%]",
-                              message.senderType === "bot" || message.senderId === user.id
+                              ("senderType" in message && message.senderType === "bot") || 
+                              ("isBot" in message && message.isBot) || 
+                              ("senderId" in message && message.senderId === user.id)
                                 ? "flex-row-reverse space-x-reverse"
                                 : "flex-row",
                             )}
                           >
                             <Avatar className="h-6 w-6">
-                              <AvatarImage src={message.senderAvatar || "/placeholder.svg"} />
+                              <AvatarImage src={("senderAvatar" in message ? message.senderAvatar : undefined) || "/placeholder.svg"} />
                               <AvatarFallback>
-                                {message.senderType === "bot"
+                                {("senderType" in message && message.senderType === "bot") || ("isBot" in message && message.isBot)
                                   ? "AI"
-                                  : message.senderType === "admin"
+                                  : ("senderType" in message && message.senderType === "admin")
                                     ? "ST"
-                                    : message.senderName?.charAt(0) || "U"}
+                                    : ("senderName" in message ? message.senderName?.charAt(0) : undefined) || "U"}
                               </AvatarFallback>
                             </Avatar>
                             <div
                               className={cn(
                                 "rounded-lg px-3 py-2",
-                                message.senderType === "bot"
+                                ("senderType" in message && message.senderType === "bot") || ("isBot" in message && message.isBot)
                                   ? "bg-green-600 text-white"
-                                  : message.senderId === user.id
+                                  : ("senderId" in message && message.senderId === user.id)
                                     ? "bg-blue-600 text-white"
                                     : "bg-gray-100 text-gray-900",
                               )}
                             >
                               <div className="flex items-start space-x-2">
-                                {message.senderType === "bot" && <Sparkles className="h-3 w-3 mt-0.5 text-green-200" />}
+                                {(("senderType" in message && message.senderType === "bot") || ("isBot" in message && message.isBot)) && <Sparkles className="h-3 w-3 mt-0.5 text-green-200" />}
                                 <div className="flex-1">
                                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                                   <div
                                     className={cn(
                                       "flex items-center justify-between mt-1 space-x-2",
-                                      message.senderType === "bot"
+                                      ("senderType" in message && message.senderType === "bot") || ("isBot" in message && message.isBot)
                                         ? "text-green-100"
-                                        : message.senderId === user.id
+                                        : ("senderId" in message && message.senderId === user.id)
                                           ? "text-blue-100"
                                           : "text-gray-500",
                                     )}
                                   >
                                     <span className="text-xs">{formatTime(message.timestamp)}</span>
-                                    {message.senderId === user.id && chatMode === "human" && (
+                                    {("senderId" in message && message.senderId === user.id) && chatMode === "human" && (
                                       <div className="flex items-center">
                                         {message.read ? (
                                           <CheckCheck className="h-3 w-3" />
@@ -441,9 +445,9 @@ export function ChatWidget() {
                         </div>
 
                         {/* Follow-up suggestions for bot messages */}
-                        {message.senderType === "bot" && message.followUps && message.followUps.length > 0 && (
+                        {(("senderType" in message && message.senderType === "bot") || ("isBot" in message && message.isBot)) && ("followUps" in message && message.followUps && message.followUps.length > 0) && (
                           <div className="mt-2 flex flex-wrap gap-2 justify-end">
-                            {message.followUps.map((followUp, index) => (
+                            {("followUps" in message ? message.followUps : []).map((followUp, index) => (
                               <Button
                                 key={index}
                                 variant="outline"
