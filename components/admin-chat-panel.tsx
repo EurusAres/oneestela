@@ -192,7 +192,7 @@ export function AdminChatPanel() {
         const lastMessage = messages[messages.length - 1]
         const unreadCount = messages.filter((msg) => !msg.read && msg.senderId !== user?.id).length
         const userStatus = userStatuses[userId]
-        const hasNewNotification = messages.some((msg) => newMessageNotifications.includes(msg.id))
+        const hasNewNotification = messages.some((msg) => newMessageNotifications?.includes(msg.id))
         const isEscalated = messages.some((msg) => msg.escalated)
         const hasBotHistory = messages.some((msg) => msg.senderType === "bot" || msg.botConversation)
 
