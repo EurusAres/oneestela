@@ -46,10 +46,6 @@ export function CMSHomepageEditor() {
         // Update homepage with the new image URL
         if (field === 'heroImage') {
           updateHomepage({ heroImage: imageUrl })
-        } else if (field === 'aboutImage') {
-          updateHomepage({ aboutImage: imageUrl })
-        } else if (field === 'ctaImage') {
-          updateHomepage({ ctaImage: imageUrl })
         }
       }
     } catch (error) {
@@ -159,8 +155,6 @@ export function CMSHomepageEditor() {
                     variant="destructive"
                     onClick={() => {
                       if (field === 'heroImage') updateHomepage({ heroImage: '' })
-                      else if (field === 'aboutImage') updateHomepage({ aboutImage: '' })
-                      else if (field === 'ctaImage') updateHomepage({ ctaImage: '' })
                     }}
                     className="w-full sm:w-auto text-xs md:text-sm"
                   >

@@ -60,6 +60,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
             endTime: b.endTime || (b.check_out_date ? new Date(b.check_out_date).toTimeString().slice(0,5) : ''),
             specialRequests: b.specialRequests || b.special_requests || '',
             declineReason: b.declineReason || b.decline_reason || '',
+            status: (b.status || 'pending') as "pending" | "confirmed" | "declined" | "completed" | "cancelled",
             submittedAt: b.submittedAt || b.created_at || new Date().toISOString(),
             total: b.total || b.total_price?.toString(),
             userInfo: b.userInfo || {
@@ -146,7 +147,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       
       if (response.ok) {
         const updatedBookings = bookings.map((booking) =>
-          booking.id === id ? { ...booking, status: "cancelled" } : booking,
+          booking.id === id ? { ...booking, status: "cancelled" as const } : booking,
         )
         setBookings(updatedBookings)
         

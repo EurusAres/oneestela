@@ -111,7 +111,7 @@ export function AdminChatPanel() {
 
       // Show toast notification for new messages
       const latestMessage = chatHistory.find(
-        (msg) => newMessageNotifications.includes(msg.id) && msg.senderId !== user?.id,
+        (msg) => newMessageNotifications?.includes(msg.id) && msg.senderId !== user?.id,
       )
 
       if (latestMessage) {
@@ -248,11 +248,11 @@ export function AdminChatPanel() {
 
       // Clear notifications for this conversation
       const conversationNotifications = selectedMessages
-        .filter((msg) => newMessageNotifications.includes(msg.id))
+        .filter((msg) => newMessageNotifications?.includes(msg.id))
         .map((msg) => msg.id)
 
       if (conversationNotifications.length > 0) {
-        clearNotifications()
+        clearNotifications?.()
       }
     }
   }, [selectedConversation, selectedMessages, user?.id, markAsRead, newMessageNotifications, clearNotifications])
@@ -335,8 +335,8 @@ export function AdminChatPanel() {
               {totalUnreadCount > 0 && (
                 <Badge className="bg-red-500 text-white animate-pulse">{totalUnreadCount}</Badge>
               )}
-              {newMessageNotifications.length > 0 && (
-                <Badge className="bg-orange-500 text-white animate-bounce">{newMessageNotifications.length} New</Badge>
+              {(newMessageNotifications?.length ?? 0) > 0 && (
+                <Badge className="bg-orange-500 text-white animate-bounce">{newMessageNotifications?.length} New</Badge>
               )}
             </CardTitle>
             <CardDescription>
@@ -434,7 +434,7 @@ export function AdminChatPanel() {
                             >
                               <span>{conversation.userName}</span>
                               {conversation.hasBotHistory && (
-                                <Sparkles className="h-3 w-3 text-purple-500" title="Has AI chat history" />
+                                <Sparkles className="h-3 w-3 text-purple-500" />
                               )}
                             </h4>
                             <span className="text-xs text-gray-500">{formatTime(conversation.lastMessageTime)}</span>
