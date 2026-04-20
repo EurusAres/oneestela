@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { MainLayout } from "@/components/main-layout"
 import { Button } from "@/components/ui/button"
@@ -244,7 +244,7 @@ function BookingDetailDialog({
   )
 }
 
-export default function BookingsPage() {
+function BookingsPageContent() {
   const { getAllBookings, updateBookingStatus } = useBookings()
   const { toast } = useToast()
   const searchParams = useSearchParams()
@@ -716,5 +716,25 @@ export default function BookingsPage() {
         </DialogContent>
       </Dialog>
     </MainLayout>
+  )
+}
+
+export default function BookingsPage() {
+  return (
+    <Suspense fallback={
+      <MainLayout>
+        <div className="container mx-auto px-4 py-6 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">Booking Management</h1>
+              <p className="text-gray-600 text-sm md:text-base">Manage customer bookings and inquiries</p>
+            </div>
+          </div>
+          <div className="text-center py-8">Loading bookings...</div>
+        </div>
+      </MainLayout>
+    }>
+      <BookingsPageContent />
+    </Suspense>
   )
 }
