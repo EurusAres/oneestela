@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emergency Database Fix</title>
+</head>
+<body>
+    <h1>Emergency Database Fix</h1>
+    <button onclick="runEmergencyFix()">Run Emergency Fix</button>
+    <div id="result"></div>
+
+    <script>
+        async function runEmergencyFix() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Running emergency fix...';
+            
+            try {
+                const response = await fetch('https://oneestela.vercel.app/api/test-db', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                resultDiv.innerHTML = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

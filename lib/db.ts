@@ -11,8 +11,9 @@ const dbConfig = {
     rejectUnauthorized: false // Required for Aiven managed MySQL
   },
   connectTimeout: 60000,
-  acquireTimeout: 60000,
-  timeout: 60000,
+  // Remove invalid configuration options that cause warnings
+  // acquireTimeout: 60000,  // Not valid for mysql2
+  // timeout: 60000,         // Not valid for mysql2
   // Connection pool settings for better performance
   connectionLimit: 10,
   queueLimit: 0
