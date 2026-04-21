@@ -152,7 +152,20 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
               name: venue.name,
               description: venue.description || 'Experience this beautiful event venue',
               capacity: venue.capacity ? `Up to ${venue.capacity} guests` : undefined,
-              amenities: venue.amenities ? JSON.parse(venue.amenities) : [],
+              amenities: (() => {
+                if (Array.isArray(venue.amenities)) {
+                  return venue.amenities
+                }
+                if (venue.amenities && typeof venue.amenities === 'string') {
+                  try {
+                    return JSON.parse(venue.amenities)
+                  } catch (error) {
+                    console.warn('Invalid JSON in venue amenities:', venue.amenities)
+                    return []
+                  }
+                }
+                return []
+              })(),
               category: 'event',
               price: venue.price_per_hour || 0,
               angles,
@@ -212,7 +225,20 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
               availableRooms: room.available_rooms, // Use the corrected value from API
               unavailableEntries: room.unavailable_entries || [],
               unavailableCount: room.unavailable_count || 0,
-              amenities: room.amenities ? JSON.parse(room.amenities) : [],
+              amenities: (() => {
+                if (Array.isArray(room.amenities)) {
+                  return room.amenities
+                }
+                if (room.amenities && typeof room.amenities === 'string') {
+                  try {
+                    return JSON.parse(room.amenities)
+                  } catch (error) {
+                    console.warn('Invalid JSON in room amenities:', room.amenities)
+                    return []
+                  }
+                }
+                return []
+              })(),
               category: 'office',
               floor,
               price: room.price_per_hour || 0,
