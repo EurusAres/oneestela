@@ -6,46 +6,54 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const venueId = searchParams.get('venueId');
 
-    let query = `
-      SELECT ud.id, ud.venue_id, DATE_FORMAT(ud.date, '%Y-%m-%d') as date, 
-             ud.reason, ud.notes, ud.created_by, ud.created_at, v.name as venue_name 
-      FROM unavailable_dates ud 
-      JOIN venues v ON ud.venue_id = v.id
-    `;
-    const params: any[] = [];
+    // Handle missing tables gracefully
+    let unavailableDates: any[] = [];
+    
+    try {
+      let query = `
+        SELECT ud.id, ud.venue_id, DATE_FORMAT(ud.date, '%Y-%m-%d') as date, 
+               ud.reason, ud.notes, ud.created_at, v.name as venue_name 
+        FROM unavailable_dates ud 
+        JOIN venues v ON ud.venue_id = v.id
+      `;
+      const params: any[] = [];
 
-    if (venueId) {
-      query += ' WHERE ud.venue_id = ?';
-      params.push(venueId);
-    }
+      if (venueId) {
+        query += ' WHERE ud.venue_id = ?';
+        params.push(venueId);
+      }
 
-    query += ' ORDER BY ud.date ASC';
+      query += ' ORDER BY ud.date ASC';
 
-    const unavailableDates = await executeQuery(query, params);
+      unavailableDates = await executeQuery(query, params) as any[];
 
-    console.log('Raw database result:', unavailableDates);
+      console.log('Raw database result:', unavailableDates);
 
-    // Format dates to ensure consistency
-    const formattedDates = (unavailableDates as any[]).map(item => {
-      console.log('Processing item:', item);
-      console.log('Original date:', item.date);
-      console.log('Date type:', typeof item.date);
-      
-      const formattedDate = item.date instanceof Date 
-        ? item.date.toISOString().split('T')[0] 
-        : item.date;
+      // Format dates to ensure consistency
+      const formattedDates = unavailableDates.map(item => {
+        console.log('Processing item:', item);
+        console.log('Original date:', item.date);
+        console.log('Date type:', typeof item.date);
         
-      console.log('Formatted date:', formattedDate);
+        const formattedDate = item.date instanceof Date 
+          ? item.date.toISOString().split('T')[0] 
+          : item.date;
+          
+        console.log('Formatted date:', formattedDate);
+        
+        return {
+          ...item,
+          date: formattedDate
+        };
+      });
+
+      console.log('Final formatted dates:', formattedDates);
+      return NextResponse.json({ unavailableDates: formattedDates });
       
-      return {
-        ...item,
-        date: formattedDate
-      };
-    });
-
-    console.log('Final formatted dates:', formattedDates);
-
-    return NextResponse.json({ unavailableDates: formattedDates });
+    } catch (error) {
+      console.log('Unavailable dates table not found or empty, returning empty array');
+      return NextResponse.json({ unavailableDates: [] });
+    }
   } catch (error) {
     console.error('Error fetching unavailable dates:', error);
     return NextResponse.json(

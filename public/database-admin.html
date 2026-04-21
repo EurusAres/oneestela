@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Estela Place - Database Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button.success {
+            background: #28a745;
+        }
+        .button.danger {
+            background: #dc3545;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .test-pass {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .test-fail {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .summary {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 One Estela Place - Database Admin</h1>
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+            <button class="button" onclick="runTests()">🧪 Test All APIs</button>
+            <button class="button danger" onclick="fixDatabase()">🔧 Fix Database Schema</button>
+            <button class="button success" onclick="testSpecificEndpoint('/api/dashboard/stats')">📊 Test Dashboard Stats</button>
+            <button class="button success" onclick="testSpecificEndpoint('/api/users')">👥 Test Users API</button>
+            <button class="button success" onclick="testSpecificEndpoint('/api/office-rooms')">🏢 Test Office Rooms API</button>
+            <button class="button success" onclick="testSpecificEndpoint('/api/payment-proofs')">💳 Test Payment Proofs API</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        function displayResults(title, data) {
+            hideLoading();
+            const resultsDiv = document.getElementById('results');
+            
+            let html = `<div class="results">
+                <h2>${title}</h2>
+                <div class="summary">
+                    <strong>Timestamp:</strong> ${new Date().toLocaleString()}
+                </div>`;
+            
+            if (data.summary) {
+                const summaryClass = data.summary.success ? 'test-pass' : 'test-fail';
+                html += `<div class="test-item ${summaryClass}">
+                    <strong>Summary:</strong> ${data.summary.passed}/${data.summary.total} tests passed
+                </div>`;
+            }
+            
+            if (data.tests) {
+                data.tests.forEach(test => {
+                    const testClass = test.status === 'PASS' ? 'test-pass' : 'test-fail';
+                    html += `<div class="test-item ${testClass}">
+                        <strong>${test.name}:</strong> ${test.status}`;
+                    
+                    if (test.count !== undefined) {
+                        html += ` (${test.count} records)`;
+                    }
+                    
+                    if (test.error) {
+                        html += `<br><small>Error: ${test.error}</small>`;
+                    }
+                    
+                    if (test.missingColumns && test.missingColumns.length > 0) {
+                        html += `<br><small>Missing columns: ${test.missingColumns.join(', ')}</small>`;
+                    }
+                    
+                    html += `</div>`;
+                });
+            }
+            
+            if (data.fixes) {
+                html += `<h3>Applied Fixes:</h3>`;
+                data.fixes.forEach(fix => {
+                    html += `<div class="test-item test-pass">✅ ${fix}</div>`;
+                });
+            }
+            
+            html += `<pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function runTests() {
+            showLoading();
+            try {
+                const response = await fetch('/api/test-all-apis');
+                const data = await response.json();
+                displayResults('🧪 API Test Results', data);
+            } catch (error) {
+                hideLoading();
+                document.getElementById('results').innerHTML = `
+                    <div class="results">
+                        <h2>❌ Test Failed</h2>
+                        <div class="test-item test-fail">
+                            Error: ${error.message}
+                        </div>
+                    </div>`;
+            }
+        }
+        
+        async function fixDatabase() {
+            if (!confirm('This will modify the database schema. Are you sure?')) {
+                return;
+            }
+            
+            showLoading();
+            try {
+                const response = await fetch('/api/fix-database', { method: 'POST' });
+                const data = await response.json();
+                displayResults('🔧 Database Fix Results', data);
+            } catch (error) {
+                hideLoading();
+                document.getElementById('results').innerHTML = `
+                    <div class="results">
+                        <h2>❌ Database Fix Failed</h2>
+                        <div class="test-item test-fail">
+                            Error: ${error.message}
+                        </div>
+                    </div>`;
+            }
+        }
+        
+        async function testSpecificEndpoint(endpoint) {
+            showLoading();
+            try {
+                const response = await fetch(endpoint);
+                const data = await response.json();
+                
+                const title = `🔍 Test Results for ${endpoint}`;
+                const result = {
+                    endpoint: endpoint,
+                    status: response.status,
+                    statusText: response.statusText,
+                    success: response.ok,
+                    data: data
+                };
+                
+                displayResults(title, result);
+            } catch (error) {
+                hideLoading();
+                document.getElementById('results').innerHTML = `
+                    <div class="results">
+                        <h2>❌ Endpoint Test Failed</h2>
+                        <div class="test-item test-fail">
+                            <strong>Endpoint:</strong> ${endpoint}<br>
+                            <strong>Error:</strong> ${error.message}
+                        </div>
+                    </div>`;
+            }
+        }
+        
+        // Auto-run tests on page load
+        window.onload = function() {
+            runTests();
+        };
+    </script>
+</body>
+</html>
