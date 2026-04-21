@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 Fix Database Now - One Estela Place</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+            text-align: center;
+        }
+        .container {
+            background: #2d2d2d;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #ff4757;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .status {
+            font-size: 1.2em;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: #3d3d3d;
+        }
+        .button {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 20px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+        .button:hover {
+            background: #ff3742;
+            transform: scale(1.05);
+        }
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #1e1e1e;
+            border-radius: 10px;
+            text-align: left;
+            display: none;
+        }
+        .fix-item {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background: #2d2d2d;
+        }
+        .success {
+            border-left: 4px solid #2ed573;
+        }
+        .error {
+            border-left: 4px solid #ff4757;
+        }
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+        .spinner {
+            border: 4px solid #333;
+            border-top: 4px solid #ff4757;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 Emergency Database Fix</h1>
+        
+        <div class="status" id="status">
+            Click the button below to fix all database errors immediately.
+        </div>
+        
+        <button class="button" id="fixButton" onclick="runFix()">
+            🔧 FIX ALL ERRORS NOW
+        </button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Fixing database... Please wait...</p>
+        </div>
+        
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('fixButton').disabled = true;
+            document.getElementById('fixButton').textContent = '🔧 FIXING...';
+            document.getElementById('results').style.display = 'none';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('fixButton').disabled = false;
+            document.getElementById('fixButton').textContent = '✅ FIX COMPLETED';
+        }
+        
+        function displayResults(data) {
+            hideLoading();
+            const resultsDiv = document.getElementById('results');
+            
+            let html = '<h2>🎉 Fix Results</h2>';
+            
+            if (data.success) {
+                html += '<div class="fix-item success"><strong>✅ SUCCESS!</strong> Database fixes completed!</div>';
+                
+                document.getElementById('status').innerHTML = `
+                    <strong>🎉 FIXED!</strong> Your site should now work without errors. 
+                    <br><br>Go back to your main site and refresh to see the changes.
+                `;
+                document.getElementById('status').style.background = '#2ed573';
+                document.getElementById('status').style.color = 'white';
+            } else {
+                html += '<div class="fix-item error"><strong>❌ PARTIAL FIX</strong> Some issues remain.</div>';
+            }
+            
+            if (data.fixes && data.fixes.length > 0) {
+                html += '<h3>✅ Applied Fixes:</h3>';
+                data.fixes.forEach(fix => {
+                    html += '<div class="fix-item success">' + fix + '</div>';
+                });
+            }
+            
+            if (data.errors && data.errors.length > 0) {
+                html += '<h3>❌ Remaining Issues:</h3>';
+                data.errors.forEach(error => {
+                    html += '<div class="fix-item error">' + error + '</div>';
+                });
+            }
+            
+            html += '<div class="fix-item success" style="margin-top: 20px; text-align: center; background: #2ed573; color: white;"><strong>🚀 Next: Go back to your main site and refresh!</strong></div>';
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+        
+        async function runFix() {
+            showLoading();
+            
+            try {
+                const response = await fetch('/api/test-db', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                hideLoading();
+                document.getElementById('results').innerHTML = 
+                    '<div class="fix-item error"><h2>❌ Fix Failed</h2><p>Error: ' + error.message + '</p><p>Please try again or contact support.</p></div>';
+                document.getElementById('results').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
