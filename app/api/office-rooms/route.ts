@@ -99,8 +99,40 @@ export async function GET(request: NextRequest) {
       const actualAvailableRooms = Math.max(0, Number(room.available_rooms || 0) - totalOccupied);
       const unavailableEntries = unavailableEntriesMap.get(room.id) || [];
       
+      // Parse amenities safely
+      let parsedAmenities = [];
+      if (room.amenities) {
+        try {
+          if (typeof room.amenities === 'string') {
+            // If it's a string that looks like JSON, parse it
+            if (room.amenities.trim().startsWith('[') || room.amenities.trim().startsWith('{')) {
+              parsedAmenities = JSON.parse(room.amenities);
+            } else {
+              // If it's a comma-separated string, split it
+              parsedAmenities = room.amenities.split(',').map((item: string) => item.trim()).filter((item: string) => item);
+            }
+          } else if (Array.isArray(room.amenities)) {
+            parsedAmenities = room.amenities;
+          } else {
+            // If it's already an object (from JSON column), use as is
+            parsedAmenities = room.amenities;
+          }
+        } catch (error) {
+          console.log('Error parsing amenities for room', room.id, ':', error);
+          console.log('Amenities value:', room.amenities);
+          console.log('Amenities type:', typeof room.amenities);
+          // If parsing fails, treat as comma-separated string
+          if (typeof room.amenities === 'string') {
+            parsedAmenities = room.amenities.split(',').map((item: string) => item.trim()).filter((item: string) => item);
+          } else {
+            parsedAmenities = [];
+          }
+        }
+      }
+      
       return {
         ...room,
+        amenities: parsedAmenities,
         image_360_url: room.image_360_url || '',
         type: room.type || 'office',
         available_rooms: actualAvailableRooms,

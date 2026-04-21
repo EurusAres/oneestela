@@ -57,8 +57,11 @@ CREATE TABLE IF NOT EXISTS office_rooms (
   description LONGTEXT,
   capacity INT,
   price_per_hour DECIMAL(10, 2),
+  available_rooms INT DEFAULT 1,
   image_url VARCHAR(500),
+  image_360_url VARCHAR(500),
   amenities JSON,
+  type VARCHAR(100) DEFAULT 'office',
   status ENUM('available', 'maintenance', 'booked') DEFAULT 'available',
   total_rooms INT DEFAULT 1,
   unavailable_rooms INT DEFAULT 0,
@@ -78,14 +81,18 @@ CREATE TABLE IF NOT EXISTS bookings (
   venue_id INT,
   event_name VARCHAR(255),
   event_type VARCHAR(100),
-  date DATE,
+  check_in_date DATE,
+  check_out_date DATE,
+  date DATE, -- Legacy column for compatibility
   start_time TIME,
   end_time TIME,
-  guest_count INT,
+  number_of_guests INT,
+  guest_count INT, -- Legacy column for compatibility
   special_requests LONGTEXT,
   status ENUM('pending', 'confirmed', 'cancelled', 'completed', 'declined') DEFAULT 'pending',
   decline_reason TEXT,
-  total_amount DECIMAL(10, 2),
+  total_price DECIMAL(10, 2),
+  total_amount DECIMAL(10, 2), -- Legacy column for compatibility
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -95,7 +102,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   INDEX idx_office_room_id (office_room_id),
   INDEX idx_venue_id (venue_id),
   INDEX idx_status (status),
-  INDEX idx_date (date)
+  INDEX idx_date (date),
+  INDEX idx_check_in_date (check_in_date)
 );
 
 -- Create Contact Messages table
@@ -220,6 +228,7 @@ CREATE TABLE IF NOT EXISTS unavailable_dates (
   date DATE NOT NULL,
   reason VARCHAR(500),
   notes TEXT,
+  created_by VARCHAR(255) DEFAULT 'admin',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (venue_id) REFERENCES venues(id) ON DELETE CASCADE,
   UNIQUE KEY unique_venue_date (venue_id, date),
@@ -231,15 +240,12 @@ CREATE TABLE IF NOT EXISTS unavailable_dates (
 CREATE TABLE IF NOT EXISTS unavailable_offices (
   id INT PRIMARY KEY AUTO_INCREMENT,
   office_room_id INT NOT NULL,
-  date DATE NOT NULL,
-  unavailable_count INT NOT NULL DEFAULT 1,
+  unavailable_rooms INT NOT NULL DEFAULT 1,
   reason VARCHAR(500),
   notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (office_room_id) REFERENCES office_rooms(id) ON DELETE CASCADE,
-  UNIQUE KEY unique_office_date (office_room_id, date),
-  INDEX idx_office_room_id (office_room_id),
-  INDEX idx_date (date)
+  INDEX idx_office_room_id (office_room_id)
 );
 
 -- Insert initial admin user (password: admin123)

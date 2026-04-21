@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 Emergency Database Fix - One Estela Place</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .status {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .button {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            display: block;
+            margin: 20px auto;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .button:hover {
+            background: #ff3742;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: none;
+        }
+        .fix-item {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .success {
+            border-left: 4px solid #2ed573;
+        }
+        .error {
+            border-left: 4px solid #ff4757;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .countdown {
+            font-size: 3em;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .auto-message {
+            text-align: center;
+            font-style: italic;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 Emergency Database Fix</h1>
+        
+        <div class="status" id="status">
+            Your site is experiencing database errors. This emergency fix will resolve all issues automatically.
+        </div>
+        
+        <div class="countdown" id="countdown">5</div>
+        <div class="auto-message">Auto-fixing in <span id="countdown-text">5</span> seconds...</div>
+        
+        <button class="button" id="fixButton" onclick="runEmergencyFix()">
+            🔧 RUN EMERGENCY FIX NOW
+        </button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Fixing database issues... Please wait...</p>
+        </div>
+        
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        let countdownTimer;
+        let countdownValue = 5;
+        
+        function updateCountdown() {
+            document.getElementById('countdown').textContent = countdownValue;
+            document.getElementById('countdown-text').textContent = countdownValue;
+            
+            if (countdownValue <= 0) {
+                clearInterval(countdownTimer);
+                document.getElementById('countdown').style.display = 'none';
+                document.querySelector('.auto-message').style.display = 'none';
+                runEmergencyFix();
+            } else {
+                countdownValue--;
+            }
+        }
+        
+        function startCountdown() {
+            countdownTimer = setInterval(updateCountdown, 1000);
+        }
+        
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('fixButton').disabled = true;
+            document.getElementById('fixButton').textContent = '🔧 FIXING...';
+            document.getElementById('results').style.display = 'none';
+            
+            // Clear countdown
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            document.getElementById('countdown').style.display = 'none';
+            document.querySelector('.auto-message').style.display = 'none';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('fixButton').disabled = false;
+            document.getElementById('fixButton').textContent = '✅ FIX COMPLETED';
+        }
+        
+        function displayResults(data) {
+            hideLoading();
+            const resultsDiv = document.getElementById('results');
+            
+            let html = `<h2>🎉 Emergency Fix Results</h2>`;
+            
+            if (data.success) {
+                html += `<div class="fix-item success">
+                    <strong>✅ SUCCESS!</strong> All database issues have been resolved!
+                </div>`;
+                
+                document.getElementById('status').innerHTML = `
+                    <strong>🎉 FIXED!</strong> Your site should now work without errors. 
+                    <br>Refresh your main site to see the changes.
+                `;
+                document.getElementById('status').style.background = 'rgba(46, 213, 115, 0.3)';
+            } else {
+                html += `<div class="fix-item error">
+                    <strong>❌ PARTIAL FIX</strong> Some issues were resolved, but errors remain.
+                </div>`;
+            }
+            
+            if (data.fixes && data.fixes.length > 0) {
+                html += `<h3>Applied Fixes:</h3>`;
+                data.fixes.forEach(fix => {
+                    html += `<div class="fix-item success">${fix}</div>`;
+                });
+            }
+            
+            if (data.errors && data.errors.length > 0) {
+                html += `<h3>Remaining Issues:</h3>`;
+                data.errors.forEach(error => {
+                    html += `<div class="fix-item error">${error}</div>`;
+                });
+            }
+            
+            if (data.apiStatus && data.apiStatus.length > 0) {
+                html += `<h3>API Status:</h3>`;
+                data.apiStatus.forEach(status => {
+                    const isSuccess = status.includes('✅');
+                    html += `<div class="fix-item ${isSuccess ? 'success' : 'error'}">${status}</div>`;
+                });
+            }
+            
+            html += `<div class="fix-item success" style="margin-top: 20px; text-align: center;">
+                <strong>🚀 Next Steps:</strong><br>
+                1. Close this tab<br>
+                2. Refresh your main site<br>
+                3. All errors should be gone!
+            </div>`;
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+        
+        async function runEmergencyFix() {
+            showLoading();
+            
+            try {
+                const response = await fetch('/api/emergency-fix');
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                hideLoading();
+                document.getElementById('results').innerHTML = `
+                    <div class="fix-item error">
+                        <h2>❌ Fix Failed</h2>
+                        <p>Error: ${error.message}</p>
+                        <p>Please try refreshing the page and running the fix again.</p>
+                    </div>`;
+                document.getElementById('results').style.display = 'block';
+            }
+        }
+        
+        // Start countdown when page loads
+        window.onload = function() {
+            startCountdown();
+        };
+        
+        // Allow manual trigger
+        document.getElementById('fixButton').onclick = function() {
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            runEmergencyFix();
+        };
+    </script>
+</body>
+</html>

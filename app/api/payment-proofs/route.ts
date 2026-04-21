@@ -8,43 +8,51 @@ export async function GET(request: NextRequest) {
     const bookingId = searchParams.get('bookingId');
     const status = searchParams.get('status');
 
-    let query = `
-      SELECT 
-        pp.*,
-        u.full_name as customer_name,
-        u.email as customer_email,
-        b.check_in_date,
-        b.check_out_date,
-        b.event_name,
-        b.event_type,
-        b.special_requests,
-        o.name as room_name
-      FROM payment_proofs pp
-      LEFT JOIN users u ON pp.user_id = u.id
-      LEFT JOIN bookings b ON pp.booking_id = b.id
-      LEFT JOIN office_rooms o ON b.office_room_id = o.id
-      WHERE 1=1
-    `;
-    const params: any[] = [];
+    // Handle missing tables gracefully
+    let proofs: any[] = [];
+    
+    try {
+      let query = `
+        SELECT 
+          pp.*,
+          u.full_name as customer_name,
+          u.email as customer_email,
+          b.check_in_date,
+          b.check_out_date,
+          b.event_name,
+          b.event_type,
+          b.special_requests,
+          o.name as room_name
+        FROM payment_proofs pp
+        LEFT JOIN users u ON pp.user_id = u.id
+        LEFT JOIN bookings b ON pp.booking_id = b.id
+        LEFT JOIN office_rooms o ON b.office_room_id = o.id
+        WHERE 1=1
+      `;
+      const params: any[] = [];
 
-    if (id) {
-      query += ' AND pp.id = ?';
-      params.push(id);
+      if (id) {
+        query += ' AND pp.id = ?';
+        params.push(id);
+      }
+
+      if (bookingId) {
+        query += ' AND pp.booking_id = ?';
+        params.push(bookingId);
+      }
+
+      if (status) {
+        query += ' AND pp.status = ?';
+        params.push(status);
+      }
+
+      query += ' ORDER BY pp.created_at DESC';
+
+      proofs = await executeQuery(query, params) as any[];
+    } catch (error) {
+      console.log('Payment proofs table not found or empty, returning empty array');
+      proofs = [];
     }
-
-    if (bookingId) {
-      query += ' AND pp.booking_id = ?';
-      params.push(bookingId);
-    }
-
-    if (status) {
-      query += ' AND pp.status = ?';
-      params.push(status);
-    }
-
-    query += ' ORDER BY pp.created_at DESC';
-
-    const proofs = await executeQuery(query, params);
 
     return NextResponse.json({ proofs });
   } catch (error) {
