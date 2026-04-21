@@ -12,7 +12,9 @@ export async function GET(request: NextRequest) {
     try {
       let query = `
         SELECT ud.id, ud.venue_id, DATE_FORMAT(ud.date, '%Y-%m-%d') as date, 
-               ud.reason, ud.notes, ud.created_at, v.name as venue_name 
+               ud.reason, ud.notes, 
+               COALESCE(ud.created_by, 'admin') as created_by,
+               ud.created_at, v.name as venue_name 
         FROM unavailable_dates ud 
         JOIN venues v ON ud.venue_id = v.id
       `;

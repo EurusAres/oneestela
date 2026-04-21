@@ -23,7 +23,7 @@ export async function GET() {
           SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
           SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled,
           SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
-          COALESCE(SUM(total_price), 0) as total_revenue
+          COALESCE(SUM(CASE WHEN total_price IS NOT NULL THEN total_price WHEN total_amount IS NOT NULL THEN total_amount ELSE 0 END), 0) as total_revenue
         FROM bookings
       `) as any;
       totals = totalResults;
@@ -47,10 +47,10 @@ export async function GET() {
         SELECT 
           b.id, 
           b.status, 
-          b.check_in_date, 
-          b.check_out_date, 
-          b.total_price,
-          b.number_of_guests,
+          COALESCE(b.check_in_date, b.date) as check_in_date, 
+          COALESCE(b.check_out_date, b.date) as check_out_date, 
+          COALESCE(b.total_price, b.total_amount, 0) as total_price,
+          COALESCE(b.number_of_guests, b.guest_count, 0) as number_of_guests,
           b.special_requests, 
           b.created_at,
           b.updated_at,
@@ -72,9 +72,9 @@ export async function GET() {
     let monthlyBookings: any[] = [];
     try {
       monthlyBookings = await executeQuery(`
-        SELECT DATE_FORMAT(check_in_date, '%Y-%m') as month, COUNT(*) as count
+        SELECT DATE_FORMAT(COALESCE(check_in_date, date), '%Y-%m') as month, COUNT(*) as count
         FROM bookings
-        WHERE check_in_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        WHERE COALESCE(check_in_date, date) >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
         GROUP BY month
         ORDER BY month ASC
       `) as any[];
@@ -86,10 +86,10 @@ export async function GET() {
     let monthlyRevenue: any[] = [];
     try {
       monthlyRevenue = await executeQuery(`
-        SELECT DATE_FORMAT(check_in_date, '%Y-%m') as month,
-               COALESCE(SUM(total_price), 0) as amount
+        SELECT DATE_FORMAT(COALESCE(check_in_date, date), '%Y-%m') as month,
+               COALESCE(SUM(CASE WHEN total_price IS NOT NULL THEN total_price WHEN total_amount IS NOT NULL THEN total_amount ELSE 0 END), 0) as amount
         FROM bookings
-        WHERE check_in_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        WHERE COALESCE(check_in_date, date) >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
           AND status IN ('confirmed', 'completed')
         GROUP BY month
         ORDER BY month ASC
@@ -194,7 +194,7 @@ export async function GET() {
     
     try {
       const [thisMonthResults] = await executeQuery(`
-        SELECT COUNT(*) as count, COALESCE(SUM(total_price), 0) as revenue
+        SELECT COUNT(*) as count, COALESCE(SUM(CASE WHEN total_price IS NOT NULL THEN total_price WHEN total_amount IS NOT NULL THEN total_amount ELSE 0 END), 0) as revenue
         FROM bookings
         WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())
       `) as any;
@@ -205,7 +205,7 @@ export async function GET() {
 
     try {
       const [lastMonthResults] = await executeQuery(`
-        SELECT COUNT(*) as count, COALESCE(SUM(total_price), 0) as revenue
+        SELECT COUNT(*) as count, COALESCE(SUM(CASE WHEN total_price IS NOT NULL THEN total_price WHEN total_amount IS NOT NULL THEN total_amount ELSE 0 END), 0) as revenue
         FROM bookings
         WHERE MONTH(created_at) = MONTH(DATE_SUB(NOW(), INTERVAL 1 MONTH))
           AND YEAR(created_at) = YEAR(DATE_SUB(NOW(), INTERVAL 1 MONTH))
