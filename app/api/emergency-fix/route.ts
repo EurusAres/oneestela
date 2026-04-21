@@ -22,12 +22,101 @@ export async function GET() {
           phone VARCHAR(20),
           role ENUM('user', 'admin', 'staff') DEFAULT 'user',
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_email (email),
+          INDEX idx_role (role)
         )
       `);
       results.fixes.push('✅ Users table ensured');
     } catch (error: any) {
       results.errors.push(`❌ Users table: ${error.message}`);
+    }
+
+    // Fix 1.1: Create missing email verification tables
+    try {
+      await executeQuery(`
+        CREATE TABLE IF NOT EXISTS email_verifications (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          code VARCHAR(6) NOT NULL,
+          verified BOOLEAN DEFAULT FALSE,
+          expires_at TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_email (email),
+          INDEX idx_code (code),
+          INDEX idx_expires_at (expires_at)
+        )
+      `);
+      results.fixes.push('✅ Email verifications table ensured');
+    } catch (error: any) {
+      results.errors.push(`❌ Email verifications table: ${error.message}`);
+    }
+
+    try {
+      await executeQuery(`
+        CREATE TABLE IF NOT EXISTS verification_codes (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          code VARCHAR(6) NOT NULL,
+          used BOOLEAN DEFAULT FALSE,
+          expires_at TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_email (email),
+          INDEX idx_code (code),
+          INDEX idx_expires_at (expires_at)
+        )
+      `);
+      results.fixes.push('✅ Verification codes table ensured');
+    } catch (error: any) {
+      results.errors.push(`❌ Verification codes table: ${error.message}`);
+    }
+
+    // Fix 1.2: Create user_info table
+    try {
+      await executeQuery(`
+        CREATE TABLE IF NOT EXISTS user_info (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          user_id INT NOT NULL UNIQUE,
+          company_name VARCHAR(255),
+          company_email VARCHAR(255),
+          contact_number VARCHAR(20),
+          address VARCHAR(500),
+          profile_picture_url VARCHAR(500),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_user_id (user_id)
+        )
+      `);
+      results.fixes.push('✅ User info table ensured');
+    } catch (error: any) {
+      results.errors.push(`❌ User info table: ${error.message}`);
+    }
+
+    // Fix 1.3: Create homepage_content table
+    try {
+      await executeQuery(`
+        CREATE TABLE IF NOT EXISTS homepage_content (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          hero_title VARCHAR(255),
+          hero_description LONGTEXT,
+          hero_image VARCHAR(500),
+          about_title VARCHAR(255),
+          about_description LONGTEXT,
+          cta_title VARCHAR(255),
+          cta_description LONGTEXT,
+          cta_button_text VARCHAR(255),
+          features JSON,
+          contact_location LONGTEXT,
+          contact_phone VARCHAR(20),
+          contact_email VARCHAR(255),
+          contact_hours LONGTEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `);
+      results.fixes.push('✅ Homepage content table ensured');
+    } catch (error: any) {
+      results.errors.push(`❌ Homepage content table: ${error.message}`);
     }
     
     // Fix 2: Ensure venues table
