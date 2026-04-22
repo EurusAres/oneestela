@@ -57,7 +57,9 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
+    console.log('Homepage PUT request received at:', new Date().toISOString())
     const updates = await request.json()
+    console.log('Updates received:', updates)
     
     // First check if table exists and has data
     const checkResults = await executeQuery('SELECT COUNT(*) as count FROM homepage_content')
