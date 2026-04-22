@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { PublicLayout } from "@/components/public-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -6,28 +9,32 @@ import { ReserveButton } from "@/components/reserve-button"
 import { TourButton } from "@/components/tour-button"
 import { FeaturedReviewsSection } from "@/components/featured-reviews-section"
 
-async function getHomepageContent() {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/homepage`, {
-      cache: 'no-store'
-    })
-    if (res.ok) {
-      return await res.json()
-    }
-  } catch (error) {
-    console.error('Error fetching homepage content:', error)
-  }
-  
-  // Return default content if fetch fails
-  return {
+export default function HomePage() {
+  const [content, setContent] = useState({
     heroTitle: 'Welcome to One Estela Place',
     heroDescription: 'The perfect venue for your special events and celebrations',
-    heroImage: '/images/venue-interior.jpg'
-  }
-}
+    heroImage: '/images/venue-interior.jpg',
+    ctaTitle: 'Ready to Book Your Event?',
+    ctaDescription: 'Take a virtual tour first, then contact us to start planning your perfect event',
+    ctaButtonText: 'Book Now'
+  })
 
-export default async function HomePage() {
-  const content = await getHomepageContent()
+  useEffect(() => {
+    async function getHomepageContent() {
+      try {
+        const res = await fetch('/api/homepage', {
+          cache: 'no-store'
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setContent(data)
+        }
+      } catch (error) {
+        console.error('Error fetching homepage content:', error)
+      }
+    }
+    getHomepageContent()
+  }, [])
   
   return (
     <PublicLayout>

@@ -1,19 +1,19 @@
 import mysql from 'mysql2/promise'
 
+// Check if we're in production (Vercel) or development
+const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
+
 // Aiven MySQL configuration with SSL support
 const dbConfig = {
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || '22321'),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST || (isProduction ? 'one-estela-place-eares223321-3924.i.aivencloud.com' : '127.0.0.1'),
+  port: parseInt(process.env.DB_PORT || (isProduction ? '22797' : '3306')),
+  user: process.env.DB_USER || (isProduction ? 'avnadmin' : 'root'),
+  password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'one_estela_place',
-  ssl: {
+  ssl: isProduction ? {
     rejectUnauthorized: false // Required for Aiven managed MySQL
-  },
+  } : undefined,
   connectTimeout: 60000,
-  // Remove invalid configuration options that cause warnings
-  // acquireTimeout: 60000,  // Not valid for mysql2
-  // timeout: 60000,         // Not valid for mysql2
   // Connection pool settings for better performance
   connectionLimit: 10,
   queueLimit: 0
@@ -24,6 +24,12 @@ const pool = mysql.createPool(dbConfig)
 
 export async function getConnection() {
   try {
+    // Skip database connection during build time if no credentials are available
+    if (!dbConfig.host || (!dbConfig.password && isProduction)) {
+      console.log('Skipping database connection during build time')
+      throw new Error('Database connection skipped during build')
+    }
+    
     const connection = await pool.getConnection()
     return connection
   } catch (error) {
@@ -33,15 +39,22 @@ export async function getConnection() {
 }
 
 export async function executeQuery(query: string, params: any[] = []) {
-  const connection = await getConnection()
   try {
-    const [results] = await connection.execute(query, params)
-    return results
+    const connection = await getConnection()
+    try {
+      const [results] = await connection.execute(query, params)
+      return results
+    } finally {
+      connection.release()
+    }
   } catch (error) {
     console.error('Query execution error:', error)
+    // Return empty array for build-time queries to prevent build failures
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV) {
+      console.log('Returning empty result for build-time query')
+      return []
+    }
     throw error
-  } finally {
-    connection.release()
   }
 }
 
