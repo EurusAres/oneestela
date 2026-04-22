@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { executeQuery } from '@/lib/db'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const results = await executeQuery('SELECT * FROM homepage_content ORDER BY id DESC LIMIT 1')
@@ -55,10 +58,10 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(req: Request) {
   try {
     console.log('Homepage PUT request received at:', new Date().toISOString())
-    const updates = await request.json()
+    const updates = await req.json()
     console.log('Updates received:', updates)
     
     // First check if table exists and has data
