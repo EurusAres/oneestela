@@ -184,7 +184,8 @@ export function CMSVenueEditor() {
         fetchVenues()
       } else {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to save venue')
+        console.error('Server error response:', error)
+        throw new Error(error.details || error.error || 'Failed to save venue')
       }
     } catch (error) {
       console.error('Error saving venue:', error)

@@ -120,6 +120,7 @@ export async function PATCH(request: NextRequest) {
     } = body;
 
     if (!id) {
+      console.error('Missing venue ID in request');
       return NextResponse.json(
         { error: 'Missing venue ID' },
         { status: 400 }
@@ -160,10 +161,13 @@ export async function PATCH(request: NextRequest) {
     }
     if (amenities !== undefined) {
       updates.push('amenities = ?');
-      params.push(JSON.stringify(amenities));
+      const amenitiesJson = JSON.stringify(amenities);
+      params.push(amenitiesJson);
+      console.log('Updating amenities to:', amenitiesJson);
     }
 
     if (updates.length === 0) {
+      console.error('No fields to update');
       return NextResponse.json(
         { error: 'No fields to update' },
         { status: 400 }
@@ -177,12 +181,14 @@ export async function PATCH(request: NextRequest) {
     console.log('With params:', params);
 
     await executeQuery(query, params);
-
+    
+    console.log('Venue updated successfully');
     return NextResponse.json({ message: 'Venue updated successfully' });
   } catch (error) {
     console.error('Error updating venue:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
