@@ -30,8 +30,8 @@ export function useHomepageContent() {
 
   const updateContent = useCallback(async (updates: Partial<HomepageContent>) => {
     try {
-      const response = await fetch('/api/homepage', {
-        method: 'PUT',
+      const response = await fetch('/api/homepage/update', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       })
