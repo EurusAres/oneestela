@@ -53,8 +53,6 @@ export function useHomepageContent() {
       console.error('Error updating homepage content:', error)
       throw error
     }
-      console.error('Error updating homepage content:', error)
-    }
   }, [fetchContent])
 
   return { content, isLoading, updateContent }
