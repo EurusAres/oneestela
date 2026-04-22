@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { executeQuery } from '@/lib/db';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const results: any = {
     timestamp: new Date().toISOString(),
