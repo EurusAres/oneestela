@@ -30,19 +30,29 @@ export function useHomepageContent() {
 
   const updateContent = useCallback(async (updates: Partial<HomepageContent>) => {
     try {
+      console.log('Updating homepage content with:', updates)
       const response = await fetch('/api/homepage/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       })
       
+      console.log('Update response status:', response.status)
+      const responseData = await response.json()
+      console.log('Update response data:', responseData)
+      
       if (response.ok) {
         // Refresh content after update
         await fetchContent()
+        console.log('Homepage content updated successfully')
       } else {
-        console.error('Failed to update homepage content')
+        console.error('Failed to update homepage content:', responseData)
+        throw new Error(responseData.error || responseData.details || 'Update failed')
       }
     } catch (error) {
+      console.error('Error updating homepage content:', error)
+      throw error
+    }
       console.error('Error updating homepage content:', error)
     }
   }, [fetchContent])

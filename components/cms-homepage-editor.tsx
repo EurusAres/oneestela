@@ -10,14 +10,17 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Upload, X, Edit2, ImageIcon } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/hooks/use-toast'
 
 const updateHomepageContent = () => {}; // Declare the variable here or fix the import
 
 export function CMSHomepageEditor() {
   const { homepage, updateHomepage } = useCMS()
   const [editingSection, setEditingSection] = useState<string | null>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { toast } = useToast()
 
   if (!homepage) {
     return <div className="text-center py-8">Loading homepage content...</div>
@@ -57,22 +60,38 @@ export function CMSHomepageEditor() {
     setEditingSection(field)
   }
 
-  const saveEdit = (field: keyof typeof homepage) => {
+  const saveEdit = async (field: keyof typeof homepage) => {
     const value = inputRef.current?.value || textareaRef.current?.value || ''
     
-    if (field === 'heroTitle') updateHomepage({ heroTitle: value })
-    else if (field === 'heroDescription') updateHomepage({ heroDescription: value })
-    else if (field === 'ctaTitle') updateHomepage({ ctaTitle: value })
-    else if (field === 'ctaDescription') updateHomepage({ ctaDescription: value })
-    else if (field === 'ctaButtonText') updateHomepage({ ctaButtonText: value })
-    else if (field === 'aboutTitle') updateHomepage({ aboutTitle: value })
-    else if (field === 'aboutDescription') updateHomepage({ aboutDescription: value })
-    else if (field === 'contactLocation') updateHomepage({ contactLocation: value })
-    else if (field === 'contactPhone') updateHomepage({ contactPhone: value })
-    else if (field === 'contactEmail') updateHomepage({ contactEmail: value })
-    else if (field === 'contactHours') updateHomepage({ contactHours: value })
-    
-    setEditingSection(null)
+    setIsUpdating(true)
+    try {
+      if (field === 'heroTitle') await updateHomepage({ heroTitle: value })
+      else if (field === 'heroDescription') await updateHomepage({ heroDescription: value })
+      else if (field === 'ctaTitle') await updateHomepage({ ctaTitle: value })
+      else if (field === 'ctaDescription') await updateHomepage({ ctaDescription: value })
+      else if (field === 'ctaButtonText') await updateHomepage({ ctaButtonText: value })
+      else if (field === 'aboutTitle') await updateHomepage({ aboutTitle: value })
+      else if (field === 'aboutDescription') await updateHomepage({ aboutDescription: value })
+      else if (field === 'contactLocation') await updateHomepage({ contactLocation: value })
+      else if (field === 'contactPhone') await updateHomepage({ contactPhone: value })
+      else if (field === 'contactEmail') await updateHomepage({ contactEmail: value })
+      else if (field === 'contactHours') await updateHomepage({ contactHours: value })
+      
+      toast({
+        title: "Success",
+        description: "Homepage content updated successfully",
+      })
+      setEditingSection(null)
+    } catch (error) {
+      console.error('Error saving edit:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update homepage content",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   const cancelEdit = () => {
@@ -183,10 +202,10 @@ export function CMSHomepageEditor() {
                 />
               )}
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button size="sm" onClick={() => saveEdit(field)} className="w-full sm:w-auto text-xs md:text-sm">
-                  Save Changes
+                <Button size="sm" onClick={() => saveEdit(field)} disabled={isUpdating} className="w-full sm:w-auto text-xs md:text-sm">
+                  {isUpdating ? 'Saving...' : 'Save Changes'}
                 </Button>
-                <Button size="sm" variant="outline" onClick={cancelEdit} className="w-full sm:w-auto text-xs md:text-sm">
+                <Button size="sm" variant="outline" onClick={cancelEdit} disabled={isUpdating} className="w-full sm:w-auto text-xs md:text-sm">
                   Cancel
                 </Button>
               </div>
