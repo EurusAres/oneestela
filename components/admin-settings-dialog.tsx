@@ -51,11 +51,11 @@ export function AdminSettingsDialog({ userId }: AdminSettingsDialogProps) {
 
   const fetchCurrentEmail = async () => {
     try {
-      if (!user?.id) {
+      if (!userId) {
         console.error('No user ID available')
         return
       }
-      const response = await fetch(`/api/auth/profile?userId=${user.id}`)
+      const response = await fetch(`/api/auth/profile?userId=${userId}`)
       if (response.ok) {
         const data = await response.json()
         setCurrentEmail(data.email || '')
