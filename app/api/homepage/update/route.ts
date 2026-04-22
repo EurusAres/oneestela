@@ -8,11 +8,23 @@ export async function POST(request: Request) {
   try {
     console.log('Homepage update POST request received at:', new Date().toISOString())
     const updates = await request.json()
-    console.log('Updates received:', updates)
+    console.log('Updates received:', JSON.stringify(updates))
+    
+    // Validate that we have at least one field to update
+    if (!updates || Object.keys(updates).length === 0) {
+      console.error('No updates provided')
+      return NextResponse.json(
+        { error: 'No updates provided' },
+        { status: 400 }
+      )
+    }
     
     // First check if table exists and has data
+    console.log('Checking if homepage_content table has data...')
     const checkResults = await executeQuery('SELECT COUNT(*) as count FROM homepage_content')
+    console.log('Check results:', checkResults)
     const hasData = Array.isArray(checkResults) && (checkResults[0] as any)?.count > 0
+    console.log('Has data:', hasData)
     
     // Convert camelCase to snake_case for database
     const dbUpdates: any = {}
@@ -35,25 +47,35 @@ export async function POST(request: Request) {
       const setClause = Object.keys(dbUpdates).map(key => `${key} = ?`).join(', ')
       const values = Object.values(dbUpdates)
 
+      console.log('Updating existing record with query:', `UPDATE homepage_content SET ${setClause} WHERE id = 1`)
+      console.log('Values:', values)
+      
       await executeQuery(
         `UPDATE homepage_content SET ${setClause} WHERE id = 1`,
         values
       )
+      console.log('Update successful')
     } else {
       // Insert new record
       const columns = Object.keys(dbUpdates).join(', ')
       const placeholders = Object.keys(dbUpdates).map(() => '?').join(', ')
       const values = Object.values(dbUpdates)
 
+      console.log('Inserting new record with query:', `INSERT INTO homepage_content (${columns}) VALUES (${placeholders})`)
+      console.log('Values:', values)
+      
       await executeQuery(
         `INSERT INTO homepage_content (${columns}) VALUES (${placeholders})`,
         values
       )
+      console.log('Insert successful')
     }
 
+    console.log('Homepage content updated successfully')
     return NextResponse.json({ message: 'Homepage content updated successfully' })
   } catch (error) {
     console.error('Error updating homepage content:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
       { error: 'Failed to update homepage content', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
