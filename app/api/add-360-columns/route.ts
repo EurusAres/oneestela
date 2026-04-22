@@ -16,11 +16,11 @@ export async function GET() {
     try {
       await executeQuery(`
         ALTER TABLE venues 
-        ADD COLUMN IF NOT EXISTS image_360_url VARCHAR(500)
+        ADD COLUMN image_360_url VARCHAR(500)
       `)
       results.fixes.push('✅ Added image_360_url column to venues table')
     } catch (error: any) {
-      if (error.message && error.message.includes('Duplicate column')) {
+      if (error.message && (error.message.includes('Duplicate column') || error.message.includes('duplicate column'))) {
         results.fixes.push('✅ image_360_url column already exists in venues table')
       } else {
         results.errors.push(`❌ venues.image_360_url: ${error.message}`)
@@ -31,11 +31,11 @@ export async function GET() {
     try {
       await executeQuery(`
         ALTER TABLE office_rooms 
-        ADD COLUMN IF NOT EXISTS image_360_url VARCHAR(500)
+        ADD COLUMN image_360_url VARCHAR(500)
       `)
       results.fixes.push('✅ Added image_360_url column to office_rooms table')
     } catch (error: any) {
-      if (error.message && error.message.includes('Duplicate column')) {
+      if (error.message && (error.message.includes('Duplicate column') || error.message.includes('duplicate column'))) {
         results.fixes.push('✅ image_360_url column already exists in office_rooms table')
       } else {
         results.errors.push(`❌ office_rooms.image_360_url: ${error.message}`)
