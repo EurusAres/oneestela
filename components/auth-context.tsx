@@ -73,10 +73,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (savedUser || sessionUser) {
         try {
           const parsedUser = JSON.parse(savedUser || sessionUser || '{}')
-          if (parsedUser && parsedUser.name && parsedUser.email) {
+          if (parsedUser && parsedUser.name && parsedUser.email && parsedUser.id) {
             // Validate session with server
             try {
-              const response = await fetch("/api/auth/profile", {
+              const response = await fetch(`/api/auth/profile?userId=${parsedUser.id}`, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
               })
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // Update user data from server (in case of changes)
                 const validatedUser = {
                   id: serverUser.id,
-                  name: serverUser.name,
+                  name: serverUser.name || serverUser.full_name,
                   email: serverUser.email,
                   avatar: serverUser.avatar || "/placeholder.svg?height=40&width=40",
                   role: serverUser.role || "user",
