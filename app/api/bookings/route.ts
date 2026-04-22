@@ -56,6 +56,13 @@ export async function POST(request: NextRequest) {
     const userId = body.userId;
     const isOfficeInquiry = (body.eventType || '').startsWith('office-');
 
+    console.log('Booking type check:', { 
+      eventType: body.eventType, 
+      isOfficeInquiry, 
+      hasDate: !!body.date,
+      dateValue: body.date 
+    });
+
     // Resolve officeRoomId
     let officeRoomId = body.officeRoomId;
     
@@ -83,9 +90,11 @@ export async function POST(request: NextRequest) {
     let checkInDate, checkOutDate;
     
     if (isOfficeInquiry) {
-      // For office inquiries, use placeholder dates since they don't need specific dates
-      checkInDate = '2024-01-01 09:00:00';
-      checkOutDate = '2024-01-01 17:00:00';
+      // For office inquiries, use current date as placeholder since they don't need specific dates
+      const now = new Date();
+      const currentDateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+      checkInDate = `${currentDateStr} 09:00:00`;
+      checkOutDate = `${currentDateStr} 17:00:00`;
     } else {
       // For event bookings, handle date formatting as before
       if (body.checkInDate) {
@@ -120,12 +129,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isOfficeInquiry && (!checkInDate || !checkOutDate)) {
-      console.error('Validation failed for event booking:', { userId, checkInDate, checkOutDate });
+      console.error('Validation failed for event booking:', { userId, checkInDate, checkOutDate, date: body.date, startTime: body.startTime, endTime: body.endTime });
       return NextResponse.json(
-        { error: 'Missing required fields for event booking: date/checkInDate and time/checkOutDate are required', received: { userId, checkInDate, checkOutDate } },
+        { error: 'Missing required fields for event booking: date/checkInDate and time/checkOutDate are required', received: { userId, checkInDate, checkOutDate, bodyDate: body.date, bodyStartTime: body.startTime, bodyEndTime: body.endTime } },
         { status: 400 }
       );
     }
+
+    console.log('Final date values before insert:', { checkInDate, checkOutDate, isOfficeInquiry });
 
     const result = await executeQuery(
       `INSERT INTO bookings 
