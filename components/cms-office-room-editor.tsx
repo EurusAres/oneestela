@@ -117,7 +117,9 @@ export function CMSOfficeRoomEditor() {
       imageUrl: room.image_url || '',
       image360Url: room.image_360_url || '',
       type: room.type || 'office',
-      amenities: room.amenities || ''
+      amenities: Array.isArray(room.amenities) 
+        ? room.amenities.join(', ') 
+        : (typeof room.amenities === 'string' ? room.amenities : '')
     })
     setRegularImageFile(null)
     setImage360File(null)
@@ -174,7 +176,9 @@ export function CMSOfficeRoomEditor() {
         imageUrl,
         image360Url,
         type: formData.type,
-        amenities: formData.amenities.split(',').map(a => a.trim()).filter(Boolean)
+        amenities: typeof formData.amenities === 'string' 
+          ? formData.amenities.split(',').map(a => a.trim()).filter(Boolean)
+          : (Array.isArray(formData.amenities) ? formData.amenities : [])
       }
 
       console.log('Saving office room with payload:', payload);

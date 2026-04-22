@@ -104,7 +104,9 @@ export function CMSVenueEditor() {
       pricePerHour: venue.price_per_hour.toString(),
       imageUrl: venue.image_url || '',
       image360Url: venue.image_360_url || '',
-      amenities: venue.amenities || ''
+      amenities: Array.isArray(venue.amenities) 
+        ? venue.amenities.join(', ') 
+        : (typeof venue.amenities === 'string' ? venue.amenities : '')
     })
     setRegularImageFile(null)
     setImage360File(null)
@@ -158,7 +160,9 @@ export function CMSVenueEditor() {
         pricePerHour: parseFloat(formData.pricePerHour) || 0,
         imageUrl,
         image360Url,
-        amenities: formData.amenities.split(',').map(a => a.trim()).filter(Boolean)
+        amenities: typeof formData.amenities === 'string' 
+          ? formData.amenities.split(',').map(a => a.trim()).filter(Boolean)
+          : (Array.isArray(formData.amenities) ? formData.amenities : [])
       }
 
       console.log('Saving venue with payload:', payload);
