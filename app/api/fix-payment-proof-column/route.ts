@@ -8,8 +8,8 @@ export async function GET(request: NextRequest) {
     console.log('Starting payment proof column fix...');
 
     const results = {
-      payment_proofs: { before: null as any, after: null as any },
-      users: { before: null as any, after: null as any }
+      payment_proofs: { before: null as any, after: null as any, error: null as any },
+      users: { before: null as any, after: null as any, error: null as any }
     };
 
     // Fix payment_proofs.proof_url
