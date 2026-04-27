@@ -78,32 +78,67 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if date already exists for this venue
-    const existingDate = await executeQuery(
-      'SELECT id FROM unavailable_dates WHERE venue_id = ? AND date = ?',
-      [venueId, date]
-    );
+    // Validate venue exists
+    try {
+      const venueCheck = await executeQuery(
+        'SELECT id FROM venues WHERE id = ?',
+        [venueId]
+      );
 
-    if ((existingDate as any[]).length > 0) {
+      if ((venueCheck as any[]).length === 0) {
+        return NextResponse.json(
+          { error: 'Venue not found' },
+          { status: 404 }
+        );
+      }
+    } catch (venueError) {
+      console.error('Error checking venue:', venueError);
       return NextResponse.json(
-        { error: 'This date is already marked as unavailable for this venue' },
-        { status: 409 }
+        { error: 'Failed to validate venue', details: (venueError as Error).message },
+        { status: 500 }
       );
     }
 
-    const result = await executeQuery(
-      `INSERT INTO unavailable_dates (venue_id, date, reason, notes, created_by)
-       VALUES (?, STR_TO_DATE(?, '%Y-%m-%d'), ?, ?, ?)`,
-      [venueId, date, reason, notes || '', createdBy || 'admin']
-    );
+    // Check if date already exists for this venue
+    try {
+      const existingDate = await executeQuery(
+        'SELECT id FROM unavailable_dates WHERE venue_id = ? AND date = ?',
+        [venueId, date]
+      );
 
-    console.log('Database insert result:', result);
-    console.log('Inserted date value:', date);
+      if ((existingDate as any[]).length > 0) {
+        return NextResponse.json(
+          { error: 'This date is already marked as unavailable for this venue' },
+          { status: 409 }
+        );
+      }
+    } catch (checkError) {
+      console.error('Error checking existing date:', checkError);
+      // Continue anyway - this is not critical
+    }
 
-    return NextResponse.json(
-      { message: 'Unavailable date added successfully', id: (result as any).insertId },
-      { status: 201 }
-    );
+    // Insert the unavailable date
+    try {
+      const result = await executeQuery(
+        `INSERT INTO unavailable_dates (venue_id, date, reason, notes, created_by)
+         VALUES (?, STR_TO_DATE(?, '%Y-%m-%d'), ?, ?, ?)`,
+        [venueId, date, reason, notes || '', createdBy || 'admin']
+      );
+
+      console.log('Database insert result:', result);
+      console.log('Inserted date value:', date);
+
+      return NextResponse.json(
+        { message: 'Unavailable date added successfully', id: (result as any).insertId },
+        { status: 201 }
+      );
+    } catch (insertError) {
+      console.error('Error inserting unavailable date:', insertError);
+      return NextResponse.json(
+        { error: 'Failed to insert unavailable date', details: (insertError as Error).message },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Error creating unavailable date:', error);
     return NextResponse.json(
