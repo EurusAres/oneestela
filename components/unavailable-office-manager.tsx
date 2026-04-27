@@ -41,6 +41,7 @@ export function UnavailableOfficeManager({ open, onOpenChange }: UnavailableOffi
   const [isLoading, setIsLoading] = useState(false)
   const [selectedOfficeId, setSelectedOfficeId] = useState<string>('')
   const [reason, setReason] = useState<string>('')
+  const [customReason, setCustomReason] = useState<string>('')
   const [unavailableRooms, setUnavailableRooms] = useState<string>('')
   const { toast } = useToast()
 
@@ -89,6 +90,16 @@ export function UnavailableOfficeManager({ open, onOpenChange }: UnavailableOffi
       return
     }
 
+    // Validate custom reason if "Other" is selected
+    if (reason === "Other" && !customReason.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a custom reason',
+        variant: 'destructive'
+      })
+      return
+    }
+
     const unavailableCount = parseInt(unavailableRooms)
     if (isNaN(unavailableCount) || unavailableCount <= 0) {
       toast({
@@ -111,12 +122,15 @@ export function UnavailableOfficeManager({ open, onOpenChange }: UnavailableOffi
 
     setIsLoading(true)
     try {
+      // Use custom reason if "Other" is selected
+      const finalReason = reason === "Other" ? customReason.trim() : reason
+
       const response = await fetch('/api/unavailable-offices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           office_room_id: parseInt(selectedOfficeId),
-          reason,
+          reason: finalReason,
           unavailable_rooms: unavailableCount
         })
       })
@@ -128,6 +142,7 @@ export function UnavailableOfficeManager({ open, onOpenChange }: UnavailableOffi
         })
         setSelectedOfficeId('')
         setReason('')
+        setCustomReason('')
         setUnavailableRooms('')
         fetchUnavailableOffices()
       } else {
@@ -258,10 +273,25 @@ export function UnavailableOfficeManager({ open, onOpenChange }: UnavailableOffi
                       <SelectItem value="Maintenance">Maintenance</SelectItem>
                       <SelectItem value="Renovation">Renovation</SelectItem>
                       <SelectItem value="Fully Occupied">Fully Occupied</SelectItem>
+                      <SelectItem value="Other">Other (Custom Reason)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+
+              {/* Custom Reason Input - Show only when "Other" is selected */}
+              {reason === "Other" && (
+                <div className="space-y-2">
+                  <Label htmlFor="customReason">Custom Reason</Label>
+                  <Input
+                    id="customReason"
+                    type="text"
+                    value={customReason}
+                    onChange={(e) => setCustomReason(e.target.value)}
+                    placeholder="Enter custom reason..."
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="unavailableRooms">Number of Rooms to Mark Unavailable</Label>

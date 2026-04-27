@@ -67,6 +67,7 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
   const [selectedVenue, setSelectedVenue] = useState<string>("")
   const [selectedDate, setSelectedDate] = useState<Date>()
   const [selectedReason, setSelectedReason] = useState<string>("")
+  const [customReason, setCustomReason] = useState<string>("")
   const [showCalendar, setShowCalendar] = useState(false)
 
   // Fetch data
@@ -119,6 +120,16 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
       return
     }
 
+    // Validate custom reason if "Other" is selected
+    if (selectedReason === "Other" && !customReason.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter a custom reason",
+        variant: "destructive"
+      })
+      return
+    }
+
     try {
       // Format date without timezone conversion
       const year = selectedDate.getFullYear()
@@ -130,13 +141,16 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
       console.log('Formatted date string:', dateString)
       console.log('Date components:', { year, month, day })
 
+      // Use custom reason if "Other" is selected
+      const finalReason = selectedReason === "Other" ? customReason.trim() : selectedReason
+
       const response = await fetch('/api/unavailable-dates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           venueId: parseInt(selectedVenue),
           date: dateString,
-          reason: selectedReason,
+          reason: finalReason,
           createdBy: 'admin'
         })
       })
@@ -202,6 +216,7 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
     setSelectedVenue("")
     setSelectedDate(undefined)
     setSelectedReason("")
+    setCustomReason("")
     setShowCalendar(false)
   }
 
@@ -386,9 +401,29 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
                       Staffing Shortages
                     </div>
                   </SelectItem>
+                  <SelectItem value="Other">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Other (Custom Reason)
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Custom Reason Input - Show only when "Other" is selected */}
+            {selectedReason === "Other" && (
+              <div className="space-y-2">
+                <Label>Custom Reason</Label>
+                <Textarea
+                  placeholder="Enter custom reason..."
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
+            )}
           </div>
 
           <DialogFooter>
