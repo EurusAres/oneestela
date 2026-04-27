@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         location: 'Main Building - 2nd Floor',
         capacity: 200,
         pricePerHour: 500,
-        amenities: 'Stage, Sound System, Lighting, Air Conditioning, Tables & Chairs',
+        amenities: JSON.stringify(['Stage', 'Sound System', 'Lighting', 'Air Conditioning', 'Tables & Chairs']),
         imageUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y1ZjVmNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5HcmFuZCBCYWxscm9vbTwvdGV4dD48L3N2Zz4=',
         image360Url: null
       },
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         location: 'Garden Area',
         capacity: 100,
         pricePerHour: 350,
-        amenities: 'Outdoor Setting, Garden View, Lighting, Tables & Chairs',
+        amenities: JSON.stringify(['Outdoor Setting', 'Garden View', 'Lighting', 'Tables & Chairs']),
         imageUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2U4ZjVlOSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5HYXJkZW4gUGF2aWxpb248L3RleHQ+PC9zdmc+',
         image360Url: null
       },
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         location: 'Main Building - 3rd Floor',
         capacity: 80,
         pricePerHour: 300,
-        amenities: 'Projector, Screen, Whiteboard, Video Conferencing, WiFi, Air Conditioning',
+        amenities: JSON.stringify(['Projector', 'Screen', 'Whiteboard', 'Video Conferencing', 'WiFi', 'Air Conditioning']),
         imageUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2UzZjJmZCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Db25mZXJlbmNlIEhhbGw8L3RleHQ+PC9zdmc+',
         image360Url: null
       },
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
         location: 'Rooftop',
         capacity: 120,
         pricePerHour: 450,
-        amenities: 'City View, Bar Area, Lounge Seating, Ambient Lighting, Sound System',
+        amenities: JSON.stringify(['City View', 'Bar Area', 'Lounge Seating', 'Ambient Lighting', 'Sound System']),
         imageUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2ZmZjhlNyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Sb29mdG9wIFRlcnJhY2U8L3RleHQ+PC9zdmc+',
         image360Url: null
       }
