@@ -89,6 +89,30 @@ export async function POST(request: NextRequest) {
     // Handle date formatting more carefully
     let checkInDate, checkOutDate;
     
+    // Helper function to convert 12-hour time to 24-hour format
+    const convertTo24Hour = (time12h: string): string => {
+      if (!time12h) return '09:00:00';
+      
+      // If already in 24-hour format (HH:MM:SS or HH:MM), return as is
+      if (time12h.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
+        return time12h.includes(':') && time12h.split(':').length === 2 ? `${time12h}:00` : time12h;
+      }
+      
+      // Convert 12-hour format to 24-hour
+      const [time, modifier] = time12h.split(' ');
+      let [hours, minutes] = time.split(':');
+      
+      if (hours === '12') {
+        hours = '00';
+      }
+      
+      if (modifier === 'PM' || modifier === 'pm') {
+        hours = String(parseInt(hours, 10) + 12);
+      }
+      
+      return `${hours.padStart(2, '0')}:${minutes}:00`;
+    };
+    
     if (isOfficeInquiry) {
       // For office inquiries, use current date as placeholder since they don't need specific dates
       const now = new Date();
@@ -101,14 +125,16 @@ export async function POST(request: NextRequest) {
         checkInDate = body.checkInDate;
       } else if (body.date) {
         const dateStr = body.date.includes('T') ? body.date.split('T')[0] : body.date;
-        checkInDate = `${dateStr} ${body.startTime || '09:00:00'}`;
+        const startTime24 = convertTo24Hour(body.startTime);
+        checkInDate = `${dateStr} ${startTime24}`;
       }
       
       if (body.checkOutDate) {
         checkOutDate = body.checkOutDate;
       } else if (body.date) {
         const dateStr = body.date.includes('T') ? body.date.split('T')[0] : body.date;
-        checkOutDate = `${dateStr} ${body.endTime || '17:00:00'}`;
+        const endTime24 = convertTo24Hour(body.endTime);
+        checkOutDate = `${dateStr} ${endTime24}`;
       }
     }
     
