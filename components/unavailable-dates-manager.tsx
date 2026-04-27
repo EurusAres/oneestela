@@ -81,10 +81,25 @@ export function UnavailableDatesManager({ open, onOpenChange }: UnavailableDates
   const fetchUnavailableDates = async () => {
     try {
       setLoading(true)
+      console.log('Fetching unavailable dates...')
       const response = await fetch('/api/unavailable-dates')
+      console.log('Response status:', response.status)
+      console.log('Response ok:', response.ok)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('Received data:', data)
+        console.log('Unavailable dates array:', data.unavailableDates)
+        console.log('Array length:', data.unavailableDates?.length)
         setUnavailableDates(data.unavailableDates || [])
+      } else {
+        const errorData = await response.json()
+        console.error('API error:', errorData)
+        toast({
+          title: "Error",
+          description: "Failed to load unavailable dates",
+          variant: "destructive"
+        })
       }
     } catch (error) {
       console.error('Error fetching unavailable dates:', error)
