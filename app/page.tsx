@@ -127,17 +127,6 @@ export default function HomePage() {
               With state-of-the-art facilities, professional catering services, and a dedicated events team, we ensure
               every detail of your event is perfectly executed.
             </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <Button className="bg-amber-700 text-white hover:bg-amber-800 w-full sm:w-auto">
-                <a href="/about">Learn More About Us</a>
-              </Button>
-              <TourButton
-                variant="outline"
-                className="border-amber-700 text-amber-700 hover:bg-amber-700 hover:text-white w-full sm:w-auto"
-              >
-                Virtual Tour
-              </TourButton>
-            </div>
           </div>
         </div>
       </section>
