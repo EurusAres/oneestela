@@ -173,23 +173,53 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
     .map((booking) => {
       const dateStr = booking.date || (booking.check_in_date ? booking.check_in_date.split('T')[0] : '')
       if (!dateStr) return null
+      
+      // Parse the date string (YYYY-MM-DD format)
       const [year, month, day] = dateStr.split('-').map(Number)
-      return new Date(year, month - 1, day)
+      const parsedDate = new Date(year, month - 1, day)
+      
+      console.log('Parsing booking date:', {
+        bookingId: booking.id,
+        status: booking.status,
+        rawDate: booking.date,
+        rawCheckIn: booking.check_in_date,
+        dateStr,
+        parsedDate: parsedDate.toDateString()
+      })
+      
+      return parsedDate
     })
     .filter(date => date !== null)
+
+  console.log('Total reserved dates from bookings:', reservedDates.length, reservedDates.map(d => d.toDateString()))
 
   // Extract admin unavailable dates
   const adminReservedDates = adminUnavailableDates.map((unavailable) => {
     const dateStr = unavailable.date
+    let parsedDate: Date
+    
     if (dateStr.includes('-')) {
       const [year, month, day] = dateStr.split('-').map(Number)
-      return new Date(year, month - 1, day)
+      parsedDate = new Date(year, month - 1, day)
+    } else {
+      parsedDate = new Date(dateStr)
     }
-    return new Date(dateStr)
+    
+    console.log('Parsing admin unavailable date:', {
+      id: unavailable.id,
+      rawDate: dateStr,
+      parsedDate: parsedDate.toDateString()
+    })
+    
+    return parsedDate
   })
+
+  console.log('Total admin unavailable dates:', adminReservedDates.length, adminReservedDates.map(d => d.toDateString()))
 
   // Combine all reserved dates (bookings + admin unavailable)
   const allReservedDates = [...reservedDates, ...adminReservedDates]
+  
+  console.log('All reserved dates combined:', allReservedDates.length, allReservedDates.map(d => d.toDateString()))
 
   const isDateReserved = (date: Date) => {
     return allReservedDates.some((reservedDate) => reservedDate.toDateString() === date.toDateString())
