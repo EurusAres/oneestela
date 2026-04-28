@@ -194,8 +194,7 @@ export function UnifiedChatWidget() {
     }
     setUnifiedMessages(prev => [...prev, handoffMsg])
 
-    // Write escalation notice to DB so admin sees it
-    postToDb("🔄 [Customer requested human support — chat escalated from AI assistant]", true)
+    // Note: Escalation is handled silently without showing message to customer
   }, [isEscalated, isHandedOffToAdmin, postToDb])
 
   // ── Polling for admin replies ─────────────────────────────────────────────────
