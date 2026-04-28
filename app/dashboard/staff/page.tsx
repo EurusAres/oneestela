@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { MainLayout } from '@/components/main-layout'
 import { useStaff, type StaffAccount } from '@/components/staff-context'
 import { Button } from '@/components/ui/button'
@@ -21,8 +22,11 @@ import { useToast } from '@/hooks/use-toast'
 import { Plus, Edit2, Trash2, RotateCcw, Mail, Phone, Briefcase, Calendar, DollarSign } from 'lucide-react'
 
 export default function StaffManagementPage() {
+  const router = useRouter()
   const { staff, isLoading, addStaff, updateStaff, removeStaff, activateStaff } = useStaff()
   const { toast } = useToast()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isChecking, setIsChecking] = useState(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false)
@@ -40,6 +44,38 @@ export default function StaffManagementPage() {
     salary: '',
     status: 'active' as 'active' | 'inactive' | 'on_leave',
   })
+
+  // Check authentication on mount
+  useEffect(() => {
+    const userStr = localStorage.getItem("user") || sessionStorage.getItem("user")
+    
+    if (!userStr) {
+      router.push("/")
+      return
+    }
+
+    try {
+      const user = JSON.parse(userStr)
+      // Only admin can access staff management
+      if (user.role === 'admin') {
+        setIsAuthenticated(true)
+      } else {
+        router.push("/")
+        return
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error)
+      router.push("/")
+      return
+    }
+
+    setIsChecking(false)
+  }, [router])
+
+  // Show nothing while checking authentication
+  if (isChecking || !isAuthenticated) {
+    return null
+  }
 
   const filteredStaff = staff.filter(
     (s) =>

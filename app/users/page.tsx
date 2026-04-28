@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { MainLayout } from '@/components/main-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -11,9 +12,44 @@ import { useToast } from '@/hooks/use-toast'
 import { Users, Mail, Phone, Calendar, RefreshCw, UserCheck, Shield, Trash2 } from 'lucide-react'
 
 export default function UsersPage() {
+  const router = useRouter()
   const { users, stats, isLoading, refreshUsers } = useUsers()
   const { toast } = useToast()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isChecking, setIsChecking] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Check authentication on mount
+  useEffect(() => {
+    const userStr = localStorage.getItem("user") || sessionStorage.getItem("user")
+    
+    if (!userStr) {
+      router.push("/")
+      return
+    }
+
+    try {
+      const user = JSON.parse(userStr)
+      // Only admin can access users page
+      if (user.role === 'admin') {
+        setIsAuthenticated(true)
+      } else {
+        router.push("/")
+        return
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error)
+      router.push("/")
+      return
+    }
+
+    setIsChecking(false)
+  }, [router])
+
+  // Show nothing while checking authentication
+  if (isChecking || !isAuthenticated) {
+    return null
+  }
 
   const filteredUsers = users.filter(
     (user) =>

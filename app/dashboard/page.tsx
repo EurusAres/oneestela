@@ -15,6 +15,7 @@ import {
 } from "recharts"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 function pctChange(current: number, previous: number) {
   if (previous === 0) return current > 0 ? 100 : 0
@@ -40,6 +41,42 @@ export default function DashboardPage() {
   const { updateBookingStatus } = useBookings()
   const { toast } = useToast()
   const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isChecking, setIsChecking] = useState(true)
+
+  // Check authentication on mount
+  useEffect(() => {
+    const userStr = localStorage.getItem("user") || sessionStorage.getItem("user")
+    
+    if (!userStr) {
+      // No user found, redirect to home
+      router.push("/")
+      return
+    }
+
+    try {
+      const user = JSON.parse(userStr)
+      // Check if user has admin or staff role
+      if (user.role === 'admin' || user.role === 'staff') {
+        setIsAuthenticated(true)
+      } else {
+        // User doesn't have permission, redirect to home
+        router.push("/")
+        return
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error)
+      router.push("/")
+      return
+    }
+
+    setIsChecking(false)
+  }, [router])
+
+  // Show nothing while checking authentication
+  if (isChecking || !isAuthenticated) {
+    return null
+  }
 
   const s = stats?.summary
   const bookingDelta = pctChange(stats?.thisMonth.bookings ?? 0, stats?.lastMonth.bookings ?? 0)
