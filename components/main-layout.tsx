@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
 import { usePaymentProof } from "@/components/payment-proof-context"
+import { useBookings } from "@/components/booking-context"
 import { ChangePasswordDialog } from "@/components/change-password-dialog"
 import { AdminSettingsDialog } from "@/components/admin-settings-dialog"
 
@@ -38,11 +39,52 @@ export function MainLayout({ children }: MainLayoutProps) {
   const router = useRouter()
   const { toast } = useToast()
   const { getPendingPaymentProofs } = usePaymentProof()
+  const { getAllBookings } = useBookings()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [userRole, setUserRole] = useState<string>('admin')
   const [userId, setUserId] = useState<string>('')
+  const [unreadMessages, setUnreadMessages] = useState(0)
 
   const pendingPayments = getPendingPaymentProofs().length
+  const pendingBookings = getAllBookings().filter(booking => booking.status === 'pending').length
+
+  // Fetch unread messages count
+  useEffect(() => {
+    const fetchUnreadMessages = async () => {
+      try {
+        const response = await fetch('/api/chat/conversations')
+        if (response.ok) {
+          const data = await response.json()
+          // Count total unread messages across all conversations
+          const unreadCount = (data.conversations || []).reduce((count: number, conv: any) => {
+            return count + (conv.unread || 0)
+          }, 0)
+          setUnreadMessages(unreadCount)
+        }
+      } catch (error) {
+        console.error('Error fetching unread messages:', error)
+      }
+    }
+
+    fetchUnreadMessages()
+    
+    // Poll for unread messages every 10 seconds
+    const interval = setInterval(fetchUnreadMessages, 10000)
+    
+    // Listen for chat events to refresh immediately
+    const handleChatUpdate = () => {
+      fetchUnreadMessages()
+    }
+    
+    window.addEventListener('chat-message-received', handleChatUpdate)
+    window.addEventListener('chat-message-read', handleChatUpdate)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('chat-message-received', handleChatUpdate)
+      window.removeEventListener('chat-message-read', handleChatUpdate)
+    }
+  }, [])
 
   // Get user role and ID from localStorage/sessionStorage
   useEffect(() => {
@@ -67,8 +109,20 @@ export function MainLayout({ children }: MainLayoutProps) {
   const allMenuItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ['admin', 'staff'] },
     { name: "Booking Calendar", href: "/calendar", icon: Calendar, roles: ['admin', 'staff'] },
-    { name: "Booking Management", href: "/dashboard/bookings", icon: BookOpen, roles: ['admin', 'staff'] },
-    { name: "Customer Chat", href: "/dashboard/chat", icon: MessageSquare, roles: ['admin', 'staff'] },
+    { 
+      name: "Booking Management", 
+      href: "/dashboard/bookings", 
+      icon: BookOpen, 
+      badge: pendingBookings > 0 ? pendingBookings : undefined,
+      roles: ['admin', 'staff'] 
+    },
+    { 
+      name: "Customer Chat", 
+      href: "/dashboard/chat", 
+      icon: MessageSquare, 
+      badge: unreadMessages > 0 ? unreadMessages : undefined,
+      roles: ['admin', 'staff'] 
+    },
     {
       name: "Payment Verification",
       href: "/dashboard/payments",
