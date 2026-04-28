@@ -147,9 +147,9 @@ export function UnifiedChatWidget() {
     if (unifiedMessages.length === 0 && !isHandedOffToAdmin) {
       setUnifiedMessages([{
         id: `welcome-${Date.now()}`,
-        content: "Hello! Welcome to One Estela Place! 👋 I'm your AI assistant. I can help you with venue availability, office space details, pricing, and reservation steps. How can I assist you today?",
+        content: "Hello! Welcome to One Estela Place! 👋 I'm your Chat Bot. I can help you with venue availability, office space details, pricing, and reservation steps. How can I assist you today?",
         senderType: "bot",
-        senderName: "AI Assistant",
+        senderName: "Chat Bot",
         timestamp: new Date().toISOString(),
         followUps: [
           "Check venue availability",
@@ -170,7 +170,7 @@ export function UnifiedChatWidget() {
       id: msg.id,
       content: msg.content,
       senderType: msg.isBot ? "bot" : "user",
-      senderName: msg.isBot ? "AI Assistant" : (user?.name || "You"),
+      senderName: msg.isBot ? "Chat Bot" : (user?.name || "You"),
       timestamp: msg.timestamp,
       followUps: msg.followUps,
       escalated: msg.escalated,
@@ -188,7 +188,7 @@ export function UnifiedChatWidget() {
       id: `handoff-${Date.now()}`,
       content: "🔄 Connecting you with our support team... A specialist will respond shortly.",
       senderType: "bot",
-      senderName: "AI Assistant",
+      senderName: "Chat Bot",
       timestamp: new Date().toISOString(),
       escalated: true,
     }
@@ -284,7 +284,7 @@ export function UnifiedChatWidget() {
               </Badge>
             )}
             <div className="absolute -top-12 right-0 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              {isHandedOffToAdmin ? "Chat with Support Team" : "Chat with AI Assistant"}
+              {isHandedOffToAdmin ? "Chat with Support Team" : "Chat with Chat Bot"}
             </div>
           </Button>
         </div>
@@ -311,7 +311,7 @@ export function UnifiedChatWidget() {
                 <div className="flex items-center space-x-1">
                   <div className={cn("w-2 h-2 rounded-full", isHandedOffToAdmin ? "bg-purple-300" : "bg-green-400")} />
                   <span className="text-xs opacity-90">
-                    {isHandedOffToAdmin ? "Human support" : "AI Assistant"}
+                    {isHandedOffToAdmin ? "Human support" : "Chat Bot"}
                   </span>
                 </div>
               </div>
@@ -432,7 +432,7 @@ export function UnifiedChatWidget() {
                 <p className="text-xs mt-1 flex items-center gap-1">
                   {isHandedOffToAdmin
                     ? <><User className="h-3 w-3 text-purple-500" /><span className="text-purple-600">Support Team • replies may take a moment</span></>
-                    : <><Bot className="h-3 w-3 text-green-500" /><span className="text-green-600">AI Assistant • always available</span></>
+                    : <><Bot className="h-3 w-3 text-green-500" /><span className="text-green-600">Chat Bot • always available</span></>
                   }
                 </p>
               </div>

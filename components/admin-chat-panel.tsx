@@ -155,7 +155,7 @@ export function AdminChatPanel() {
           // Show escalation toast
           toast({
             title: "🤖➡️👨‍💼 Chat Escalated from AI",
-            description: `${notification.userName} was transferred from our AI assistant. ${notification.messageCount} messages in history.`,
+            description: `${notification.userName} was transferred from our Chat Bot. ${notification.messageCount} messages in history.`,
             duration: 10000,
           })
 
@@ -567,7 +567,7 @@ export function AdminChatPanel() {
                                   {message.senderType === "bot" && (
                                     <div className="flex items-center space-x-1 mb-1">
                                       <Bot className="h-3 w-3 text-purple-600" />
-                                      <span className="text-xs font-medium text-purple-600">AI Assistant</span>
+                                      <span className="text-xs font-medium text-purple-600">Chat Bot</span>
                                     </div>
                                   )}
                                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -686,7 +686,7 @@ export function AdminChatPanel() {
                           <span className="text-sm font-medium">AI Escalations Available</span>
                         </div>
                         <p className="text-xs text-purple-600 mt-1">
-                          Some conversations were transferred from our AI assistant
+                          Some conversations were transferred from our Chat Bot
                         </p>
                       </div>
                     )}

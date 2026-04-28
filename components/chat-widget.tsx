@@ -361,7 +361,7 @@ export function ChatWidget() {
                       </div>
                       <p className="text-sm font-medium">
                         {chatMode === "bot"
-                          ? "Start a conversation with our AI assistant!"
+                          ? "Start a conversation with our Chat Bot!"
                           : "Start a conversation with our support team!"}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">

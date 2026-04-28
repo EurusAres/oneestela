@@ -109,7 +109,7 @@ export function UnifiedAdminChatPanel() {
             id: msg.id,
             content: msg.content,
             senderType: msg.senderType || (msg.isBot ? "bot" : "user"),
-            senderName: msg.senderName || (msg.isBot ? "AI Assistant" : escalation.userName),
+            senderName: msg.senderName || (msg.isBot ? "Chat Bot" : escalation.userName),
             senderAvatar: msg.senderAvatar,
             timestamp: msg.timestamp,
             followUps: msg.followUps,
@@ -124,7 +124,7 @@ export function UnifiedAdminChatPanel() {
           // Show escalation toast
           toast({
             title: "🤖➡️👨‍💼 Chat Escalated from AI",
-            description: `${escalation.userName} was transferred from our AI assistant. ${unifiedMessages.length} messages in history.`,
+            description: `${escalation.userName} was transferred from our Chat Bot. ${unifiedMessages.length} messages in history.`,
             duration: 10000,
           })
 
@@ -619,7 +619,7 @@ export function UnifiedAdminChatPanel() {
                                   {message.senderType === "bot" && (
                                     <div className="flex items-center space-x-1 mb-1">
                                       <Bot className="h-3 w-3 text-green-200" />
-                                      <span className="text-xs font-medium text-green-200">AI Assistant</span>
+                                      <span className="text-xs font-medium text-green-200">Chat Bot</span>
                                     </div>
                                   )}
                                   {message.senderType === "admin" && (
@@ -761,7 +761,7 @@ export function UnifiedAdminChatPanel() {
                         </div>
                         <p className="text-xs text-purple-600 mt-1">
                           {Object.keys(escalatedChats).length} conversation
-                          {Object.keys(escalatedChats).length > 1 ? "s" : ""} transferred from AI assistant
+                          {Object.keys(escalatedChats).length > 1 ? "s" : ""} transferred from Chat Bot
                         </p>
                       </div>
                     )}
