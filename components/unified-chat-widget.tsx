@@ -351,7 +351,7 @@ export function UnifiedChatWidget() {
                         )}>
                           <Avatar className="h-6 w-6 flex-shrink-0">
                             <AvatarFallback className="text-xs">
-                              {message.senderType === "bot" ? "AI" : message.senderType === "admin" ? "ST" : "U"}
+                              {message.senderType === "bot" ? "CB" : message.senderType === "admin" ? "ST" : "U"}
                             </AvatarFallback>
                           </Avatar>
                           <div className={cn(
@@ -399,7 +399,7 @@ export function UnifiedChatWidget() {
                   {!isHandedOffToAdmin && botIsTyping && (
                     <div className="flex justify-start">
                       <div className="flex items-end space-x-2">
-                        <Avatar className="h-6 w-6"><AvatarFallback className="text-xs">AI</AvatarFallback></Avatar>
+                        <Avatar className="h-6 w-6"><AvatarFallback className="text-xs">CB</AvatarFallback></Avatar>
                         <div className="bg-green-100 rounded-lg px-3 py-2">
                           <div className="flex space-x-1">
                             <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" />
