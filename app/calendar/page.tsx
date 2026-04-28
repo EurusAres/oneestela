@@ -46,8 +46,12 @@ export default function CalendarPage() {
   
   // Extract dates from bookings - parse as local date to avoid timezone issues
   const reservedDates = reservedBookings.map((booking) => {
-    const [year, month, day] = booking.date.split('-').map(Number)
-    return new Date(year, month - 1, day)
+    const dateStr = booking.date
+    if (dateStr.includes('-')) {
+      const [year, month, day] = dateStr.split('-').map(Number)
+      return new Date(year, month - 1, day)
+    }
+    return new Date(dateStr)
   })
 
   // Extract admin unavailable dates
@@ -66,7 +70,17 @@ export default function CalendarPage() {
   // Find bookings for the selected date
   const bookingsForSelectedDate = date
     ? reservedBookings.filter((booking) => {
-        const bookingDate = new Date(booking.date)
+        // Parse date string properly to avoid timezone issues
+        const dateStr = booking.date
+        let bookingDate: Date
+        
+        if (dateStr.includes('-')) {
+          const [year, month, day] = dateStr.split('-').map(Number)
+          bookingDate = new Date(year, month - 1, day)
+        } else {
+          bookingDate = new Date(dateStr)
+        }
+        
         return (
           bookingDate.getDate() === date.getDate() &&
           bookingDate.getMonth() === date.getMonth() &&
