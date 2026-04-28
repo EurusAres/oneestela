@@ -588,10 +588,6 @@ export function ReserveDialog({ open, onOpenChange, preSelectedSpace }: ReserveD
                 </div>
               </div>
 
-              <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
-                Demo: user@oneestela.com / user123
-              </div>
-
               <div className="flex gap-2 pt-4">
                 <Button
                   type="button"
