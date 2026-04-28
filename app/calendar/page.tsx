@@ -44,78 +44,71 @@ export default function CalendarPage() {
     (booking) => booking.status === "confirmed" || booking.status === "pending"
   )
   
-  // Extract dates from bookings - parse as local date to avoid timezone issues
-  const reservedDates = reservedBookings.map((booking) => {
-    const dateStr = booking.date
-    console.log('Processing booking for calendar:', { id: booking.id, eventName: booking.eventName, dateStr })
-    
+  // Helper function to normalize dates to midnight local time
+  const normalizeDate = (dateStr: string): Date => {
     if (dateStr.includes('-')) {
       const [year, month, day] = dateStr.split('-').map(Number)
-      const localDate = new Date(year, month - 1, day)
-      console.log('Parsed date:', { year, month, day, localDate: localDate.toDateString() })
-      return localDate
+      // Create date at midnight local time
+      return new Date(year, month - 1, day, 0, 0, 0, 0)
     }
-    const fallbackDate = new Date(dateStr)
-    console.log('Fallback date:', fallbackDate.toDateString())
-    return fallbackDate
+    // Parse and normalize to midnight
+    const date = new Date(dateStr)
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0)
+  }
+
+  // Extract dates from bookings - normalize to midnight local time
+  const reservedDates = reservedBookings.map((booking) => {
+    const dateStr = booking.date
+    const normalizedDate = normalizeDate(dateStr)
+    console.log('Processing booking for calendar:', { 
+      id: booking.id, 
+      eventName: booking.eventName, 
+      dateStr,
+      normalized: normalizedDate.toDateString(),
+      timestamp: normalizedDate.getTime()
+    })
+    return normalizedDate
   })
 
   console.log('All reserved dates for calendar:', reservedDates.map(d => d.toDateString()))
 
-  // Extract admin unavailable dates
+  // Extract admin unavailable dates - normalize to midnight local time
   const adminReservedDates = adminUnavailableDates.map((unavailable) => {
-    const dateStr = unavailable.date
-    if (dateStr.includes('-')) {
-      const [year, month, day] = dateStr.split('-').map(Number)
-      return new Date(year, month - 1, day)
-    }
-    return new Date(dateStr)
+    return normalizeDate(unavailable.date)
   })
 
   // Combine all reserved dates (bookings + admin unavailable)
   const allReservedDates = [...reservedDates, ...adminReservedDates]
   
+  console.log('Combined reserved dates:', allReservedDates.map(d => ({
+    date: d.toDateString(),
+    iso: d.toISOString(),
+    time: d.getTime(),
+    hours: d.getHours(),
+    minutes: d.getMinutes()
+  })))
+  
+  console.log('Calendar modifiers:', {
+    reserved: allReservedDates
+  })
+  
   // Find bookings for the selected date
   const bookingsForSelectedDate = date
     ? reservedBookings.filter((booking) => {
-        // Parse date string properly to avoid timezone issues
-        const dateStr = booking.date
-        let bookingDate: Date
+        const bookingDate = normalizeDate(booking.date)
+        const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0)
         
-        if (dateStr.includes('-')) {
-          const [year, month, day] = dateStr.split('-').map(Number)
-          bookingDate = new Date(year, month - 1, day)
-        } else {
-          bookingDate = new Date(dateStr)
-        }
-        
-        return (
-          bookingDate.getDate() === date.getDate() &&
-          bookingDate.getMonth() === date.getMonth() &&
-          bookingDate.getFullYear() === date.getFullYear()
-        )
+        return bookingDate.getTime() === selectedDate.getTime()
       })
     : []
 
   // Find admin unavailable dates for the selected date
   const unavailableDatesForSelectedDate = date
     ? adminUnavailableDates.filter((unavailable) => {
-        // Parse date string properly to avoid timezone issues
-        const dateStr = unavailable.date
-        let unavailableDate: Date
+        const unavailableDate = normalizeDate(unavailable.date)
+        const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0)
         
-        if (dateStr.includes('-')) {
-          const [year, month, day] = dateStr.split('-').map(Number)
-          unavailableDate = new Date(year, month - 1, day)
-        } else {
-          unavailableDate = new Date(dateStr)
-        }
-        
-        return (
-          unavailableDate.getDate() === date.getDate() &&
-          unavailableDate.getMonth() === date.getMonth() &&
-          unavailableDate.getFullYear() === date.getFullYear()
-        )
+        return unavailableDate.getTime() === selectedDate.getTime()
       })
     : []
 
