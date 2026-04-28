@@ -47,12 +47,20 @@ export default function CalendarPage() {
   // Extract dates from bookings - parse as local date to avoid timezone issues
   const reservedDates = reservedBookings.map((booking) => {
     const dateStr = booking.date
+    console.log('Processing booking for calendar:', { id: booking.id, eventName: booking.eventName, dateStr })
+    
     if (dateStr.includes('-')) {
       const [year, month, day] = dateStr.split('-').map(Number)
-      return new Date(year, month - 1, day)
+      const localDate = new Date(year, month - 1, day)
+      console.log('Parsed date:', { year, month, day, localDate: localDate.toDateString() })
+      return localDate
     }
-    return new Date(dateStr)
+    const fallbackDate = new Date(dateStr)
+    console.log('Fallback date:', fallbackDate.toDateString())
+    return fallbackDate
   })
+
+  console.log('All reserved dates for calendar:', reservedDates.map(d => d.toDateString()))
 
   // Extract admin unavailable dates
   const adminReservedDates = adminUnavailableDates.map((unavailable) => {
