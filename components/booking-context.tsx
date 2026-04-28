@@ -40,42 +40,67 @@ const BookingContext = createContext<BookingContextType | undefined>(undefined)
 
 export function BookingProvider({ children }: { children: React.ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [lastUpdate, setLastUpdate] = useState<number>(Date.now())
+
+  // Load bookings from database
+  const loadBookings = async () => {
+    try {
+      const response = await fetch("/api/bookings")
+      if (response.ok) {
+        const data = await response.json()
+        const mapped = (data.bookings || []).map((b: any) => ({
+          ...b,
+          id: b.id?.toString(),
+          userId: b.userId || b.user_id?.toString(),
+          eventName: b.eventName || b.event_name || 'Event Booking',
+          eventType: b.room_name || b.eventType || b.event_type || 'general', // Use resolved room/venue name
+          guestCount: b.guestCount || b.number_of_guests || 0,
+          date: b.date || (b.check_in_date ? b.check_in_date.split('T')[0] : ''),
+          startTime: b.startTime || (b.check_in_date ? new Date(b.check_in_date).toTimeString().slice(0,5) : ''),
+          endTime: b.endTime || (b.check_out_date ? new Date(b.check_out_date).toTimeString().slice(0,5) : ''),
+          specialRequests: b.specialRequests || b.special_requests || '',
+          declineReason: b.declineReason || b.decline_reason || '',
+          status: (b.status || 'pending') as "pending" | "confirmed" | "declined" | "completed" | "cancelled",
+          submittedAt: b.submittedAt || b.created_at || new Date().toISOString(),
+          total: b.total || b.total_price?.toString(),
+          userInfo: b.userInfo || {
+            name: b.user_name || '',
+            email: b.user_email || '',
+            phone: b.user_phone || '',
+          },
+        }))
+        setBookings(mapped)
+        setLastUpdate(Date.now())
+      }
+    } catch (error) {
+      console.error("Load bookings error:", error)
+    }
+  }
 
   useEffect(() => {
-    // Load bookings from database on mount
-    const loadBookings = async () => {
-      try {
-        const response = await fetch("/api/bookings")
-        if (response.ok) {
-          const data = await response.json()
-          const mapped = (data.bookings || []).map((b: any) => ({
-            ...b,
-            id: b.id?.toString(),
-            userId: b.userId || b.user_id?.toString(),
-            eventName: b.eventName || b.event_name || 'Event Booking',
-            eventType: b.room_name || b.eventType || b.event_type || 'general', // Use resolved room/venue name
-            guestCount: b.guestCount || b.number_of_guests || 0,
-            date: b.date || (b.check_in_date ? b.check_in_date.split('T')[0] : ''),
-            startTime: b.startTime || (b.check_in_date ? new Date(b.check_in_date).toTimeString().slice(0,5) : ''),
-            endTime: b.endTime || (b.check_out_date ? new Date(b.check_out_date).toTimeString().slice(0,5) : ''),
-            specialRequests: b.specialRequests || b.special_requests || '',
-            declineReason: b.declineReason || b.decline_reason || '',
-            status: (b.status || 'pending') as "pending" | "confirmed" | "declined" | "completed" | "cancelled",
-            submittedAt: b.submittedAt || b.created_at || new Date().toISOString(),
-            total: b.total || b.total_price?.toString(),
-            userInfo: b.userInfo || {
-              name: b.user_name || '',
-              email: b.user_email || '',
-              phone: b.user_phone || '',
-            },
-          }))
-          setBookings(mapped)
-        }
-      } catch (error) {
-        console.error("Load bookings error:", error)
-      }
-    }
+    // Initial load
     loadBookings()
+
+    // Set up polling for real-time updates (every 5 seconds)
+    const pollInterval = setInterval(() => {
+      loadBookings()
+    }, 5000)
+
+    // Listen for custom events that trigger immediate refresh
+    const handleRefresh = () => {
+      loadBookings()
+    }
+
+    window.addEventListener('booking-updated', handleRefresh)
+    window.addEventListener('booking-status-changed', handleRefresh)
+    window.addEventListener('payment-verified', handleRefresh)
+
+    return () => {
+      clearInterval(pollInterval)
+      window.removeEventListener('booking-updated', handleRefresh)
+      window.removeEventListener('booking-status-changed', handleRefresh)
+      window.removeEventListener('payment-verified', handleRefresh)
+    }
   }, [])
 
   const addBooking = async (bookingData: Omit<Booking, "id" | "submittedAt">) => {
@@ -100,6 +125,9 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
           userInfo: newBooking.userInfo || bookingData.userInfo,
         }
         setBookings((prev) => [...prev, mapped])
+        
+        // Trigger event for real-time update
+        window.dispatchEvent(new CustomEvent('booking-updated'))
       }
     } catch (error) {
       console.error("Add booking error:", error)
@@ -125,6 +153,9 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
             : booking
         )
         setBookings(updatedBookings)
+        
+        // Trigger event for real-time update
+        window.dispatchEvent(new CustomEvent('booking-status-changed', { detail: { bookingId: id, status } }))
       }
     } catch (error) {
       console.error("Update booking status error:", error)
@@ -171,6 +202,9 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
           booking.id === id ? { ...booking, ...updatedBooking } : booking,
         )
         setBookings(updatedBookings)
+        
+        // Trigger event for real-time update
+        window.dispatchEvent(new CustomEvent('booking-updated'))
       }
     } catch (error) {
       console.error("Modify booking error:", error)

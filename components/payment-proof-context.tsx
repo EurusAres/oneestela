@@ -56,77 +56,82 @@ export function PaymentProofProvider({ children }: { children: React.ReactNode }
   const fileUploadService = FileUploadService.getInstance()
   const { user } = useAuth()
 
-  useEffect(() => {
-    // Load payment proofs from database on mount
-    const loadProofs = async () => {
-      try {
-        console.log('Fetching payment proofs from API...')
-        const response = await fetch("/api/payment-proofs")
-        console.log('API response status:', response.status)
+  // Load payment proofs from database
+  const loadProofs = async () => {
+    try {
+      console.log('Fetching payment proofs from API...')
+      const response = await fetch("/api/payment-proofs")
+      console.log('API response status:', response.status)
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Raw API data:', data)
+        console.log('Number of proofs:', data.proofs?.length || 0)
         
-        if (response.ok) {
-          const data = await response.json()
-          console.log('Raw API data:', data)
-          console.log('Number of proofs:', data.proofs?.length || 0)
-          
-          // Map database fields to expected interface
-          const mappedProofs = (data.proofs || []).map((proof: any) => {
-            console.log('Mapping proof:', proof)
-            const mapped = {
-              id: proof.id?.toString() || '',
-              bookingId: proof.booking_id?.toString() || '',
-              fileId: proof.id?.toString() || '', // Use proof id as fileId
-              fileName: 'payment-proof.jpg', // Default filename
-              fileUrl: proof.proof_url || '',
-              fileSize: 0, // Not stored in DB
-              fileType: 'image/jpeg', // Default type
-              uploadedAt: proof.created_at || new Date().toISOString(),
-              uploadedBy: proof.user_id?.toString() || '',
-              status: proof.status || 'pending',
-              verifiedAt: proof.updated_at,
-              verifiedBy: '',
-              adminNote: proof.verification_notes || '',
-              paymentMethod: proof.payment_method || '',
-              paymentAmount: proof.amount?.toString() || '0',
-              paymentDate: proof.created_at || new Date().toISOString(),
-              paymentReference: '',
-              customerName: proof.customer_name || 'Unknown',
-              customerEmail: proof.customer_email || '',
-              eventName: proof.event_name || proof.room_name || 'Booking',
-              eventType: proof.event_type || 'general',
-              roomName: proof.room_name || '',
-            }
-            console.log('Mapped proof fileUrl:', mapped.fileUrl?.substring(0, 100))
-            return mapped
-          })
-          
-          console.log('Mapped payment proofs:', mappedProofs)
-          setPaymentProofs(mappedProofs)
-        } else {
-          console.error('API returned error status:', response.status)
-        }
-      } catch (error) {
-        console.error("Load payment proofs error:", error)
+        // Map database fields to expected interface
+        const mappedProofs = (data.proofs || []).map((proof: any) => {
+          console.log('Mapping proof:', proof)
+          const mapped = {
+            id: proof.id?.toString() || '',
+            bookingId: proof.booking_id?.toString() || '',
+            fileId: proof.id?.toString() || '', // Use proof id as fileId
+            fileName: 'payment-proof.jpg', // Default filename
+            fileUrl: proof.proof_url || '',
+            fileSize: 0, // Not stored in DB
+            fileType: 'image/jpeg', // Default type
+            uploadedAt: proof.created_at || new Date().toISOString(),
+            uploadedBy: proof.user_id?.toString() || '',
+            status: proof.status || 'pending',
+            verifiedAt: proof.updated_at,
+            verifiedBy: '',
+            adminNote: proof.verification_notes || '',
+            paymentMethod: proof.payment_method || '',
+            paymentAmount: proof.amount?.toString() || '0',
+            paymentDate: proof.created_at || new Date().toISOString(),
+            paymentReference: '',
+            customerName: proof.customer_name || 'Unknown',
+            customerEmail: proof.customer_email || '',
+            eventName: proof.event_name || proof.room_name || 'Booking',
+            eventType: proof.event_type || 'general',
+            roomName: proof.room_name || '',
+          }
+          console.log('Mapped proof fileUrl:', mapped.fileUrl?.substring(0, 100))
+          return mapped
+        })
+        
+        console.log('Mapped payment proofs:', mappedProofs)
+        setPaymentProofs(mappedProofs)
+      } else {
+        console.error('API returned error status:', response.status)
       }
+    } catch (error) {
+      console.error("Load payment proofs error:", error)
     }
-    
+  }
+
+  useEffect(() => {
+    // Initial load
     loadProofs()
     
-    // Listen for booking cancellations and payment verifications to reload proofs
-    const handleBookingCancelled = () => {
+    // Set up polling for real-time updates (every 5 seconds)
+    const pollInterval = setInterval(() => {
+      loadProofs()
+    }, 5000)
+    
+    // Listen for events that trigger immediate refresh
+    const handleRefresh = () => {
       loadProofs()
     }
     
-    const handlePaymentVerified = () => {
-      loadProofs()
-    }
-    
-    window.addEventListener('booking-cancelled', handleBookingCancelled)
-    window.addEventListener('payment-verified', handlePaymentVerified)
+    window.addEventListener('booking-cancelled', handleRefresh)
+    window.addEventListener('payment-verified', handleRefresh)
+    window.addEventListener('payment-uploaded', handleRefresh)
     
     return () => {
-      window.removeEventListener('booking-cancelled', handleBookingCancelled)
-      window.removeEventListener('payment-verified', handlePaymentVerified)
+      clearInterval(pollInterval)
+      window.removeEventListener('booking-cancelled', handleRefresh)
+      window.removeEventListener('payment-verified', handleRefresh)
+      window.removeEventListener('payment-uploaded', handleRefresh)
     }
   }, [])
 
@@ -201,6 +206,10 @@ export function PaymentProofProvider({ children }: { children: React.ReactNode }
         }
         
         setPaymentProofs((prev) => [...prev, paymentProof])
+        
+        // Trigger event for real-time update
+        window.dispatchEvent(new CustomEvent('payment-uploaded'))
+        
         return paymentProof
       }
       
