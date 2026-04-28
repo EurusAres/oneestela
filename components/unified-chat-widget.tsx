@@ -301,7 +301,7 @@ export function UnifiedChatWidget() {
             <div className="flex items-center space-x-3">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-blue-500 text-white text-xs">
-                  {isHandedOffToAdmin ? "ST" : "AI"}
+                  {isHandedOffToAdmin ? "ST" : "CB"}
                 </AvatarFallback>
               </Avatar>
               <div>
