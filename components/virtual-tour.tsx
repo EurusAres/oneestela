@@ -930,8 +930,8 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
                 </div>
               )}
 
-              {/* Unavailable Rooms Panel - Bottom Left - Only show for office spaces with unavailable rooms */}
-              {currentArea.unavailableCount && currentArea.unavailableCount > 0 && currentArea.category === 'office' && (
+              {/* Unavailable Rooms Panel - Bottom Left - Only show for office spaces with unavailable rooms and logged-in users */}
+              {currentArea.unavailableCount && currentArea.unavailableCount > 0 && currentArea.category === 'office' && user && (
                 <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border max-w-sm">
                   <div className="p-3">
                     <h4 className="font-semibold text-sm mb-2 flex items-center text-orange-600">
