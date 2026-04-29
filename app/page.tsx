@@ -44,8 +44,12 @@ export default function HomePage() {
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: `url('${content.heroImage || '/images/venue-interior.jpg'}')`,
+            willChange: 'transform',
           }}
-        />
+        >
+          {/* Preload image for faster loading */}
+          <link rel="preload" as="image" href={content.heroImage || '/images/venue-interior.jpg'} />
+        </div>
         <div className="absolute inset-0 bg-black/60" />
         <div className="container mx-auto px-4 py-12 md:py-16 lg:py-20 text-center relative z-10">
           <h1 className="mb-4 md:mb-6 text-3xl md:text-4xl lg:text-5xl font-bold drop-shadow-lg text-white">{content.heroTitle}</h1>
@@ -140,8 +144,17 @@ export default function HomePage() {
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: `url('/images/cta-background.png')`,
+            willChange: 'transform',
           }}
-        />
+        >
+          {/* Lazy load CTA background */}
+          <img 
+            src="/images/cta-background.png" 
+            alt="" 
+            loading="lazy" 
+            style={{ display: 'none' }}
+          />
+        </div>
         <div className="absolute inset-0 bg-black/70" />
         <div className="container mx-auto px-4 text-center relative z-10">
           <h2 className="mb-3 md:mb-4 text-2xl md:text-3xl font-bold drop-shadow-lg text-white">
