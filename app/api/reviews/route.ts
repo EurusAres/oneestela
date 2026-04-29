@@ -7,6 +7,8 @@ export async function GET(request: NextRequest) {
     const officeRoomId = searchParams.get('officeRoomId');
     const venueId = searchParams.get('venueId');
     const approved = searchParams.get('approved');
+    const limit = parseInt(searchParams.get('limit') || '50'); // Default 50 reviews
+    const offset = parseInt(searchParams.get('offset') || '0');
 
     let query = `
       SELECT r.*, 
@@ -37,7 +39,8 @@ export async function GET(request: NextRequest) {
       query += ' AND r.is_approved = 0';
     }
 
-    query += ' ORDER BY r.created_at DESC';
+    query += ' ORDER BY r.created_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
 
     const reviews = await executeQuery(query, params);
 

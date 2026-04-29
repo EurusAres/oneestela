@@ -84,31 +84,14 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
       try {
         setLoading(true)
         
-        // Fetch venues, office rooms, bookings, and unavailable dates in parallel
-        const [venuesRes, roomsRes, bookingsRes, unavailableRes] = await Promise.all([
+        // Only fetch venues and rooms initially - fetch bookings/unavailable dates on demand
+        const [venuesRes, roomsRes] = await Promise.all([
           fetch('/api/venues'),
-          fetch('/api/office-rooms?includeAll=true'),
-          fetch('/api/bookings'),
-          fetch('/api/unavailable-dates')
+          fetch('/api/office-rooms?includeAll=true')
         ])
 
         const venuesData = await venuesRes.json()
         const roomsData = await roomsRes.json()
-        const bookingsData = await bookingsRes.json()
-        const unavailableData = await unavailableRes.json()
-
-        // Store all bookings for processing
-        if (bookingsData.bookings && Array.isArray(bookingsData.bookings)) {
-          setAllBookings(bookingsData.bookings.filter((booking: any) => 
-            booking.status === 'confirmed' || booking.status === 'pending'
-          ))
-        }
-
-        // Store unavailable dates
-        if (unavailableData.unavailableDates && Array.isArray(unavailableData.unavailableDates)) {
-          console.log('Unavailable dates from API:', unavailableData.unavailableDates)
-          setUnavailableDates(unavailableData.unavailableDates)
-        }
 
         const areas: TourArea[] = []
 
@@ -277,6 +260,39 @@ export function VirtualTour({ open, onOpenChange, onBookSpace }: VirtualTourProp
       }
     }
   }, [open, toast])
+
+  // Lazy load bookings and unavailable dates when user is logged in
+  useEffect(() => {
+    const fetchAvailabilityData = async () => {
+      if (!open || !user) return
+      
+      try {
+        const [bookingsRes, unavailableRes] = await Promise.all([
+          fetch('/api/bookings'),
+          fetch('/api/unavailable-dates')
+        ])
+
+        const bookingsData = await bookingsRes.json()
+        const unavailableData = await unavailableRes.json()
+
+        // Store all bookings for processing
+        if (bookingsData.bookings && Array.isArray(bookingsData.bookings)) {
+          setAllBookings(bookingsData.bookings.filter((booking: any) => 
+            booking.status === 'confirmed' || booking.status === 'pending'
+          ))
+        }
+
+        // Store unavailable dates
+        if (unavailableData.unavailableDates && Array.isArray(unavailableData.unavailableDates)) {
+          setUnavailableDates(unavailableData.unavailableDates)
+        }
+      } catch (error) {
+        console.error('Error fetching availability data:', error)
+      }
+    }
+
+    fetchAvailabilityData()
+  }, [open, user])
 
   const currentArea = tourAreas[currentAreaIndex]
   const currentAngle = currentArea?.angles[currentAngleIndex]
