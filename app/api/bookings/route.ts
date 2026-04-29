@@ -5,6 +5,8 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const limit = parseInt(searchParams.get('limit') || '100'); // Default 100 bookings
+    const offset = parseInt(searchParams.get('offset') || '0');
 
     let query = `
       SELECT b.*, 
@@ -32,7 +34,8 @@ export async function GET(request: NextRequest) {
       params.push(userId);
     }
 
-    query += ' ORDER BY b.created_at ASC';
+    query += ' ORDER BY b.created_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
 
     const bookings = await executeQuery(query, params);
 

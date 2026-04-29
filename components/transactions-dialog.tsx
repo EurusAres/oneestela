@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -28,7 +28,13 @@ export function TransactionsDialog({ open, onOpenChange }: TransactionsDialogPro
   const [showPaymentUpload, setShowPaymentUpload] = useState(false)
   const [selectedBooking, setSelectedBooking] = useState<any>(null)
 
-  const userBookings = user ? getUserBookings(user.id).sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()) : []
+  // Memoize sorted bookings to avoid re-sorting on every render
+  const userBookings = useMemo(() => {
+    if (!user) return []
+    return getUserBookings(user.id).sort((a, b) => 
+      new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+    )
+  }, [user, getUserBookings])
 
   const getStatusColor = (status: string) => {
     switch (status) {
