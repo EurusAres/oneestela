@@ -12,7 +12,8 @@ export function FeaturedReviewsSection() {
   useEffect(() => {
     const fetchFeaturedReviews = async () => {
       try {
-        const response = await fetch('/api/reviews?approved=true')
+        // Use pagination - only fetch 10 reviews (more than enough for 3 to display)
+        const response = await fetch('/api/reviews?approved=true&limit=10&offset=0')
         if (response.ok) {
           const data = await response.json()
           // Get featured reviews first, then approved reviews if not enough featured

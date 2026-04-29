@@ -58,7 +58,8 @@ export function ReviewsProvider({ children }: { children: React.ReactNode }) {
   const refreshReviews = useCallback(async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/reviews')
+      // Use pagination with limit of 50 reviews for faster loading
+      const response = await fetch('/api/reviews?limit=50&offset=0')
       if (response.ok) {
         const data = await response.json()
         setReviews(data.reviews || [])
@@ -192,8 +193,8 @@ export function ReviewsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refreshReviews()
     
-    // Auto-refresh every 30 seconds for real-time updates
-    const interval = setInterval(refreshReviews, 30000)
+    // Reduce auto-refresh to every 60 seconds (was 30) to reduce load
+    const interval = setInterval(refreshReviews, 60000)
     return () => clearInterval(interval)
   }, [refreshReviews])
 
