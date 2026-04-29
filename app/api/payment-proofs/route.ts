@@ -7,6 +7,8 @@ export async function GET(request: NextRequest) {
     const id = searchParams.get('id');
     const bookingId = searchParams.get('bookingId');
     const status = searchParams.get('status');
+    const limit = parseInt(searchParams.get('limit') || '100'); // Default 100 proofs
+    const offset = parseInt(searchParams.get('offset') || '0');
 
     // Handle missing tables gracefully
     let proofs: any[] = [];
@@ -46,7 +48,8 @@ export async function GET(request: NextRequest) {
         params.push(status);
       }
 
-      query += ' ORDER BY pp.created_at DESC';
+      query += ' ORDER BY pp.created_at DESC LIMIT ? OFFSET ?';
+      params.push(limit, offset);
 
       proofs = await executeQuery(query, params) as any[];
     } catch (error) {
