@@ -28,7 +28,7 @@ export async function GET() {
       tests: {
         connection: 'OK',
         tablesFound: Array.isArray(tables) ? tables.length : 0,
-        bookingsCount: Array.isArray(count) && count[0] ? count[0].total : 0,
+        bookingsCount: Array.isArray(count) && count[0] ? (count[0] as any).total : 0,
         sampleBooking: Array.isArray(oneBooking) && oneBooking[0] ? oneBooking[0] : null
       }
     })
