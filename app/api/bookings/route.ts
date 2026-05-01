@@ -17,13 +17,28 @@ export async function GET(request: NextRequest) {
     let query: string;
     let params: any[] = [];
 
+    // Join with users table to get customer information
+    const baseQuery = `
+      SELECT 
+        b.*,
+        u.full_name as user_name,
+        u.email as user_email,
+        u.phone as user_phone,
+        o.name as room_name,
+        v.name as venue_name
+      FROM bookings b
+      LEFT JOIN users u ON b.user_id = u.id
+      LEFT JOIN office_rooms o ON b.office_room_id = o.id
+      LEFT JOIN venues v ON b.venue_id = v.id
+    `;
+
     if (userId) {
       // Only use parameterized query for WHERE clause
-      query = `SELECT * FROM bookings WHERE user_id = ? ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+      query = `${baseQuery} WHERE b.user_id = ? ORDER BY b.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
       params = [parseInt(userId)];
     } else {
       // No parameters needed
-      query = `SELECT * FROM bookings ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+      query = `${baseQuery} ORDER BY b.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
       params = [];
     }
 
