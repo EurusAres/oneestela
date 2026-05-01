@@ -1,51 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Import with fallback
-let executeQuery: any;
-try {
-  executeQuery = require('@/lib/db').executeQuery;
-} catch (error) {
-  console.error('Failed to import executeQuery from @/lib/db:', error);
-  // Fallback function
-  executeQuery = async () => {
-    throw new Error('Database connection not available');
-  };
-}
+import { executeQuery } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('Bookings API: Starting request processing...')
-    console.log('Bookings API: Environment check:', {
-      NODE_ENV: process.env.NODE_ENV,
-      VERCEL: process.env.VERCEL,
-      DB_HOST: process.env.DB_HOST ? 'SET' : 'NOT SET',
-      DB_PASSWORD: process.env.DB_PASSWORD ? 'SET' : 'NOT SET'
-    })
-    
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    console.log('Bookings API: Query parameters:', { userId, limit, offset })
-
-    // Test basic database connection first
-    console.log('Bookings API: Testing basic connection...')
-    const testQuery = await executeQuery('SELECT 1 as test');
-    console.log('Bookings API: Basic connection successful:', testQuery)
-
-    // Test if bookings table exists - use backticks for MySQL
-    console.log('Bookings API: Checking bookings table...')
-    const tableCheck = await executeQuery("SHOW TABLES LIKE 'bookings'");
-    console.log('Bookings API: Table check result:', tableCheck)
-
-    // Simple count query first
-    console.log('Bookings API: Getting bookings count...')
-    const countResult = await executeQuery('SELECT COUNT(*) as total FROM bookings');
-    console.log('Bookings API: Count result:', countResult)
-
-    // If we get here, try the actual query
-    console.log('Bookings API: Executing main query...')
+    // Simple direct query without complex joins
     let query = 'SELECT * FROM bookings';
     const params: any[] = [];
 
@@ -58,30 +21,16 @@ export async function GET(request: NextRequest) {
     params.push(limit, offset);
 
     const bookings = await executeQuery(query, params);
-    console.log('Bookings API: Query successful, found', Array.isArray(bookings) ? bookings.length : 0, 'bookings')
 
     return NextResponse.json({ 
-      bookings: bookings || [],
-      debug: {
-        tableExists: Array.isArray(tableCheck) && tableCheck.length > 0,
-        totalCount: Array.isArray(countResult) ? countResult[0] : 0
-      }
+      bookings: Array.isArray(bookings) ? bookings : []
     });
   } catch (error) {
-    console.error('Bookings API: Error details:', {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : 'Unknown',
-      code: (error as any)?.code,
-      errno: (error as any)?.errno,
-      sqlState: (error as any)?.sqlState
-    });
+    console.error('Bookings API Error:', error);
     return NextResponse.json(
       { 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : String(error),
-        code: (error as any)?.code,
-        errno: (error as any)?.errno
+        error: 'Failed to fetch bookings',
+        details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );
