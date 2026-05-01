@@ -1,9 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { executeQuery } from '@/lib/db';
+
+// Import with fallback
+let executeQuery: any;
+try {
+  executeQuery = require('@/lib/db').executeQuery;
+} catch (error) {
+  console.error('Failed to import executeQuery from @/lib/db:', error);
+  // Fallback function
+  executeQuery = async () => {
+    throw new Error('Database connection not available');
+  };
+}
 
 export async function GET(request: NextRequest) {
   try {
     console.log('Bookings API: Starting request processing...')
+    console.log('Bookings API: Environment check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      DB_HOST: process.env.DB_HOST ? 'SET' : 'NOT SET',
+      DB_PASSWORD: process.env.DB_PASSWORD ? 'SET' : 'NOT SET'
+    })
     
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
