@@ -18,8 +18,8 @@ export async function GET() {
     const result = await executeQuery('SELECT 1 as test')
     console.log('Database connection successful:', result)
 
-    // Test bookings table exists
-    const tableCheck = await executeQuery('SHOW TABLES LIKE ?', ['bookings'])
+    // Test bookings table exists - use single quotes for MySQL
+    const tableCheck = await executeQuery("SHOW TABLES LIKE 'bookings'")
     console.log('Bookings table check:', tableCheck)
 
     // Test bookings count

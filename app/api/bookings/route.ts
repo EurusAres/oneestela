@@ -34,9 +34,9 @@ export async function GET(request: NextRequest) {
     const testQuery = await executeQuery('SELECT 1 as test');
     console.log('Bookings API: Basic connection successful:', testQuery)
 
-    // Test if bookings table exists
+    // Test if bookings table exists - use backticks for MySQL
     console.log('Bookings API: Checking bookings table...')
-    const tableCheck = await executeQuery('SHOW TABLES LIKE ?', ['bookings']);
+    const tableCheck = await executeQuery("SHOW TABLES LIKE 'bookings'");
     console.log('Bookings API: Table check result:', tableCheck)
 
     // Simple count query first
