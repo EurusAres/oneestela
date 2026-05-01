@@ -23,12 +23,19 @@ export async function GET() {
     const oneBooking = await executeQuery('SELECT * FROM bookings LIMIT 1')
     console.log('One booking:', oneBooking)
 
+    // Type-safe extraction of count
+    let bookingsCount = 0;
+    if (Array.isArray(count) && count.length > 0) {
+      const countRow = count[0] as any;
+      bookingsCount = countRow.total || 0;
+    }
+
     return NextResponse.json({
       success: true,
       tests: {
         connection: 'OK',
         tablesFound: Array.isArray(tables) ? tables.length : 0,
-        bookingsCount: Array.isArray(count) && count[0] ? (count[0] as any).total : 0,
+        bookingsCount,
         sampleBooking: Array.isArray(oneBooking) && oneBooking[0] ? oneBooking[0] : null
       }
     })
