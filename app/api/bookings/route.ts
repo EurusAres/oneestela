@@ -12,47 +12,59 @@ export async function GET(request: NextRequest) {
 
     console.log('Bookings API: Query parameters:', { userId, limit, offset })
 
-    // Simplified query first to test basic functionality
-    let query = `
-      SELECT b.*, 
-             u.full_name as user_name, 
-             u.email as user_email, 
-             u.phone as user_phone
-      FROM bookings b
-      LEFT JOIN users u ON b.user_id = u.id
-    `;
+    // Test basic database connection first
+    console.log('Bookings API: Testing basic connection...')
+    const testQuery = await executeQuery('SELECT 1 as test');
+    console.log('Bookings API: Basic connection successful:', testQuery)
+
+    // Test if bookings table exists
+    console.log('Bookings API: Checking bookings table...')
+    const tableCheck = await executeQuery('SHOW TABLES LIKE "bookings"');
+    console.log('Bookings API: Table check result:', tableCheck)
+
+    // Simple count query first
+    console.log('Bookings API: Getting bookings count...')
+    const countResult = await executeQuery('SELECT COUNT(*) as total FROM bookings');
+    console.log('Bookings API: Count result:', countResult)
+
+    // If we get here, try the actual query
+    console.log('Bookings API: Executing main query...')
+    let query = 'SELECT * FROM bookings';
     const params: any[] = [];
 
     if (userId) {
-      query += ' WHERE b.user_id = ?';
+      query += ' WHERE user_id = ?';
       params.push(userId);
     }
 
-    query += ' ORDER BY b.created_at DESC LIMIT ? OFFSET ?';
+    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
-    console.log('Bookings API: Executing simplified query...')
     const bookings = await executeQuery(query, params);
     console.log('Bookings API: Query successful, found', Array.isArray(bookings) ? bookings.length : 0, 'bookings')
 
-    // Add room names in a second step if needed
-    const enrichedBookings = Array.isArray(bookings) ? bookings.map((booking: any) => ({
-      ...booking,
-      room_name: booking.event_name || 'Event Booking',
-      image_url: '/images/venue-interior.jpg' // Default image
-    })) : [];
-
-    return NextResponse.json({ bookings: enrichedBookings });
+    return NextResponse.json({ 
+      bookings: bookings || [],
+      debug: {
+        tableExists: Array.isArray(tableCheck) && tableCheck.length > 0,
+        totalCount: Array.isArray(countResult) ? countResult[0] : 0
+      }
+    });
   } catch (error) {
     console.error('Bookings API: Error details:', {
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       name: error instanceof Error ? error.name : 'Unknown',
+      code: (error as any)?.code,
+      errno: (error as any)?.errno,
+      sqlState: (error as any)?.sqlState
     });
     return NextResponse.json(
       { 
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
+        code: (error as any)?.code,
+        errno: (error as any)?.errno
       },
       { status: 500 }
     );
