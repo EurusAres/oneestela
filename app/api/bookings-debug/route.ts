@@ -34,13 +34,21 @@ export async function GET() {
     diagnostics.tests.simpleQuery = `OK - ${Array.isArray(bookings) ? bookings.length : 0} bookings returned`;
     diagnostics.tests.sampleBooking = Array.isArray(bookings) && bookings[0] ? bookings[0] : null;
 
-    // Test 4: Parameterized query (what the main API uses)
-    diagnostics.tests.parameterizedQuery = 'Testing...';
-    const paramBookings = await executeQuery(
-      'SELECT * FROM bookings ORDER BY created_at DESC LIMIT ? OFFSET ?',
-      [100, 0]
+    // Test 4: Non-parameterized LIMIT query (what the main API now uses)
+    diagnostics.tests.nonParamQuery = 'Testing...';
+    const nonParamBookings = await executeQuery(
+      'SELECT * FROM bookings ORDER BY created_at DESC LIMIT 100 OFFSET 0',
+      []
     );
-    diagnostics.tests.parameterizedQuery = `OK - ${Array.isArray(paramBookings) ? paramBookings.length : 0} bookings returned`;
+    diagnostics.tests.nonParamQuery = `OK - ${Array.isArray(nonParamBookings) ? nonParamBookings.length : 0} bookings returned`;
+    
+    // Test 5: Parameterized WHERE query
+    diagnostics.tests.paramWhereQuery = 'Testing...';
+    const paramWhereBookings = await executeQuery(
+      'SELECT * FROM bookings WHERE user_id = ? ORDER BY created_at DESC LIMIT 10',
+      [4]
+    );
+    diagnostics.tests.paramWhereQuery = `OK - ${Array.isArray(paramWhereBookings) ? paramWhereBookings.length : 0} bookings returned`;
 
     diagnostics.overallStatus = 'SUCCESS';
     return NextResponse.json(diagnostics);

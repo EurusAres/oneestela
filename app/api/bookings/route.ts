@@ -8,20 +8,24 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
-    const limit = parseInt(searchParams.get('limit') || '100');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    
+    // Use string concatenation instead of parameterized LIMIT/OFFSET
+    // MySQL has issues with parameterized LIMIT in some configurations
+    const limit = Math.max(1, Math.min(1000, parseInt(searchParams.get('limit') || '100')));
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
 
-    // Simple direct query - we know the table exists and has 6 bookings
-    let query = 'SELECT * FROM bookings';
-    const params: any[] = [];
+    let query: string;
+    let params: any[] = [];
 
     if (userId) {
-      query += ' WHERE user_id = ?';
-      params.push(userId);
+      // Only use parameterized query for WHERE clause
+      query = `SELECT * FROM bookings WHERE user_id = ? ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+      params = [parseInt(userId)];
+    } else {
+      // No parameters needed
+      query = `SELECT * FROM bookings ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+      params = [];
     }
-
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-    params.push(limit, offset);
 
     console.log('Executing bookings query:', query, 'with params:', params);
     const result = await executeQuery(query, params);
