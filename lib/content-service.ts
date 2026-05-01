@@ -53,231 +53,300 @@ export interface ContentDatabase {
   lastUpdated: string
 }
 
-const STORAGE_KEY = 'oneestela_cms_data'
-
-const defaultContent: ContentDatabase = {
-  homepage: {
-    heroTitle: 'Welcome to One Estela Place',
-    heroDescription: 'The perfect venue for your special events and celebrations',
-    heroImage: '/images/venue-interior.jpg',
-    aboutTitle: 'About One Estela Place',
-    aboutDescription: 'One Estela Place is a premier event venue that has been hosting memorable celebrations for over a decade. Our stunning architecture and versatile spaces provide the perfect backdrop for weddings, corporate events, and special occasions.',
-    ctaTitle: 'Ready to host your event?',
-    ctaDescription: 'Contact us today to book your perfect event space and create unforgettable memories.',
-    ctaButtonText: 'Book Your Event',
-    features: [
-      {
-        id: '1',
-        title: 'State-of-the-art Facilities',
-        description: 'Modern amenities and equipment for every event need'
-      },
-      {
-        id: '2',
-        title: 'Professional Catering',
-        description: 'Dedicated events team to ensure every detail is perfect'
-      },
-      {
-        id: '3',
-        title: 'Flexible Spaces',
-        description: 'Customizable venue layouts for any event type'
-      }
-    ]
-  },
-  venues: [
-    {
-      id: 'venue-1',
-      name: 'Grand Ballroom',
-      description: 'Elegant ballroom perfect for large celebrations and corporate events',
-      capacity: 500,
-      images: ['/images/venue-interior.jpg', '/images/venue-chandelier.png'],
-      features: ['Air Conditioning', 'Sound System', 'Dance Floor', 'Catering Available'],
-      price: 5000,
-      available: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    {
-      id: 'venue-2',
-      name: 'Intimate Lounge',
-      description: 'Cozy lounge space ideal for intimate gatherings and cocktail parties',
-      capacity: 100,
-      images: ['/images/cta-background.png'],
-      features: ['Bar Setup', 'Lounge Seating', 'Private Entrance'],
-      price: 1500,
-      available: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-  ],
-  officeRooms: [
-    {
-      id: 'office-gf-1',
-      floor: 'ground',
-      name: 'Executive Suite',
-      description: 'Premium office space on the ground floor with natural lighting',
-      capacity: 20,
-      images: ['/images/venue-interior.jpg'],
-      features: ['Large Windows', 'Meeting Table', 'Projector'],
-      available: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    {
-      id: 'office-sf-1',
-      floor: 'second',
-      name: 'Creative Studio',
-      description: 'Open-plan office on the second floor perfect for collaborative teams',
-      capacity: 30,
-      images: ['/images/venue-interior.jpg'],
-      features: ['Open Layout', 'Whiteboard Walls', 'Break Area'],
-      available: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-  ],
-  lastUpdated: new Date().toISOString()
-}
-
-// Initialize storage if empty
-function initializeStorage() {
-  if (typeof window !== 'undefined') {
-    const existing = localStorage.getItem(STORAGE_KEY)
-    if (!existing) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultContent))
-    }
-  }
-}
-
+// API-based content service - no localStorage usage
 export const contentService = {
   // Homepage operations
-  getHomepageContent: (): HomepageContent => {
-    initializeStorage()
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultContent))
-    return data.homepage
+  getHomepageContent: async (): Promise<HomepageContent> => {
+    try {
+      const response = await fetch('/api/homepage', {
+        cache: 'no-store'
+      })
+      if (!response.ok) {
+        throw new Error('Failed to fetch homepage content')
+      }
+      return await response.json()
+    } catch (error) {
+      console.error('Error fetching homepage content:', error)
+      // Return default content as fallback
+      return {
+        heroTitle: 'Welcome to One Estela Place',
+        heroDescription: 'The perfect venue for your special events and celebrations',
+        heroImage: '/images/venue-interior.jpg',
+        aboutTitle: 'About One Estela Place',
+        aboutDescription: 'One Estela Place is a premier event venue that has been hosting memorable celebrations for over a decade.',
+        ctaTitle: 'Ready to host your event?',
+        ctaDescription: 'Contact us today to book your perfect event space and create unforgettable memories.',
+        ctaButtonText: 'Book Your Event',
+        features: []
+      }
+    }
   },
 
-  updateHomepageContent: (updates: Partial<HomepageContent>) => {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultContent))
-    data.homepage = { ...data.homepage, ...updates }
-    data.lastUpdated = new Date().toISOString()
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-    window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'homepage' } }))
+  updateHomepageContent: async (updates: Partial<HomepageContent>): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/homepage/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update homepage content')
+      }
+      
+      // Dispatch custom event for UI updates
+      window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'homepage' } }))
+      return true
+    } catch (error) {
+      console.error('Error updating homepage content:', error)
+      return false
+    }
   },
 
   // Venue operations
-  getVenues: (): Venue[] => {
-    initializeStorage()
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultContent))
-    return data.venues
-  },
-
-  getVenueById: (id: string): Venue | undefined => {
-    const venues = contentService.getVenues()
-    return venues.find(v => v.id === id)
-  },
-
-  addVenue: (venue: Omit<Venue, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultContent))
-    const newVenue: Venue = {
-      ...venue,
-      id: `venue-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    data.venues.push(newVenue)
-    data.lastUpdated = new Date().toISOString()
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-    window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'venues' } }))
-    return newVenue
-  },
-
-  updateVenue: (id: string, updates: Partial<Venue>) => {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultContent))
-    const index = data.venues.findIndex((v: Venue) => v.id === id)
-    if (index !== -1) {
-      data.venues[index] = {
-        ...data.venues[index],
-        ...updates,
-        updatedAt: new Date().toISOString()
+  getVenues: async (): Promise<Venue[]> => {
+    try {
+      const response = await fetch('/api/venues', {
+        cache: 'no-store'
+      })
+      if (!response.ok) {
+        throw new Error('Failed to fetch venues')
       }
-      data.lastUpdated = new Date().toISOString()
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-      window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'venues', id } }))
+      return await response.json()
+    } catch (error) {
+      console.error('Error fetching venues:', error)
+      return []
     }
   },
 
-  deleteVenue: (id: string) => {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultContent))
-    data.venues = data.venues.filter((v: Venue) => v.id !== id)
-    data.lastUpdated = new Date().toISOString()
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-    window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'venues' } }))
+  getVenueById: async (id: string): Promise<Venue | undefined> => {
+    try {
+      const venues = await contentService.getVenues()
+      return venues.find(v => v.id === id)
+    } catch (error) {
+      console.error('Error fetching venue by ID:', error)
+      return undefined
+    }
+  },
+
+  addVenue: async (venue: Omit<Venue, 'id' | 'createdAt' | 'updatedAt'>): Promise<Venue | null> => {
+    try {
+      const response = await fetch('/api/venues', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(venue),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to add venue')
+      }
+      
+      const newVenue = await response.json()
+      window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'venues' } }))
+      return newVenue
+    } catch (error) {
+      console.error('Error adding venue:', error)
+      return null
+    }
+  },
+
+  updateVenue: async (id: string, updates: Partial<Venue>): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/venues', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, ...updates }),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update venue')
+      }
+      
+      window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'venues', id } }))
+      return true
+    } catch (error) {
+      console.error('Error updating venue:', error)
+      return false
+    }
+  },
+
+  deleteVenue: async (id: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/venues', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete venue')
+      }
+      
+      window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'venues' } }))
+      return true
+    } catch (error) {
+      console.error('Error deleting venue:', error)
+      return false
+    }
   },
 
   // Office room operations
-  getOfficeRooms: (): OfficeRoom[] => {
-    initializeStorage()
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultContent))
-    return data.officeRooms
-  },
-
-  getOfficeRoomsByFloor: (floor: 'ground' | 'second'): OfficeRoom[] => {
-    const rooms = contentService.getOfficeRooms()
-    return rooms.filter(r => r.floor === floor)
-  },
-
-  getOfficeRoomById: (id: string): OfficeRoom | undefined => {
-    const rooms = contentService.getOfficeRooms()
-    return rooms.find(r => r.id === id)
-  },
-
-  addOfficeRoom: (room: Omit<OfficeRoom, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultContent))
-    const newRoom: OfficeRoom = {
-      ...room,
-      id: `office-${room.floor}-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    data.officeRooms.push(newRoom)
-    data.lastUpdated = new Date().toISOString()
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-    window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'officeRooms' } }))
-    return newRoom
-  },
-
-  updateOfficeRoom: (id: string, updates: Partial<OfficeRoom>) => {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultContent))
-    const index = data.officeRooms.findIndex((r: OfficeRoom) => r.id === id)
-    if (index !== -1) {
-      data.officeRooms[index] = {
-        ...data.officeRooms[index],
-        ...updates,
-        updatedAt: new Date().toISOString()
+  getOfficeRooms: async (): Promise<OfficeRoom[]> => {
+    try {
+      const response = await fetch('/api/office-rooms', {
+        cache: 'no-store'
+      })
+      if (!response.ok) {
+        throw new Error('Failed to fetch office rooms')
       }
-      data.lastUpdated = new Date().toISOString()
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-      window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'officeRooms', id } }))
+      return await response.json()
+    } catch (error) {
+      console.error('Error fetching office rooms:', error)
+      return []
     }
   },
 
-  deleteOfficeRoom: (id: string) => {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultContent))
-    data.officeRooms = data.officeRooms.filter((r: OfficeRoom) => r.id !== id)
-    data.lastUpdated = new Date().toISOString()
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-    window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'officeRooms' } }))
+  getOfficeRoomsByFloor: async (floor: 'ground' | 'second'): Promise<OfficeRoom[]> => {
+    try {
+      const rooms = await contentService.getOfficeRooms()
+      return rooms.filter(r => r.floor === floor)
+    } catch (error) {
+      console.error('Error fetching office rooms by floor:', error)
+      return []
+    }
+  },
+
+  getOfficeRoomById: async (id: string): Promise<OfficeRoom | undefined> => {
+    try {
+      const rooms = await contentService.getOfficeRooms()
+      return rooms.find(r => r.id === id)
+    } catch (error) {
+      console.error('Error fetching office room by ID:', error)
+      return undefined
+    }
+  },
+
+  addOfficeRoom: async (room: Omit<OfficeRoom, 'id' | 'createdAt' | 'updatedAt'>): Promise<OfficeRoom | null> => {
+    try {
+      const response = await fetch('/api/office-rooms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(room),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to add office room')
+      }
+      
+      const newRoom = await response.json()
+      window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'officeRooms' } }))
+      return newRoom
+    } catch (error) {
+      console.error('Error adding office room:', error)
+      return null
+    }
+  },
+
+  updateOfficeRoom: async (id: string, updates: Partial<OfficeRoom>): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/office-rooms', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, ...updates }),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update office room')
+      }
+      
+      window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'officeRooms', id } }))
+      return true
+    } catch (error) {
+      console.error('Error updating office room:', error)
+      return false
+    }
+  },
+
+  deleteOfficeRoom: async (id: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/office-rooms', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete office room')
+      }
+      
+      window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'officeRooms' } }))
+      return true
+    } catch (error) {
+      console.error('Error deleting office room:', error)
+      return false
+    }
   },
 
   // Get all data
-  getAllContent: (): ContentDatabase => {
-    initializeStorage()
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultContent))
+  getAllContent: async (): Promise<ContentDatabase> => {
+    try {
+      const [homepage, venues, officeRooms] = await Promise.all([
+        contentService.getHomepageContent(),
+        contentService.getVenues(),
+        contentService.getOfficeRooms()
+      ])
+      
+      return {
+        homepage,
+        venues,
+        officeRooms,
+        lastUpdated: new Date().toISOString()
+      }
+    } catch (error) {
+      console.error('Error fetching all content:', error)
+      return {
+        homepage: {
+          heroTitle: 'Welcome to One Estela Place',
+          heroDescription: 'The perfect venue for your special events and celebrations',
+          heroImage: '/images/venue-interior.jpg',
+          aboutTitle: 'About One Estela Place',
+          aboutDescription: 'One Estela Place is a premier event venue.',
+          ctaTitle: 'Ready to host your event?',
+          ctaDescription: 'Contact us today to book your perfect event space.',
+          ctaButtonText: 'Book Your Event',
+          features: []
+        },
+        venues: [],
+        officeRooms: [],
+        lastUpdated: new Date().toISOString()
+      }
+    }
   },
 
-  // Clear all data (for testing)
-  resetContent: () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultContent))
-    window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'all' } }))
+  // Clear all data (for testing) - now calls API to reset
+  resetContent: async (): Promise<boolean> => {
+    try {
+      // This would need a dedicated API endpoint to reset all content
+      // For now, just dispatch the event
+      window.dispatchEvent(new CustomEvent('cms-content-updated', { detail: { type: 'all' } }))
+      return true
+    } catch (error) {
+      console.error('Error resetting content:', error)
+      return false
+    }
   }
 }

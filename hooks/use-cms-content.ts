@@ -63,21 +63,25 @@ export function useVenues() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    setIsLoading(true)
-    try {
-      const data = contentService.getVenues()
-      setVenues(data)
-    } catch (error) {
-      console.error('Error loading venues:', error)
-    } finally {
-      setIsLoading(false)
+    const loadVenues = async () => {
+      setIsLoading(true)
+      try {
+        const data = await contentService.getVenues()
+        setVenues(data)
+      } catch (error) {
+        console.error('Error loading venues:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    const handleUpdate = (event: Event) => {
+    loadVenues()
+
+    const handleUpdate = async (event: Event) => {
       const customEvent = event as CustomEvent
       if (customEvent.detail?.type === 'venues' || customEvent.detail?.type === 'all') {
         try {
-          const data = contentService.getVenues()
+          const data = await contentService.getVenues()
           setVenues(data)
         } catch (error) {
           console.error('Error updating venues:', error)
@@ -97,21 +101,25 @@ export function useOfficeRooms() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    setIsLoading(true)
-    try {
-      const data = contentService.getOfficeRooms()
-      setRooms(data)
-    } catch (error) {
-      console.error('Error loading office rooms:', error)
-    } finally {
-      setIsLoading(false)
+    const loadRooms = async () => {
+      setIsLoading(true)
+      try {
+        const data = await contentService.getOfficeRooms()
+        setRooms(data)
+      } catch (error) {
+        console.error('Error loading office rooms:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    const handleUpdate = (event: Event) => {
+    loadRooms()
+
+    const handleUpdate = async (event: Event) => {
       const customEvent = event as CustomEvent
       if (customEvent.detail?.type === 'officeRooms' || customEvent.detail?.type === 'all') {
         try {
-          const data = contentService.getOfficeRooms()
+          const data = await contentService.getOfficeRooms()
           setRooms(data)
         } catch (error) {
           console.error('Error updating office rooms:', error)
@@ -131,21 +139,25 @@ export function useOfficeRoomsByFloor(floor: 'ground' | 'second') {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    setIsLoading(true)
-    try {
-      const data = contentService.getOfficeRoomsByFloor(floor)
-      setRooms(data)
-    } catch (error) {
-      console.error('Error loading office rooms:', error)
-    } finally {
-      setIsLoading(false)
+    const loadRooms = async () => {
+      setIsLoading(true)
+      try {
+        const data = await contentService.getOfficeRoomsByFloor(floor)
+        setRooms(data)
+      } catch (error) {
+        console.error('Error loading office rooms:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    const handleUpdate = (event: Event) => {
+    loadRooms()
+
+    const handleUpdate = async (event: Event) => {
       const customEvent = event as CustomEvent
       if (customEvent.detail?.type === 'officeRooms' || customEvent.detail?.type === 'all') {
         try {
-          const data = contentService.getOfficeRoomsByFloor(floor)
+          const data = await contentService.getOfficeRoomsByFloor(floor)
           setRooms(data)
         } catch (error) {
           console.error('Error updating office rooms:', error)
@@ -165,19 +177,23 @@ export function useAllContent() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    setIsLoading(true)
-    try {
-      const data = contentService.getAllContent()
-      setContent(data)
-    } catch (error) {
-      console.error('Error loading content:', error)
-    } finally {
-      setIsLoading(false)
+    const loadContent = async () => {
+      setIsLoading(true)
+      try {
+        const data = await contentService.getAllContent()
+        setContent(data)
+      } catch (error) {
+        console.error('Error loading content:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    const handleUpdate = () => {
+    loadContent()
+
+    const handleUpdate = async () => {
       try {
-        const data = contentService.getAllContent()
+        const data = await contentService.getAllContent()
         setContent(data)
       } catch (error) {
         console.error('Error updating content:', error)
