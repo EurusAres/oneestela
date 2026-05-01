@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Simple direct query without complex joins
+    // Simple direct query - we know the table exists and has 6 bookings
     let query = 'SELECT * FROM bookings';
     const params: any[] = [];
 
@@ -20,14 +20,27 @@ export async function GET(request: NextRequest) {
     query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
-    const bookings = await executeQuery(query, params);
+    const result = await executeQuery(query, params);
+    const bookings = Array.isArray(result) ? result : [];
 
     return NextResponse.json({ 
-      bookings: Array.isArray(bookings) ? bookings : []
+      bookings,
+      count: bookings.length,
+      success: true
     });
   } catch (error) {
     console.error('Bookings API Error:', error);
     return NextResponse.json(
+      { 
+        error: 'Failed to fetch bookings',
+        details: error instanceof Error ? error.message : String(error),
+        code: (error as any)?.code,
+        sqlMessage: (error as any)?.sqlMessage
+      },
+      { status: 500 }
+    );
+  }
+}
       { 
         error: 'Failed to fetch bookings',
         details: error instanceof Error ? error.message : String(error)
