@@ -7,8 +7,10 @@ export async function GET(request: NextRequest) {
     const id = searchParams.get('id');
     const bookingId = searchParams.get('bookingId');
     const status = searchParams.get('status');
-    const limit = parseInt(searchParams.get('limit') || '100'); // Default 100 proofs
-    const offset = parseInt(searchParams.get('offset') || '0');
+    
+    // Use string concatenation for LIMIT/OFFSET with validation
+    const limit = Math.max(1, Math.min(1000, parseInt(searchParams.get('limit') || '100')));
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
 
     // Handle missing tables gracefully
     let proofs: any[] = [];
@@ -35,12 +37,12 @@ export async function GET(request: NextRequest) {
 
       if (id) {
         query += ' AND pp.id = ?';
-        params.push(id);
+        params.push(parseInt(id));
       }
 
       if (bookingId) {
         query += ' AND pp.booking_id = ?';
-        params.push(bookingId);
+        params.push(parseInt(bookingId));
       }
 
       if (status) {
@@ -48,20 +50,37 @@ export async function GET(request: NextRequest) {
         params.push(status);
       }
 
-      query += ' ORDER BY pp.created_at DESC LIMIT ? OFFSET ?';
-      params.push(limit, offset);
+      query += ` ORDER BY pp.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
 
+      console.log('Executing payment proofs query:', query, 'with params:', params);
       proofs = await executeQuery(query, params) as any[];
+      console.log('Payment proofs returned:', proofs.length);
     } catch (error) {
-      console.log('Payment proofs table not found or empty, returning empty array');
+      console.error('Payment proofs query error:', error);
       proofs = [];
     }
 
-    return NextResponse.json({ proofs });
+    return NextResponse.json({ 
+      proofs,
+      count: proofs.length,
+      success: true
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    });
   } catch (error) {
     console.error('Error fetching payment proofs:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Internal server error', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        proofs: [],
+        count: 0,
+        success: false
+      },
       { status: 500 }
     );
   }

@@ -7,8 +7,10 @@ export async function GET(request: NextRequest) {
     const officeRoomId = searchParams.get('officeRoomId');
     const venueId = searchParams.get('venueId');
     const approved = searchParams.get('approved');
-    const limit = parseInt(searchParams.get('limit') || '50'); // Default 50 reviews
-    const offset = parseInt(searchParams.get('offset') || '0');
+    
+    // Use string concatenation for LIMIT/OFFSET with validation
+    const limit = Math.max(1, Math.min(1000, parseInt(searchParams.get('limit') || '50')));
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
 
     let query = `
       SELECT r.*, 
@@ -25,12 +27,12 @@ export async function GET(request: NextRequest) {
 
     if (officeRoomId) {
       query += ' AND r.office_room_id = ?';
-      params.push(officeRoomId);
+      params.push(parseInt(officeRoomId));
     }
 
     if (venueId) {
       query += ' AND r.venue_id = ?';
-      params.push(venueId);
+      params.push(parseInt(venueId));
     }
 
     if (approved === 'true') {
@@ -39,16 +41,33 @@ export async function GET(request: NextRequest) {
       query += ' AND r.is_approved = 0';
     }
 
-    query += ' ORDER BY r.created_at DESC LIMIT ? OFFSET ?';
-    params.push(limit, offset);
+    query += ` ORDER BY r.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
 
+    console.log('Executing reviews query:', query, 'with params:', params);
     const reviews = await executeQuery(query, params);
+    console.log('Reviews returned:', Array.isArray(reviews) ? reviews.length : 0);
 
-    return NextResponse.json({ reviews });
+    return NextResponse.json({ 
+      reviews: Array.isArray(reviews) ? reviews : [],
+      count: Array.isArray(reviews) ? reviews.length : 0,
+      success: true
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    });
   } catch (error) {
     console.error('Error fetching reviews:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        reviews: [],
+        count: 0,
+        success: false
+      },
       { status: 500 }
     );
   }
