@@ -207,7 +207,9 @@ export const contentService = {
       if (!response.ok) {
         throw new Error('Failed to fetch office rooms')
       }
-      return await response.json()
+      const data = await response.json()
+      // API returns { rooms: [...] }, extract the rooms array
+      return Array.isArray(data.rooms) ? data.rooms : (Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching office rooms:', error)
       return []
@@ -217,6 +219,11 @@ export const contentService = {
   getOfficeRoomsByFloor: async (floor: 'ground' | 'second'): Promise<OfficeRoom[]> => {
     try {
       const rooms = await contentService.getOfficeRooms()
+      // Ensure rooms is an array before filtering
+      if (!Array.isArray(rooms)) {
+        console.error('getOfficeRooms did not return an array:', rooms)
+        return []
+      }
       return rooms.filter(r => r.floor === floor)
     } catch (error) {
       console.error('Error fetching office rooms by floor:', error)
