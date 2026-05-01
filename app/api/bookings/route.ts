@@ -41,44 +41,23 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-      { 
-        error: 'Failed to fetch bookings',
-        details: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    );
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    console.log('Received booking data:', JSON.stringify(body, null, 2));
-    
-    // Handle both API formats: office room booking and event booking
     const userId = body.userId;
     const isOfficeInquiry = (body.eventType || '').startsWith('office-');
 
-    console.log('Booking type check:', { 
-      eventType: body.eventType, 
-      isOfficeInquiry, 
-      hasDate: !!body.date,
-      dateValue: body.date 
-    });
-
-    // Resolve officeRoomId
     let officeRoomId = body.officeRoomId;
     
     if (isOfficeInquiry && body.eventType) {
-      // Extract office room ID from eventType (format: "office-20")
       const parts = body.eventType.split('-');
       if (parts.length === 2 && parts[0] === 'office') {
         officeRoomId = parseInt(parts[1]);
       }
     }
     
-    // Fall back to the first room in the DB if not provided
     if (!officeRoomId) {
       const rooms = await executeQuery('SELECT id FROM office_rooms ORDER BY id ASC LIMIT 1') as any[];
       if (!rooms || rooms.length === 0) {
@@ -90,41 +69,28 @@ export async function POST(request: NextRequest) {
       officeRoomId = rooms[0].id;
     }
     
-    // Handle date formatting more carefully
     let checkInDate, checkOutDate;
     
-    // Helper function to convert 12-hour time to 24-hour format
     const convertTo24Hour = (time12h: string): string => {
       if (!time12h) return '09:00:00';
-      
-      // If already in 24-hour format (HH:MM:SS or HH:MM), return as is
       if (time12h.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
         return time12h.includes(':') && time12h.split(':').length === 2 ? `${time12h}:00` : time12h;
       }
-      
-      // Convert 12-hour format to 24-hour
       const [time, modifier] = time12h.split(' ');
       let [hours, minutes] = time.split(':');
-      
-      if (hours === '12') {
-        hours = '00';
-      }
-      
+      if (hours === '12') hours = '00';
       if (modifier === 'PM' || modifier === 'pm') {
         hours = String(parseInt(hours, 10) + 12);
       }
-      
       return `${hours.padStart(2, '0')}:${minutes}:00`;
     };
     
     if (isOfficeInquiry) {
-      // For office inquiries, use current date as placeholder since they don't need specific dates
       const now = new Date();
-      const currentDateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const currentDateStr = now.toISOString().split('T')[0];
       checkInDate = `${currentDateStr} 09:00:00`;
       checkOutDate = `${currentDateStr} 17:00:00`;
     } else {
-      // For event bookings, handle date formatting as before
       if (body.checkInDate) {
         checkInDate = body.checkInDate;
       } else if (body.date) {
@@ -148,25 +114,19 @@ export async function POST(request: NextRequest) {
     const eventName = body.eventName || 'Event Booking';
     const eventType = body.eventType || 'general';
 
-    console.log('Processed values:', { userId, officeRoomId, checkInDate, checkOutDate, numberOfGuests, eventName, eventType, isOfficeInquiry });
-
     if (!userId) {
-      console.error('Validation failed: Missing userId');
       return NextResponse.json(
-        { error: 'Missing required field: userId is required', received: { userId } },
+        { error: 'Missing required field: userId is required' },
         { status: 400 }
       );
     }
 
     if (!isOfficeInquiry && (!checkInDate || !checkOutDate)) {
-      console.error('Validation failed for event booking:', { userId, checkInDate, checkOutDate, date: body.date, startTime: body.startTime, endTime: body.endTime });
       return NextResponse.json(
-        { error: 'Missing required fields for event booking: date/checkInDate and time/checkOutDate are required', received: { userId, checkInDate, checkOutDate, bodyDate: body.date, bodyStartTime: body.startTime, bodyEndTime: body.endTime } },
+        { error: 'Missing required fields for event booking' },
         { status: 400 }
       );
     }
-
-    console.log('Final date values before insert:', { checkInDate, checkOutDate, isOfficeInquiry });
 
     const result = await executeQuery(
       `INSERT INTO bookings 
@@ -177,12 +137,11 @@ export async function POST(request: NextRequest) {
 
     const insertId = (result as any).insertId;
 
-    // Return the created booking with proper structure
     const newBooking = {
       id: insertId.toString(),
       userId,
-      eventName: body.eventName || 'Event Booking',
-      eventType: body.eventType || 'general',
+      eventName,
+      eventType,
       guestCount: numberOfGuests,
       date: body.date || checkInDate.split(' ')[0],
       startTime: body.startTime || checkInDate.split(' ')[1] || '09:00',
@@ -190,8 +149,7 @@ export async function POST(request: NextRequest) {
       specialRequests,
       status: 'pending',
       submittedAt: new Date().toISOString(),
-      total: totalPrice.toString(),
-      userInfo: body.userInfo || { name: '', email: '', phone: '' }
+      total: totalPrice.toString()
     };
 
     return NextResponse.json(newBooking, { status: 201 });
@@ -220,7 +178,6 @@ export async function PUT(request: NextRequest) {
     const updates: string[] = [];
     const values: any[] = [];
 
-    // Build dynamic update query based on provided fields
     if (body.status !== undefined) {
       updates.push('status = ?');
       values.push(body.status);
@@ -286,13 +243,11 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Soft delete by updating status to cancelled
     await executeQuery(
       'UPDATE bookings SET status = ? WHERE id = ?',
       ['cancelled', id]
     );
 
-    // Also update any associated payment proofs to cancelled status
     await executeQuery(
       'UPDATE payment_proofs SET status = ?, verification_notes = ? WHERE booking_id = ? AND status = ?',
       ['rejected', 'Booking was cancelled by customer', id, 'pending']
