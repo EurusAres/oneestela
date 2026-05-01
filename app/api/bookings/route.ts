@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -20,22 +23,36 @@ export async function GET(request: NextRequest) {
     query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
+    console.log('Executing bookings query:', query, 'with params:', params);
     const result = await executeQuery(query, params);
+    console.log('Query result type:', typeof result, 'isArray:', Array.isArray(result));
+    
     const bookings = Array.isArray(result) ? result : [];
+    console.log('Returning bookings count:', bookings.length);
 
     return NextResponse.json({ 
       bookings,
       count: bookings.length,
       success: true
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
     });
   } catch (error) {
     console.error('Bookings API Error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
       { 
         error: 'Failed to fetch bookings',
         details: error instanceof Error ? error.message : String(error),
         code: (error as any)?.code,
-        sqlMessage: (error as any)?.sqlMessage
+        sqlMessage: (error as any)?.sqlMessage,
+        bookings: [],
+        count: 0,
+        success: false
       },
       { status: 500 }
     );
