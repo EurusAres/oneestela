@@ -3,10 +3,14 @@ import { executeQuery } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('Bookings API: Starting request processing...')
+    
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     const limit = parseInt(searchParams.get('limit') || '100'); // Default 100 bookings
     const offset = parseInt(searchParams.get('offset') || '0');
+
+    console.log('Bookings API: Query parameters:', { userId, limit, offset })
 
     let query = `
       SELECT b.*, 
@@ -37,13 +41,22 @@ export async function GET(request: NextRequest) {
     query += ' ORDER BY b.created_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
+    console.log('Bookings API: Executing query...')
     const bookings = await executeQuery(query, params);
+    console.log('Bookings API: Query successful, found', Array.isArray(bookings) ? bookings.length : 0, 'bookings')
 
     return NextResponse.json({ bookings });
   } catch (error) {
-    console.error('Error fetching bookings:', error);
+    console.error('Bookings API: Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'Unknown',
+    });
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }
