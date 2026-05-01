@@ -335,7 +335,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             </div>
           </div>
           <div className="mt-6 md:mt-8 border-t pt-6 md:pt-8 text-center text-xs md:text-sm text-gray-600">
-            <p>&copy; 2025 One Estela Place. All rights reserved.</p>
+            <p>&copy; 2026 One Estela Place. All rights reserved.</p>
           </div>
         </div>
       </footer>
