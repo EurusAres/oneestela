@@ -103,7 +103,10 @@ CREATE TABLE IF NOT EXISTS bookings (
   INDEX idx_venue_id (venue_id),
   INDEX idx_status (status),
   INDEX idx_date (date),
-  INDEX idx_check_in_date (check_in_date)
+  INDEX idx_check_in_date (check_in_date),
+  INDEX idx_created_at (created_at),
+  INDEX idx_event_type (event_type),
+  INDEX idx_status_created (status, created_at)
 );
 
 -- Create Contact Messages table
@@ -218,7 +221,9 @@ CREATE TABLE IF NOT EXISTS reviews (
   INDEX idx_venue_id (venue_id),
   INDEX idx_rating (rating),
   INDEX idx_is_approved (is_approved),
-  INDEX idx_is_featured (is_featured)
+  INDEX idx_is_featured (is_featured),
+  INDEX idx_created_at (created_at),
+  INDEX idx_approved_featured (is_approved, is_featured)
 );
 
 -- Create Unavailable Dates table

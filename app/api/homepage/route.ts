@@ -40,6 +40,10 @@ export async function GET() {
       contactPhone: content.contact_phone || '(555) 123-4567',
       contactEmail: content.contact_email || 'info@oneestela.com',
       contactHours: content.contact_hours || 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: By appointment only'
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      },
     })
   } catch (error) {
     console.error('Error fetching homepage content:', error)

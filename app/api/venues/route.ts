@@ -12,7 +12,11 @@ export async function GET(request: NextRequest) {
       image_360_url: venue.image_360_url || ''
     }));
 
-    return NextResponse.json({ venues: normalizedVenues });
+    return NextResponse.json({ venues: normalizedVenues }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (error) {
     console.error('Error fetching venues:', error);
     return NextResponse.json(
@@ -62,7 +66,12 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         { message: 'Venue created successfully', venueId: (result as any).insertId },
-        { status: 201 }
+        { 
+          status: 201,
+          headers: {
+            'Cache-Control': 'no-store',
+          },
+        }
       );
     } catch (insertError: any) {
       // If columns don't exist, try without them

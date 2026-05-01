@@ -141,7 +141,11 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ rooms: normalizedRooms });
+    return NextResponse.json({ rooms: normalizedRooms }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (error) {
     console.error('Error fetching office rooms:', error);
     return NextResponse.json(
