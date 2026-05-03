@@ -331,7 +331,7 @@ export function UnifiedChatWidget() {
       {/* Chat Window */}
       {isOpen && (
         <div className={cn(
-          "fixed bottom-6 right-6 z-50 bg-white rounded-lg shadow-2xl border flex flex-col transition-all duration-300 overflow-hidden",
+          "fixed bottom-6 right-6 z-50 bg-white rounded-lg shadow-2xl border flex flex-col transition-all duration-300",
           isMinimized ? "w-80 h-14" : "w-96 h-[520px] md:w-[420px] md:h-[600px]"
         )}
         style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
