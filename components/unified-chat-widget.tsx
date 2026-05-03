@@ -332,7 +332,7 @@ export function UnifiedChatWidget() {
       {isOpen && (
         <div className={cn(
           "fixed right-6 z-50 bg-white rounded-lg shadow-2xl border flex flex-col transition-all duration-300",
-          isMinimized ? "w-80 h-14 bottom-6" : "w-96 h-[380px] md:w-[420px] md:h-[420px] bottom-6"
+          isMinimized ? "w-80 h-14 bottom-6" : "w-96 h-[360px] md:w-[420px] md:h-[400px] bottom-4"
         )}
         >
           {/* Header */}
