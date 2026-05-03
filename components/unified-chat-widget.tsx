@@ -34,6 +34,17 @@ interface UnifiedMessage {
   escalated?: boolean
 }
 
+function renderBotMessage(content: string) {
+  const parts = content.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? (
+      <strong key={i}>{part.slice(2, -2)}</strong>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  );
+}
+
 export function UnifiedChatWidget() {
   const { user } = useAuth()
   const {
@@ -377,28 +388,30 @@ export function UnifiedChatWidget() {
               {/* Chat Bot Tab */}
               <TabsContent value="chatbot" className="flex-1 flex flex-col m-0 p-0 data-[state=inactive]:hidden">
                 {/* Messages */}
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-4">
+                <ScrollArea className="flex-1 min-h-0 p-4">
+                  <div className="flex flex-col gap-3 overflow-y-auto min-h-0 h-full p-3">
                     {unifiedMessages.map((message, index) => (
                       <div key={message.id}>
-                        <div className={cn("flex", message.senderType === "user" ? "justify-end" : "justify-start")}>
+                        <div className={cn("flex items-end gap-2 w-full", message.senderType === "user" ? "justify-end flex-row-reverse" : "justify-start")}>
                           <div className={cn(
-                            "flex items-end space-x-2 max-w-[85%]",
+                            "flex items-end space-x-2 max-w-[75%]",
                             message.senderType === "user" ? "flex-row-reverse space-x-reverse" : "flex-row"
                           )}>
-                            <Avatar className="h-6 w-6 flex-shrink-0">
+                            <Avatar className="w-8 h-8 flex-shrink-0">
                               <AvatarFallback className="text-xs">
                                 {message.senderType === "bot" ? "🤖" : "👤"}
                               </AvatarFallback>
                             </Avatar>
                             <div className={cn(
-                              "rounded-lg px-3 py-2",
+                              "max-w-[75%] rounded-2xl px-4 py-2 text-sm break-words",
                               message.senderType === "bot" ? "bg-green-600 text-white" : "bg-blue-600 text-white"
                             )}>
                               <div className="flex items-start space-x-1">
                                 {message.senderType === "bot" && <Sparkles className="h-3 w-3 mt-0.5 text-green-200 flex-shrink-0" />}
                                 <div>
-                                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                  <p className="text-sm whitespace-pre-wrap">
+                                    {message.senderType === "bot" ? renderBotMessage(message.content) : message.content}
+                                  </p>
                                   <p className="text-xs mt-1 opacity-70">{formatTime(message.timestamp)}</p>
                                 </div>
                               </div>
@@ -432,8 +445,8 @@ export function UnifiedChatWidget() {
                     {botIsTyping && (
                       <div className="flex justify-start">
                         <div className="flex items-end space-x-2">
-                          <Avatar className="h-6 w-6"><AvatarFallback className="text-xs">🤖</AvatarFallback></Avatar>
-                          <div className="bg-green-100 rounded-lg px-3 py-2">
+                          <Avatar className="w-8 h-8 flex-shrink-0"><AvatarFallback className="text-xs">🤖</AvatarFallback></Avatar>
+                          <div className="bg-green-100 max-w-[75%] rounded-2xl px-4 py-2 text-sm break-words">
                             <div className="flex space-x-1">
                               <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" />
                               <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
@@ -481,8 +494,8 @@ export function UnifiedChatWidget() {
                 </div>
 
                 {/* Messages */}
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-4">
+                <ScrollArea className="flex-1 min-h-0 p-4">
+                  <div className="flex flex-col gap-3 overflow-y-auto min-h-0 h-full p-3">
                     {supportMessages.length === 0 && (
                       <div className="text-center py-8">
                         <Users className="h-12 w-12 mx-auto text-gray-300 mb-2" />
@@ -492,18 +505,18 @@ export function UnifiedChatWidget() {
                     )}
                     {supportMessages.map((message) => (
                       <div key={message.id}>
-                        <div className={cn("flex", message.senderType === "user" ? "justify-end" : "justify-start")}>
+                        <div className={cn("flex items-end gap-2 w-full", message.senderType === "user" ? "justify-end flex-row-reverse" : "justify-start")}>
                           <div className={cn(
-                            "flex items-end space-x-2 max-w-[85%]",
+                            "flex items-end space-x-2 max-w-[75%]",
                             message.senderType === "user" ? "flex-row-reverse space-x-reverse" : "flex-row"
                           )}>
-                            <Avatar className="h-6 w-6 flex-shrink-0">
+                            <Avatar className="w-8 h-8 flex-shrink-0">
                               <AvatarFallback className="text-xs">
                                 {message.senderType === "admin" ? "👨‍💼" : "👤"}
                               </AvatarFallback>
                             </Avatar>
                             <div className={cn(
-                              "rounded-lg px-3 py-2",
+                              "max-w-[75%] rounded-2xl px-4 py-2 text-sm break-words",
                               message.senderType === "admin" ? "bg-purple-600 text-white" : "bg-blue-600 text-white"
                             )}>
                               <div className="flex items-start space-x-1">
