@@ -345,7 +345,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
       {/* Floating Review Button - Only show for logged-in users */}
       {user && (
-        <div className="fixed bottom-20 md:bottom-24 right-4 md:right-6 z-40">
+        <div className="fixed bottom-28 md:bottom-32 right-4 md:right-6 z-40">
           <ReviewSubmissionDialog
             trigger={
               <Button
