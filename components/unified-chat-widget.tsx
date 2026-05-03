@@ -331,8 +331,8 @@ export function UnifiedChatWidget() {
       {/* Chat Window */}
       {isOpen && (
         <div className={cn(
-          "fixed right-6 z-50 bg-white rounded-lg shadow-2xl border flex flex-col transition-all duration-300",
-          isMinimized ? "w-80 h-14 bottom-6" : "w-96 md:w-[420px] bottom-6 top-[100px]"
+          "fixed right-6 z-50 bg-white rounded-lg shadow-2xl border flex flex-col overflow-hidden transition-all duration-300",
+          isMinimized ? "w-80 h-14 bottom-6" : "w-96 md:w-[420px] h-[520px] bottom-6"
         )}
         >
           {/* Header */}
@@ -362,7 +362,7 @@ export function UnifiedChatWidget() {
           </div>
 
           {!isMinimized && (
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "chatbot" | "support")} className="flex-1 flex flex-col">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "chatbot" | "support")} className="flex-1 flex flex-col min-h-0 overflow-hidden">
               <TabsList className="w-full rounded-none border-b bg-gray-50 flex-shrink-0 h-12">
                 <TabsTrigger value="chatbot" className="flex-1 gap-2 data-[state=active]:bg-white relative h-10">
                   <Bot className="h-4 w-4" />
@@ -387,9 +387,9 @@ export function UnifiedChatWidget() {
               </TabsList>
 
               {/* Chat Bot Tab */}
-              <TabsContent value="chatbot" className="flex-1 flex flex-col m-0 p-0 data-[state=inactive]:hidden">
+              <TabsContent value="chatbot" className="flex-1 flex flex-col m-0 p-0 min-h-0 overflow-hidden data-[state=inactive]:hidden">
                 {/* Messages */}
-                <ScrollArea className="flex-1 min-h-0 p-4">
+                <div className="flex-1 overflow-y-auto min-h-0 p-3">
                   <div className="flex flex-col gap-3">
                     {unifiedMessages.map((message, index) => (
                       <div key={message.id} className={cn("flex items-end gap-2", message.senderType === "user" ? "justify-end" : "justify-start")}>
@@ -465,7 +465,7 @@ export function UnifiedChatWidget() {
 
                     <div ref={messagesEndRef} />
                   </div>
-                </ScrollArea>
+                </div>
 
                 {/* Input */}
                 <div className="p-3 border-t flex-shrink-0 bg-white">
@@ -489,7 +489,7 @@ export function UnifiedChatWidget() {
               </TabsContent>
 
               {/* Support Team Tab */}
-              <TabsContent value="support" className="flex-1 flex flex-col m-0 p-0 data-[state=inactive]:hidden">
+              <TabsContent value="support" className="flex-1 flex flex-col m-0 p-0 min-h-0 overflow-hidden data-[state=inactive]:hidden">
                 {/* Banner */}
                 <div className="px-3 py-1.5 bg-purple-50 border-b border-purple-200 flex-shrink-0">
                   <div className="flex items-center space-x-1.5">
@@ -500,7 +500,7 @@ export function UnifiedChatWidget() {
                 </div>
 
                 {/* Messages */}
-                <ScrollArea className="flex-1 min-h-0 p-4">
+                <div className="flex-1 overflow-y-auto min-h-0 p-3">
                   <div className="flex flex-col gap-3">
                     {supportMessages.length === 0 && (
                       <div className="text-center py-8">
@@ -543,7 +543,7 @@ export function UnifiedChatWidget() {
 
                     <div ref={supportMessagesEndRef} />
                   </div>
-                </ScrollArea>
+                </div>
 
                 {/* Input */}
                 <div className="p-3 border-t flex-shrink-0 bg-white">
