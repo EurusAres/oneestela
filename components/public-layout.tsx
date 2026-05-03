@@ -343,26 +343,6 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       {/* Chat Widget */}
       {user && <UnifiedChatWidget />}
 
-      {/* Floating Review Button - Only show for logged-in users */}
-      {user && (
-        <div className="fixed bottom-28 md:bottom-32 right-4 md:right-6 z-40">
-          <ReviewSubmissionDialog
-            trigger={
-              <Button
-                size="lg"
-                className="h-12 w-12 md:h-14 md:w-14 rounded-full shadow-lg bg-amber-600 hover:bg-amber-700 transition-all hover:scale-110"
-                title="Write a Review"
-              >
-                <Star className="h-5 w-5 md:h-6 md:w-6" />
-              </Button>
-            }
-            onSuccess={() => {
-              // Optional: Show success message or redirect
-            }}
-          />
-        </div>
-      )}
-
       {/* Dialogs */}
       <TransactionsDialog open={showTransactions} onOpenChange={setShowTransactions} />
       <ProfileDialog open={showProfile} onOpenChange={setShowProfile} />

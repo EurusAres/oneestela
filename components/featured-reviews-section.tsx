@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Star } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Star, PenSquare } from 'lucide-react'
 import { Review } from '@/components/reviews-context'
+import { ReviewSubmissionDialog } from '@/components/review-submission-dialog'
+import { useAuth } from '@/components/auth-context'
 
 export function FeaturedReviewsSection() {
+  const { user } = useAuth()
   const [featuredReviews, setFeaturedReviews] = useState<Review[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -170,6 +174,27 @@ export function FeaturedReviewsSection() {
           <div className="text-center py-8">
             <p className="text-gray-500 mb-4">No reviews available yet</p>
             <p className="text-sm text-gray-400">Be the first to share your experience!</p>
+          </div>
+        )}
+
+        {/* Write Review Button */}
+        {user && (
+          <div className="mt-8 md:mt-12 text-center">
+            <ReviewSubmissionDialog
+              trigger={
+                <Button
+                  size="lg"
+                  className="bg-amber-600 hover:bg-amber-700 text-white px-8 py-6 text-base md:text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all"
+                >
+                  <PenSquare className="mr-2 h-5 w-5" />
+                  Write a Review
+                </Button>
+              }
+              onSuccess={() => {
+                // Refresh reviews after submission
+                window.location.reload()
+              }}
+            />
           </div>
         )}
       </div>
