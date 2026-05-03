@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   MessageCircle,
   X,
@@ -17,6 +18,7 @@ import {
   User,
   Sparkles,
   AlertCircle,
+  Users,
 } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import { useChatbot } from "@/components/chatbot-service"
@@ -44,13 +46,19 @@ export function UnifiedChatWidget() {
 
   const [isOpen, setIsOpen] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
+  const [activeTab, setActiveTab] = useState<"chatbot" | "support">("chatbot")
   const [messageInput, setMessageInput] = useState("")
+  const [supportInput, setSupportInput] = useState("")
   const [unifiedMessages, setUnifiedMessages] = useState<UnifiedMessage[]>([])
+  const [supportMessages, setSupportMessages] = useState<UnifiedMessage[]>([])
   const [isHandedOffToAdmin, setIsHandedOffToAdmin] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [supportUnreadCount, setSupportUnreadCount] = useState(0)
   const [lastSeenMsgId, setLastSeenMsgId] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const supportMessagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const supportInputRef = useRef<HTMLInputElement>(null)
   const pollRef = useRef<NodeJS.Timeout | null>(null)
 
   // ── DB helpers ──────────────────────────────────────────────────────────────
@@ -92,11 +100,13 @@ export function UnifiedChatWidget() {
         timestamp: m.created_at,
       }))
 
-      setUnifiedMessages(prev => {
+      setSupportMessages(prev => {
         const existingIds = new Set(prev.map(x => x.id))
         const fresh = converted.filter(x => !existingIds.has(x.id))
         if (fresh.length === 0) return prev
-        if (!isOpen || isMinimized) setUnreadCount(c => c + fresh.length)
+        if (!isOpen || isMinimized || activeTab !== "support") {
+          setSupportUnreadCount(c => c + fresh.length)
+        }
         return [...prev, ...fresh].sort(
           (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
         )
@@ -104,7 +114,7 @@ export function UnifiedChatWidget() {
     } catch (e) {
       console.error("poll error", e)
     }
-  }, [user, lastSeenMsgId, isOpen, isMinimized])
+  }, [user, lastSeenMsgId, isOpen, isMinimized, activeTab])
 
   // ── Load history from DB when widget opens ──────────────────────────────────
 
@@ -133,8 +143,7 @@ export function UnifiedChatWidget() {
         timestamp: m.created_at,
       }))
 
-      setIsHandedOffToAdmin(true)
-      setUnifiedMessages(converted)
+      setSupportMessages(converted)
       setLastSeenMsgId(unique[unique.length - 1].id)
     } catch (e) {
       console.error("history load error", e)
@@ -183,6 +192,7 @@ export function UnifiedChatWidget() {
   useEffect(() => {
     if (!isEscalated || isHandedOffToAdmin) return
     setIsHandedOffToAdmin(true)
+    setActiveTab("support")
 
     const handoffMsg: UnifiedMessage = {
       id: `handoff-${Date.now()}`,
@@ -193,33 +203,46 @@ export function UnifiedChatWidget() {
       escalated: true,
     }
     setUnifiedMessages(prev => [...prev, handoffMsg])
-
-    // Note: Escalation is handled silently without showing message to customer
-  }, [isEscalated, isHandedOffToAdmin, postToDb])
+  }, [isEscalated, isHandedOffToAdmin])
 
   // ── Polling for admin replies ─────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!isHandedOffToAdmin || !user) return
+    if (!user) return
+    // Always poll for support messages
     pollRef.current = setInterval(fetchAdminReplies, 5000)
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
-  }, [isHandedOffToAdmin, user, fetchAdminReplies])
+  }, [user, fetchAdminReplies])
 
   // ── On open: load DB history + clear unread ──────────────────────────────────
 
   useEffect(() => {
     if (isOpen && !isMinimized) {
-      setUnreadCount(0)
+      if (activeTab === "chatbot") {
+        setUnreadCount(0)
+      } else {
+        setSupportUnreadCount(0)
+      }
       loadHistory()
-      setTimeout(() => inputRef.current?.focus(), 100)
+      setTimeout(() => {
+        if (activeTab === "chatbot") {
+          inputRef.current?.focus()
+        } else {
+          supportInputRef.current?.focus()
+        }
+      }, 100)
     }
-  }, [isOpen, isMinimized]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, isMinimized, activeTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Auto-scroll ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [unifiedMessages, botIsTyping])
+    if (activeTab === "chatbot") {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    } else {
+      supportMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [unifiedMessages, supportMessages, botIsTyping, activeTab])
 
   // ── Send message ──────────────────────────────────────────────────────────────
 
@@ -228,37 +251,41 @@ export function UnifiedChatWidget() {
     if (!messageInput.trim()) return
     const text = messageInput.trim()
     setMessageInput("")
+    await sendBotMessage(text)
+  }
 
-    if (isHandedOffToAdmin) {
-      // Optimistically add to UI
-      const optimistic: UnifiedMessage = {
-        id: `user-opt-${Date.now()}`,
-        content: text,
-        senderType: "user",
-        senderName: user?.name || "You",
-        timestamp: new Date().toISOString(),
-      }
-      setUnifiedMessages(prev => [...prev, optimistic])
-      await postToDb(text)
-    } else {
-      await sendBotMessage(text)
+  const handleSendSupportMessage = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!supportInput.trim()) return
+    const text = supportInput.trim()
+    setSupportInput("")
+
+    // Optimistically add to UI
+    const optimistic: UnifiedMessage = {
+      id: `user-opt-${Date.now()}`,
+      content: text,
+      senderType: "user",
+      senderName: user?.name || "You",
+      timestamp: new Date().toISOString(),
     }
+    setSupportMessages(prev => [...prev, optimistic])
+    await postToDb(text)
   }
 
   const handleFollowUpClick = async (followUp: string) => {
-    if (isHandedOffToAdmin) {
-      const optimistic: UnifiedMessage = {
-        id: `user-opt-${Date.now()}`,
-        content: followUp,
-        senderType: "user",
-        senderName: user?.name || "You",
-        timestamp: new Date().toISOString(),
-      }
-      setUnifiedMessages(prev => [...prev, optimistic])
-      await postToDb(followUp)
-    } else {
-      await sendFollowUp(followUp)
+    await sendFollowUp(followUp)
+  }
+
+  const handleSupportFollowUpClick = async (followUp: string) => {
+    const optimistic: UnifiedMessage = {
+      id: `user-opt-${Date.now()}`,
+      content: followUp,
+      senderType: "user",
+      senderName: user?.name || "You",
+      timestamp: new Date().toISOString(),
     }
+    setSupportMessages(prev => [...prev, optimistic])
+    await postToDb(followUp)
   }
 
   const formatTime = (ts: string) =>
@@ -278,13 +305,13 @@ export function UnifiedChatWidget() {
           >
             <MessageCircle className="h-6 w-6 text-white" />
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full" />
-            {unreadCount > 0 && (
+            {(unreadCount + supportUnreadCount) > 0 && (
               <Badge className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
-                {unreadCount > 9 ? "9+" : unreadCount}
+                {(unreadCount + supportUnreadCount) > 9 ? "9+" : (unreadCount + supportUnreadCount)}
               </Badge>
             )}
             <div className="absolute -top-12 right-0 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              {isHandedOffToAdmin ? "Chat with Support Team" : "Chat with Chat Bot"}
+              Chat with us
             </div>
           </Button>
         </div>
@@ -294,25 +321,21 @@ export function UnifiedChatWidget() {
       {isOpen && (
         <div className={cn(
           "fixed bottom-6 right-6 z-50 bg-white rounded-lg shadow-2xl border flex flex-col transition-all duration-300",
-          isMinimized ? "w-80 h-14" : "w-96 h-[520px] md:w-[420px] md:h-[580px]"
+          isMinimized ? "w-80 h-14" : "w-96 h-[520px] md:w-[420px] md:h-[600px]"
         )}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b bg-blue-600 text-white rounded-t-lg flex-shrink-0">
             <div className="flex items-center space-x-3">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-blue-500 text-white text-xs">
-                  {isHandedOffToAdmin ? "ST" : "CB"}
+                  OE
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="font-semibold text-sm">
-                  {isHandedOffToAdmin ? "Support Team" : "One Estela Place"}
-                </h3>
+                <h3 className="font-semibold text-sm">One Estela Place</h3>
                 <div className="flex items-center space-x-1">
-                  <div className={cn("w-2 h-2 rounded-full", isHandedOffToAdmin ? "bg-purple-300" : "bg-green-400")} />
-                  <span className="text-xs opacity-90">
-                    {isHandedOffToAdmin ? "Human support" : "Chat Bot"}
-                  </span>
+                  <div className="w-2 h-2 rounded-full bg-green-400" />
+                  <span className="text-xs opacity-90">Online</span>
                 </div>
               </div>
             </div>
@@ -327,9 +350,126 @@ export function UnifiedChatWidget() {
           </div>
 
           {!isMinimized && (
-            <>
-              {/* Escalation banner */}
-              {isHandedOffToAdmin && (
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "chatbot" | "support")} className="flex-1 flex flex-col">
+              <TabsList className="w-full rounded-none border-b bg-gray-50 flex-shrink-0">
+                <TabsTrigger value="chatbot" className="flex-1 gap-2 data-[state=active]:bg-white relative">
+                  <Bot className="h-4 w-4" />
+                  <span>Chat Bot</span>
+                  {unreadCount > 0 && (
+                    <Badge className="ml-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="support" className="flex-1 gap-2 data-[state=active]:bg-white relative">
+                  <Users className="h-4 w-4" />
+                  <span>Support Team</span>
+                  {supportUnreadCount > 0 && (
+                    <Badge className="ml-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
+                      {supportUnreadCount > 9 ? "9+" : supportUnreadCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Chat Bot Tab */}
+              <TabsContent value="chatbot" className="flex-1 flex flex-col m-0 data-[state=inactive]:hidden">
+                {/* Messages */}
+                <ScrollArea className="flex-1 p-4">
+                  <div className="space-y-4">
+                    {unifiedMessages.map((message, index) => (
+                      <div key={message.id}>
+                        <div className={cn("flex", message.senderType === "user" ? "justify-end" : "justify-start")}>
+                          <div className={cn(
+                            "flex items-end space-x-2 max-w-[85%]",
+                            message.senderType === "user" ? "flex-row-reverse space-x-reverse" : "flex-row"
+                          )}>
+                            <Avatar className="h-6 w-6 flex-shrink-0">
+                              <AvatarFallback className="text-xs">
+                                {message.senderType === "bot" ? "CB" : "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className={cn(
+                              "rounded-lg px-3 py-2",
+                              message.senderType === "bot" ? "bg-green-600 text-white" : "bg-blue-600 text-white"
+                            )}>
+                              <div className="flex items-start space-x-1">
+                                {message.senderType === "bot" && <Sparkles className="h-3 w-3 mt-0.5 text-green-200 flex-shrink-0" />}
+                                <div>
+                                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                  <p className="text-xs mt-1 opacity-70">{formatTime(message.timestamp)}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Follow-up suggestions */}
+                        {message.senderType === "bot" &&
+                          message.followUps &&
+                          message.followUps.length > 0 &&
+                          index === unifiedMessages.length - 1 && (
+                            <div className="mt-2 flex flex-wrap gap-2 justify-start">
+                              {message.followUps.map((fu, i) => (
+                                <Button
+                                  key={i}
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleFollowUpClick(fu)}
+                                  className="text-xs h-7 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                                >
+                                  {fu}
+                                </Button>
+                              ))}
+                            </div>
+                          )}
+                      </div>
+                    ))}
+
+                    {/* Bot typing */}
+                    {botIsTyping && (
+                      <div className="flex justify-start">
+                        <div className="flex items-end space-x-2">
+                          <Avatar className="h-6 w-6"><AvatarFallback className="text-xs">CB</AvatarFallback></Avatar>
+                          <div className="bg-green-100 rounded-lg px-3 py-2">
+                            <div className="flex space-x-1">
+                              <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" />
+                              <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
+                              <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+
+                {/* Input */}
+                <div className="p-4 border-t flex-shrink-0">
+                  <form onSubmit={handleSendMessage} className="flex space-x-2">
+                    <Input
+                      ref={inputRef}
+                      value={messageInput}
+                      onChange={e => setMessageInput(e.target.value)}
+                      placeholder="Ask about venues, pricing, bookings..."
+                      className="flex-1"
+                    />
+                    <Button type="submit" size="icon" disabled={!messageInput.trim()} className="bg-blue-600 hover:bg-blue-700">
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </form>
+                  <p className="text-xs mt-1 flex items-center gap-1">
+                    <Bot className="h-3 w-3 text-green-500" />
+                    <span className="text-green-600">Chat Bot • always available</span>
+                  </p>
+                </div>
+              </TabsContent>
+
+              {/* Support Team Tab */}
+              <TabsContent value="support" className="flex-1 flex flex-col m-0 data-[state=inactive]:hidden">
+                {/* Banner */}
                 <div className="px-4 py-2 bg-purple-50 border-b border-purple-200 flex-shrink-0">
                   <div className="flex items-center space-x-2">
                     <AlertCircle className="h-4 w-4 text-purple-600" />
@@ -337,106 +477,71 @@ export function UnifiedChatWidget() {
                   </div>
                   <p className="text-xs text-purple-600 mt-0.5">Our team will respond to your messages shortly.</p>
                 </div>
-              )}
 
-              {/* Messages */}
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
-                  {unifiedMessages.map((message, index) => (
-                    <div key={message.id}>
-                      <div className={cn("flex", message.senderType === "user" ? "justify-end" : "justify-start")}>
-                        <div className={cn(
-                          "flex items-end space-x-2 max-w-[85%]",
-                          message.senderType === "user" ? "flex-row-reverse space-x-reverse" : "flex-row"
-                        )}>
-                          <Avatar className="h-6 w-6 flex-shrink-0">
-                            <AvatarFallback className="text-xs">
-                              {message.senderType === "bot" ? "CB" : message.senderType === "admin" ? "ST" : "U"}
-                            </AvatarFallback>
-                          </Avatar>
+                {/* Messages */}
+                <ScrollArea className="flex-1 p-4">
+                  <div className="space-y-4">
+                    {supportMessages.length === 0 && (
+                      <div className="text-center py-8">
+                        <Users className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                        <p className="text-sm text-gray-500">No messages yet</p>
+                        <p className="text-xs text-gray-400 mt-1">Send a message to start chatting with our support team</p>
+                      </div>
+                    )}
+                    {supportMessages.map((message) => (
+                      <div key={message.id}>
+                        <div className={cn("flex", message.senderType === "user" ? "justify-end" : "justify-start")}>
                           <div className={cn(
-                            "rounded-lg px-3 py-2",
-                            message.senderType === "bot" ? "bg-green-600 text-white" :
-                            message.senderType === "admin" ? "bg-purple-600 text-white" :
-                            "bg-blue-600 text-white"
+                            "flex items-end space-x-2 max-w-[85%]",
+                            message.senderType === "user" ? "flex-row-reverse space-x-reverse" : "flex-row"
                           )}>
-                            <div className="flex items-start space-x-1">
-                              {message.senderType === "bot" && <Sparkles className="h-3 w-3 mt-0.5 text-green-200 flex-shrink-0" />}
-                              {message.senderType === "admin" && <User className="h-3 w-3 mt-0.5 text-purple-200 flex-shrink-0" />}
-                              <div>
-                                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                                <p className="text-xs mt-1 opacity-70">{formatTime(message.timestamp)}</p>
+                            <Avatar className="h-6 w-6 flex-shrink-0">
+                              <AvatarFallback className="text-xs">
+                                {message.senderType === "admin" ? "ST" : "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className={cn(
+                              "rounded-lg px-3 py-2",
+                              message.senderType === "admin" ? "bg-purple-600 text-white" : "bg-blue-600 text-white"
+                            )}>
+                              <div className="flex items-start space-x-1">
+                                {message.senderType === "admin" && <User className="h-3 w-3 mt-0.5 text-purple-200 flex-shrink-0" />}
+                                <div>
+                                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                  <p className="text-xs mt-1 opacity-70">{formatTime(message.timestamp)}</p>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
+                    ))}
 
-                      {/* Follow-up suggestions */}
-                      {message.senderType === "bot" &&
-                        message.followUps &&
-                        message.followUps.length > 0 &&
-                        index === unifiedMessages.length - 1 &&
-                        !isHandedOffToAdmin && (
-                          <div className="mt-2 flex flex-wrap gap-2 justify-start">
-                            {message.followUps.map((fu, i) => (
-                              <Button
-                                key={i}
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleFollowUpClick(fu)}
-                                className="text-xs h-7 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                              >
-                                {fu}
-                              </Button>
-                            ))}
-                          </div>
-                        )}
-                    </div>
-                  ))}
+                    <div ref={supportMessagesEndRef} />
+                  </div>
+                </ScrollArea>
 
-                  {/* Bot typing */}
-                  {!isHandedOffToAdmin && botIsTyping && (
-                    <div className="flex justify-start">
-                      <div className="flex items-end space-x-2">
-                        <Avatar className="h-6 w-6"><AvatarFallback className="text-xs">CB</AvatarFallback></Avatar>
-                        <div className="bg-green-100 rounded-lg px-3 py-2">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" />
-                            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
-                            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div ref={messagesEndRef} />
+                {/* Input */}
+                <div className="p-4 border-t flex-shrink-0">
+                  <form onSubmit={handleSendSupportMessage} className="flex space-x-2">
+                    <Input
+                      ref={supportInputRef}
+                      value={supportInput}
+                      onChange={e => setSupportInput(e.target.value)}
+                      placeholder="Type your message..."
+                      className="flex-1"
+                    />
+                    <Button type="submit" size="icon" disabled={!supportInput.trim()} className="bg-blue-600 hover:bg-blue-700">
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </form>
+                  <p className="text-xs mt-1 flex items-center gap-1">
+                    <User className="h-3 w-3 text-purple-500" />
+                    <span className="text-purple-600">Support Team • replies may take a moment</span>
+                  </p>
                 </div>
-              </ScrollArea>
-
-              {/* Input */}
-              <div className="p-4 border-t flex-shrink-0">
-                <form onSubmit={handleSendMessage} className="flex space-x-2">
-                  <Input
-                    ref={inputRef}
-                    value={messageInput}
-                    onChange={e => setMessageInput(e.target.value)}
-                    placeholder={isHandedOffToAdmin ? "Type your message..." : "Ask about venues, pricing, bookings..."}
-                    className="flex-1"
-                  />
-                  <Button type="submit" size="icon" disabled={!messageInput.trim()} className="bg-blue-600 hover:bg-blue-700">
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </form>
-                <p className="text-xs mt-1 flex items-center gap-1">
-                  {isHandedOffToAdmin
-                    ? <><User className="h-3 w-3 text-purple-500" /><span className="text-purple-600">Support Team • replies may take a moment</span></>
-                    : <><Bot className="h-3 w-3 text-green-500" /><span className="text-green-600">Chat Bot • always available</span></>
-                  }
-                </p>
-              </div>
-            </>
+              </TabsContent>
+            </Tabs>
           )}
         </div>
       )}
