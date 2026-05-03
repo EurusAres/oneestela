@@ -351,21 +351,23 @@ export function UnifiedChatWidget() {
 
           {!isMinimized && (
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "chatbot" | "support")} className="flex-1 flex flex-col">
-              <TabsList className="w-full rounded-none border-b bg-gray-50 flex-shrink-0">
-                <TabsTrigger value="chatbot" className="flex-1 gap-2 data-[state=active]:bg-white relative">
+              <TabsList className="w-full rounded-none border-b bg-gray-50 flex-shrink-0 h-12">
+                <TabsTrigger value="chatbot" className="flex-1 gap-2 data-[state=active]:bg-white relative h-10">
                   <Bot className="h-4 w-4" />
-                  <span>Chat Bot</span>
+                  <span className="hidden sm:inline">Chat Bot</span>
+                  <span className="sm:hidden">Bot</span>
                   {unreadCount > 0 && (
-                    <Badge className="ml-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
+                    <Badge className="ml-1 h-4 w-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0 min-w-[16px]">
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="support" className="flex-1 gap-2 data-[state=active]:bg-white relative">
+                <TabsTrigger value="support" className="flex-1 gap-2 data-[state=active]:bg-white relative h-10">
                   <Users className="h-4 w-4" />
-                  <span>Support Team</span>
+                  <span className="hidden sm:inline">Support Team</span>
+                  <span className="sm:hidden">Support</span>
                   {supportUnreadCount > 0 && (
-                    <Badge className="ml-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
+                    <Badge className="ml-1 h-4 w-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0 min-w-[16px]">
                       {supportUnreadCount > 9 ? "9+" : supportUnreadCount}
                     </Badge>
                   )}
@@ -373,7 +375,7 @@ export function UnifiedChatWidget() {
               </TabsList>
 
               {/* Chat Bot Tab */}
-              <TabsContent value="chatbot" className="flex-1 flex flex-col m-0 data-[state=inactive]:hidden">
+              <TabsContent value="chatbot" className="flex-1 flex flex-col m-0 p-0 data-[state=inactive]:hidden">
                 {/* Messages */}
                 <ScrollArea className="flex-1 p-4">
                   <div className="space-y-4">
@@ -386,7 +388,7 @@ export function UnifiedChatWidget() {
                           )}>
                             <Avatar className="h-6 w-6 flex-shrink-0">
                               <AvatarFallback className="text-xs">
-                                {message.senderType === "bot" ? "CB" : "U"}
+                                {message.senderType === "bot" ? "🤖" : "👤"}
                               </AvatarFallback>
                             </Avatar>
                             <div className={cn(
@@ -430,7 +432,7 @@ export function UnifiedChatWidget() {
                     {botIsTyping && (
                       <div className="flex justify-start">
                         <div className="flex items-end space-x-2">
-                          <Avatar className="h-6 w-6"><AvatarFallback className="text-xs">CB</AvatarFallback></Avatar>
+                          <Avatar className="h-6 w-6"><AvatarFallback className="text-xs">🤖</AvatarFallback></Avatar>
                           <div className="bg-green-100 rounded-lg px-3 py-2">
                             <div className="flex space-x-1">
                               <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" />
@@ -447,7 +449,7 @@ export function UnifiedChatWidget() {
                 </ScrollArea>
 
                 {/* Input */}
-                <div className="p-4 border-t flex-shrink-0">
+                <div className="p-4 border-t flex-shrink-0 bg-white">
                   <form onSubmit={handleSendMessage} className="flex space-x-2">
                     <Input
                       ref={inputRef}
@@ -460,7 +462,7 @@ export function UnifiedChatWidget() {
                       <Send className="h-4 w-4" />
                     </Button>
                   </form>
-                  <p className="text-xs mt-1 flex items-center gap-1">
+                  <p className="text-xs mt-1 flex items-center gap-1 text-gray-500">
                     <Bot className="h-3 w-3 text-green-500" />
                     <span className="text-green-600">Chat Bot • always available</span>
                   </p>
@@ -468,7 +470,7 @@ export function UnifiedChatWidget() {
               </TabsContent>
 
               {/* Support Team Tab */}
-              <TabsContent value="support" className="flex-1 flex flex-col m-0 data-[state=inactive]:hidden">
+              <TabsContent value="support" className="flex-1 flex flex-col m-0 p-0 data-[state=inactive]:hidden">
                 {/* Banner */}
                 <div className="px-4 py-2 bg-purple-50 border-b border-purple-200 flex-shrink-0">
                   <div className="flex items-center space-x-2">
@@ -497,7 +499,7 @@ export function UnifiedChatWidget() {
                           )}>
                             <Avatar className="h-6 w-6 flex-shrink-0">
                               <AvatarFallback className="text-xs">
-                                {message.senderType === "admin" ? "ST" : "U"}
+                                {message.senderType === "admin" ? "👨‍💼" : "👤"}
                               </AvatarFallback>
                             </Avatar>
                             <div className={cn(
@@ -522,7 +524,7 @@ export function UnifiedChatWidget() {
                 </ScrollArea>
 
                 {/* Input */}
-                <div className="p-4 border-t flex-shrink-0">
+                <div className="p-4 border-t flex-shrink-0 bg-white">
                   <form onSubmit={handleSendSupportMessage} className="flex space-x-2">
                     <Input
                       ref={supportInputRef}
@@ -535,7 +537,7 @@ export function UnifiedChatWidget() {
                       <Send className="h-4 w-4" />
                     </Button>
                   </form>
-                  <p className="text-xs mt-1 flex items-center gap-1">
+                  <p className="text-xs mt-1 flex items-center gap-1 text-gray-500">
                     <User className="h-3 w-3 text-purple-500" />
                     <span className="text-purple-600">Support Team • replies may take a moment</span>
                   </p>
