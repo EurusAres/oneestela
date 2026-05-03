@@ -468,20 +468,20 @@ export function UnifiedChatWidget() {
                 </ScrollArea>
 
                 {/* Input */}
-                <div className="p-4 border-t flex-shrink-0 bg-white">
+                <div className="p-3 border-t flex-shrink-0 bg-white">
                   <form onSubmit={handleSendMessage} className="flex space-x-2">
                     <Input
                       ref={inputRef}
                       value={messageInput}
                       onChange={e => setMessageInput(e.target.value)}
                       placeholder="Ask about venues, pricing, bookings..."
-                      className="flex-1"
+                      className="flex-1 h-9"
                     />
-                    <Button type="submit" size="icon" disabled={!messageInput.trim()} className="bg-blue-600 hover:bg-blue-700">
+                    <Button type="submit" size="icon" disabled={!messageInput.trim()} className="bg-blue-600 hover:bg-blue-700 h-9 w-9">
                       <Send className="h-4 w-4" />
                     </Button>
                   </form>
-                  <p className="text-xs mt-1 flex items-center gap-1 text-gray-500">
+                  <p className="text-[10px] mt-1 flex items-center gap-1 text-gray-500">
                     <Bot className="h-3 w-3 text-green-500" />
                     <span className="text-green-600">Chat Bot • always available</span>
                   </p>
@@ -491,12 +491,12 @@ export function UnifiedChatWidget() {
               {/* Support Team Tab */}
               <TabsContent value="support" className="flex-1 flex flex-col m-0 p-0 data-[state=inactive]:hidden">
                 {/* Banner */}
-                <div className="px-4 py-2 bg-purple-50 border-b border-purple-200 flex-shrink-0">
-                  <div className="flex items-center space-x-2">
-                    <AlertCircle className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm text-purple-700 font-medium">Connected with Support Team</span>
+                <div className="px-3 py-1.5 bg-purple-50 border-b border-purple-200 flex-shrink-0">
+                  <div className="flex items-center space-x-1.5">
+                    <AlertCircle className="h-3.5 w-3.5 text-purple-600" />
+                    <span className="text-xs text-purple-700 font-medium">Connected with Support Team</span>
                   </div>
-                  <p className="text-xs text-purple-600 mt-0.5">Our team will respond to your messages shortly.</p>
+                  <p className="text-[10px] text-purple-600 mt-0.5 leading-tight">Our team will respond shortly.</p>
                 </div>
 
                 {/* Messages */}
@@ -546,20 +546,20 @@ export function UnifiedChatWidget() {
                 </ScrollArea>
 
                 {/* Input */}
-                <div className="p-4 border-t flex-shrink-0 bg-white">
+                <div className="p-3 border-t flex-shrink-0 bg-white">
                   <form onSubmit={handleSendSupportMessage} className="flex space-x-2">
                     <Input
                       ref={supportInputRef}
                       value={supportInput}
                       onChange={e => setSupportInput(e.target.value)}
                       placeholder="Type your message..."
-                      className="flex-1"
+                      className="flex-1 h-9"
                     />
-                    <Button type="submit" size="icon" disabled={!supportInput.trim()} className="bg-blue-600 hover:bg-blue-700">
+                    <Button type="submit" size="icon" disabled={!supportInput.trim()} className="bg-blue-600 hover:bg-blue-700 h-9 w-9">
                       <Send className="h-4 w-4" />
                     </Button>
                   </form>
-                  <p className="text-xs mt-1 flex items-center gap-1 text-gray-500">
+                  <p className="text-[10px] mt-1 flex items-center gap-1 text-gray-500">
                     <User className="h-3 w-3 text-purple-500" />
                     <span className="text-purple-600">Support Team • replies may take a moment</span>
                   </p>
