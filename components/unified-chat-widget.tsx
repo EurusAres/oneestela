@@ -417,27 +417,27 @@ export function UnifiedChatWidget() {
                         )}
 
                       </div>
-
-                      {/* Follow-up suggestions */}
-                      {message.senderType === "bot" &&
-                        message.followUps &&
-                        message.followUps.length > 0 &&
-                        index === unifiedMessages.length - 1 && (
-                          <div className="mt-2 ml-10 flex flex-wrap gap-2">
-                            {message.followUps.map((fu, i) => (
-                              <Button
-                                key={i}
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleFollowUpClick(fu)}
-                                className="text-xs h-7 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                              >
-                                {fu}
-                              </Button>
-                            ))}
-                          </div>
-                        )}
                     ))}
+
+                    {/* Follow-up suggestions */}
+                    {unifiedMessages.length > 0 &&
+                      unifiedMessages[unifiedMessages.length - 1].senderType === "bot" &&
+                      unifiedMessages[unifiedMessages.length - 1].followUps &&
+                      unifiedMessages[unifiedMessages.length - 1].followUps!.length > 0 && (
+                        <div className="ml-10 flex flex-wrap gap-2">
+                          {unifiedMessages[unifiedMessages.length - 1].followUps!.map((fu, i) => (
+                            <Button
+                              key={i}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleFollowUpClick(fu)}
+                              className="text-xs h-7 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                            >
+                              {fu}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
 
 
                     {/* Bot typing */}
