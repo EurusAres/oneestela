@@ -393,7 +393,7 @@ export function UnifiedChatWidget() {
                 <ScrollArea className="flex-1 min-h-0 p-4 overflow-x-hidden">
                   <div className="flex flex-col gap-3 min-h-0 overflow-x-hidden">
                     {unifiedMessages.map((message, index) => (
-                      <div key={message.id} className={cn("flex items-end gap-2", message.senderType === "user" ? "justify-end" : "justify-start")}>
+                      <div key={message.id} className={cn("flex items-end gap-2 w-full", message.senderType === "user" ? "justify-end" : "justify-start")}>
                         {message.senderType !== "user" && (
                           <Avatar className="w-8 h-8 flex-shrink-0">
                             <AvatarFallback className="text-xs bg-green-600 text-white">
@@ -402,10 +402,12 @@ export function UnifiedChatWidget() {
                           </Avatar>
                         )}
                         <div className={cn(
-                          "max-w-[70%] rounded-2xl px-4 py-2 break-words overflow-hidden",
+                          "max-w-[calc(100%-3rem)] rounded-2xl px-4 py-2 break-words overflow-hidden",
                           message.senderType === "bot" ? "bg-green-600 text-white" : "bg-blue-600 text-white"
-                        )}>
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed break-words overflow-wrap-anywhere">
+                        )}
+                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                        >
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">
                             {message.senderType === "bot" ? renderBotMessage(message.content) : message.content}
                           </p>
                           <p className="text-xs mt-1 opacity-70">{formatTime(message.timestamp)}</p>
@@ -505,7 +507,7 @@ export function UnifiedChatWidget() {
                       </div>
                     )}
                     {supportMessages.map((message) => (
-                      <div key={message.id} className={cn("flex items-end gap-2", message.senderType === "user" ? "justify-end" : "justify-start")}>
+                      <div key={message.id} className={cn("flex items-end gap-2 w-full", message.senderType === "user" ? "justify-end" : "justify-start")}>
                         {message.senderType !== "user" && (
                           <Avatar className="w-8 h-8 flex-shrink-0">
                             <AvatarFallback className="text-xs bg-purple-600 text-white">
@@ -514,10 +516,12 @@ export function UnifiedChatWidget() {
                           </Avatar>
                         )}
                         <div className={cn(
-                          "max-w-[70%] rounded-2xl px-4 py-2 break-words overflow-hidden",
+                          "max-w-[calc(100%-3rem)] rounded-2xl px-4 py-2 break-words overflow-hidden",
                           message.senderType === "admin" ? "bg-purple-600 text-white" : "bg-blue-600 text-white"
-                        )}>
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed break-words overflow-wrap-anywhere">{message.content}</p>
+                        )}
+                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                        >
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">{message.content}</p>
                           <p className="text-xs mt-1 opacity-70">{formatTime(message.timestamp)}</p>
                         </div>
                         {message.senderType === "user" && (
