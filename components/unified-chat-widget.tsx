@@ -332,13 +332,8 @@ export function UnifiedChatWidget() {
       {isOpen && (
         <div className={cn(
           "fixed right-6 z-50 bg-white rounded-lg shadow-2xl border flex flex-col transition-all duration-300 overflow-hidden",
-          isMinimized ? "w-80 h-14 bottom-6" : "w-96 h-[480px] md:w-[420px] md:h-[520px] bottom-6"
+          isMinimized ? "w-80 h-14 bottom-6" : "w-96 h-[400px] md:w-[420px] md:h-[450px] bottom-6"
         )}
-        style={{ 
-          bottom: '24px',
-          maxHeight: 'calc(100vh - 100px)',
-          top: 'auto'
-        }}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-2 border-b bg-blue-600 text-white rounded-t-lg flex-shrink-0">
