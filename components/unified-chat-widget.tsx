@@ -402,7 +402,7 @@ export function UnifiedChatWidget() {
                           </Avatar>
                         )}
                         <div className={cn(
-                          "max-w-[calc(100%-3rem)] rounded-2xl px-4 py-2 break-words overflow-hidden",
+                          "max-w-[260px] rounded-2xl px-4 py-2 break-words overflow-hidden",
                           message.senderType === "bot" ? "bg-green-600 text-white" : "bg-blue-600 text-white"
                         )}
                         style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
@@ -516,7 +516,7 @@ export function UnifiedChatWidget() {
                           </Avatar>
                         )}
                         <div className={cn(
-                          "max-w-[calc(100%-3rem)] rounded-2xl px-4 py-2 break-words overflow-hidden",
+                          "max-w-[260px] rounded-2xl px-4 py-2 break-words overflow-hidden",
                           message.senderType === "admin" ? "bg-purple-600 text-white" : "bg-blue-600 text-white"
                         )}
                         style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
