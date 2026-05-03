@@ -390,10 +390,10 @@ export function UnifiedChatWidget() {
               {/* Chat Bot Tab */}
               <TabsContent value="chatbot" className="flex-1 flex flex-col m-0 p-0 data-[state=inactive]:hidden">
                 {/* Messages */}
-                <ScrollArea className="flex-1 min-h-0 p-4 overflow-x-hidden">
-                  <div className="flex flex-col gap-3 min-h-0 overflow-x-hidden">
+                <ScrollArea className="flex-1 min-h-0 p-4">
+                  <div className="flex flex-col gap-3 min-h-0 max-w-full overflow-x-auto">
                     {unifiedMessages.map((message, index) => (
-                      <div key={message.id} className={cn("flex items-end gap-2 w-full", message.senderType === "user" ? "justify-end" : "justify-start")}>
+                      <div key={message.id} className={cn("flex items-end gap-2 w-full max-w-full", message.senderType === "user" ? "justify-end" : "justify-start")}>
                         {message.senderType !== "user" && (
                           <Avatar className="w-8 h-8 flex-shrink-0">
                             <AvatarFallback className="text-xs bg-green-600 text-white">
@@ -402,10 +402,14 @@ export function UnifiedChatWidget() {
                           </Avatar>
                         )}
                         <div className={cn(
-                          "max-w-[260px] rounded-2xl px-4 py-2 break-words overflow-hidden",
+                          "max-w-[70%] rounded-2xl px-4 py-2",
                           message.senderType === "bot" ? "bg-green-600 text-white" : "bg-blue-600 text-white"
                         )}
-                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                        style={{ 
+                          wordBreak: 'break-word', 
+                          overflowWrap: 'break-word',
+                          maxWidth: 'min(70%, 280px)'
+                        }}
                         >
                           <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">
                             {message.senderType === "bot" ? renderBotMessage(message.content) : message.content}
@@ -497,8 +501,8 @@ export function UnifiedChatWidget() {
                 </div>
 
                 {/* Messages */}
-                <ScrollArea className="flex-1 min-h-0 p-4 overflow-x-hidden">
-                  <div className="flex flex-col gap-3 min-h-0 overflow-x-hidden">
+                <ScrollArea className="flex-1 min-h-0 p-4">
+                  <div className="flex flex-col gap-3 min-h-0 max-w-full overflow-x-auto">
                     {supportMessages.length === 0 && (
                       <div className="text-center py-8">
                         <Users className="h-12 w-12 mx-auto text-gray-300 mb-2" />
@@ -507,7 +511,7 @@ export function UnifiedChatWidget() {
                       </div>
                     )}
                     {supportMessages.map((message) => (
-                      <div key={message.id} className={cn("flex items-end gap-2 w-full", message.senderType === "user" ? "justify-end" : "justify-start")}>
+                      <div key={message.id} className={cn("flex items-end gap-2 w-full max-w-full", message.senderType === "user" ? "justify-end" : "justify-start")}>
                         {message.senderType !== "user" && (
                           <Avatar className="w-8 h-8 flex-shrink-0">
                             <AvatarFallback className="text-xs bg-purple-600 text-white">
@@ -516,10 +520,14 @@ export function UnifiedChatWidget() {
                           </Avatar>
                         )}
                         <div className={cn(
-                          "max-w-[260px] rounded-2xl px-4 py-2 break-words overflow-hidden",
+                          "max-w-[70%] rounded-2xl px-4 py-2",
                           message.senderType === "admin" ? "bg-purple-600 text-white" : "bg-blue-600 text-white"
                         )}
-                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                        style={{ 
+                          wordBreak: 'break-word', 
+                          overflowWrap: 'break-word',
+                          maxWidth: 'min(70%, 280px)'
+                        }}
                         >
                           <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">{message.content}</p>
                           <p className="text-xs mt-1 opacity-70">{formatTime(message.timestamp)}</p>
