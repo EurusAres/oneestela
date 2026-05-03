@@ -336,27 +336,27 @@ export function UnifiedChatWidget() {
         )}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-blue-600 text-white rounded-t-lg flex-shrink-0">
-            <div className="flex items-center space-x-3">
-              <Avatar className="h-8 w-8">
+          <div className="flex items-center justify-between p-2 border-b bg-blue-600 text-white rounded-t-lg flex-shrink-0">
+            <div className="flex items-center space-x-2">
+              <Avatar className="h-7 w-7">
                 <AvatarFallback className="bg-blue-500 text-white text-xs">
                   OE
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="font-semibold text-sm">One Estela Place</h3>
+                <h3 className="font-semibold text-xs">One Estela Place</h3>
                 <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 rounded-full bg-green-400" />
-                  <span className="text-xs opacity-90">Online</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                  <span className="text-[10px] opacity-90">Online</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center space-x-1">
-              <Button variant="ghost" size="icon" onClick={() => setIsMinimized(!isMinimized)} className="h-8 w-8 text-white hover:bg-blue-700">
-                {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+              <Button variant="ghost" size="icon" onClick={() => setIsMinimized(!isMinimized)} className="h-7 w-7 text-white hover:bg-blue-700">
+                {isMinimized ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8 text-white hover:bg-blue-700">
-                <X className="h-4 w-4" />
+              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-7 w-7 text-white hover:bg-blue-700">
+                <X className="h-3 w-3" />
               </Button>
             </div>
           </div>
